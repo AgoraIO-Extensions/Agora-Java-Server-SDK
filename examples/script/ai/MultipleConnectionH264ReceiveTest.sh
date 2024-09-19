@@ -1,0 +1,1 @@
+sh run.zsh io.agora.rtc.test.ai.MultipleConnectionH264ReceiveTest -channelId h264Channel -userId 11118 -connectionCount 3 -videoFile test_data/send_video.h264 -videoOutFile test_data_out/received_h264 -frameCount 300

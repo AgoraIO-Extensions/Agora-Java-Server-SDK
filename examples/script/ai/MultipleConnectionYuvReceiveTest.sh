@@ -1,0 +1,1 @@
+sh run.zsh io.agora.rtc.test.ai.MultipleConnectionYuvReceiveTest -channelId yuvChannel -userId 11122 -connectionCount 3 -videoFile test_data/360p_I420.yuv -videoOutFile test_data_out/received_yuv -frameCount 60
