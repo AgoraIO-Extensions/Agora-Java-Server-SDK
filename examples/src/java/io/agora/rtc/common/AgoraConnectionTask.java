@@ -339,7 +339,8 @@ public class AgoraConnectionTask {
         }
     }
 
-    public void sendH264Task(String filePath, int interval, int height, int width, boolean waitRelease) {
+    public void sendH264Task(String filePath, int interval, int height, int width, boolean waitRelease,
+            boolean optEnableEncryptionVideoMode) {
         SampleLogger.log("sendH264Task filePath:" + filePath + " interval:" + interval + " height:" + height + " width:"
                 + width);
         customEncodedImageSender = mediaNodeFactory.createVideoEncodedImageSender();

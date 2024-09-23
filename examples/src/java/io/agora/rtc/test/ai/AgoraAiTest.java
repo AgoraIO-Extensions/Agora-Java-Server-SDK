@@ -47,6 +47,7 @@ public class AgoraAiTest extends AgoraTest {
     protected int testTime = 0;// s
     protected int sleepTime = 1;// s
     protected boolean enableLog = true;
+    protected boolean enableEncryptionVideoMode = false;
 
     protected int useStringUid = 0;
     private AtomicInteger testTaskCount = new AtomicInteger(0);
@@ -86,6 +87,8 @@ public class AgoraAiTest extends AgoraTest {
         Option optTestTime = new Option("testTime", true, "testTime");
         Option optSleepTime = new Option("sleepTime", true, "sleepTime");
         Option optEnableLog = new Option("enableLog", true, "enableLog");
+        Option optEnableEncryptionVideoMode = new Option("enableEncryptionVideoMode", true,
+                "enableEncryptionVideoMode");
 
         options.addOption(optToken);
         options.addOption(optChannelId);
@@ -109,6 +112,7 @@ public class AgoraAiTest extends AgoraTest {
         options.addOption(optTestTime);
         options.addOption(optSleepTime);
         options.addOption(optEnableLog);
+        options.addOption(optEnableEncryptionVideoMode);
 
         CommandLine commandLine = null;
         CommandLineParser parser = new DefaultParser();
@@ -284,6 +288,15 @@ public class AgoraAiTest extends AgoraTest {
                 e.printStackTrace();
             }
         }
+
+        if (commandLine.hasOption(optEnableEncryptionVideoMode)) {
+            try {
+                enableEncryptionVideoMode = Boolean
+                        .parseBoolean(commandLine.getOptionValue("enableEncryptionVideoMode"));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
@@ -305,7 +318,7 @@ public class AgoraAiTest extends AgoraTest {
 
         SampleLogger.log("connectionCount:" + connectionCount);
 
-        service = SampleCommon.createAndInitAgoraService(0, 1, 1, useStringUid, null);
+        service = SampleCommon.createAndInitAgoraService(0, 1, 1, useStringUid, APPID);
 
     }
 
@@ -348,7 +361,7 @@ public class AgoraAiTest extends AgoraTest {
             if (TestTask.SEND_PCM == testTask) {
                 connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, true);
             } else if (TestTask.SEND_H264 == testTask) {
-                connTask.sendH264Task(videoFile, 1000 / fps, 0, 0, true);
+                connTask.sendH264Task(videoFile, 1000 / fps, 0, 0, true, enableEncryptionVideoMode);
             } else if (TestTask.SEND_YUV == testTask) {
                 connTask.sendYuvTask(videoFile, 1000 / fps, height, width, fps, true);
             } else if (TestTask.SEND_AAC == testTask) {
