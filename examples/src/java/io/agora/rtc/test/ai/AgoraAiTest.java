@@ -1,5 +1,6 @@
 package io.agora.rtc.test.ai;
 
+import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.AgoraRtcConn;
 import io.agora.rtc.common.SampleCommon;
@@ -47,13 +48,16 @@ public class AgoraAiTest extends AgoraTest {
     protected int testTime = 0;// s
     protected int sleepTime = 1;// s
     protected boolean enableLog = true;
-    protected boolean enableEncryptionVideoMode = false;
+    protected int enableEncryptionMode = 0;
+    protected int encryptionMode = Constants.ENCRYPTION_MODE_SM4_128_ECB;
+    protected String encryptionKey = "";
 
     protected int useStringUid = 0;
     private AtomicInteger testTaskCount = new AtomicInteger(0);
 
     public enum TestTask {
-        NONE, SEND_PCM, SEND_YUV, SEND_H264, SEND_AAC, SEND_DATA_STREAM, RECEIVE_PCM, RECEIVE_YUV, RECEIVE_H264,
+        NONE, SEND_PCM, SEND_YUV, SEND_H264, SEND_AAC, SEND_MP4, SEND_DATA_STREAM, RECEIVE_PCM, RECEIVE_YUV,
+        RECEIVE_H264,
         SEND_RECEIVE_PCM_YUV
     }
 
@@ -87,8 +91,12 @@ public class AgoraAiTest extends AgoraTest {
         Option optTestTime = new Option("testTime", true, "testTime");
         Option optSleepTime = new Option("sleepTime", true, "sleepTime");
         Option optEnableLog = new Option("enableLog", true, "enableLog");
-        Option optEnableEncryptionVideoMode = new Option("enableEncryptionVideoMode", true,
-                "enableEncryptionVideoMode");
+        Option optEnableEncryptionMode = new Option("enableEncryptionMode", true,
+                "enableEncryptionMode");
+        Option optEncryptionMode = new Option("encryptionMode", true,
+                "encryptionMode");
+        Option optEncryptionKey = new Option("encryptionKey", true,
+                "encryptionKey");
 
         options.addOption(optToken);
         options.addOption(optChannelId);
@@ -112,7 +120,9 @@ public class AgoraAiTest extends AgoraTest {
         options.addOption(optTestTime);
         options.addOption(optSleepTime);
         options.addOption(optEnableLog);
-        options.addOption(optEnableEncryptionVideoMode);
+        options.addOption(optEnableEncryptionMode);
+        options.addOption(optEncryptionMode);
+        options.addOption(optEncryptionKey);
 
         CommandLine commandLine = null;
         CommandLineParser parser = new DefaultParser();
@@ -289,10 +299,25 @@ public class AgoraAiTest extends AgoraTest {
             }
         }
 
-        if (commandLine.hasOption(optEnableEncryptionVideoMode)) {
+        if (commandLine.hasOption(optEnableEncryptionMode)) {
             try {
-                enableEncryptionVideoMode = Boolean
-                        .parseBoolean(commandLine.getOptionValue("enableEncryptionVideoMode"));
+                enableEncryptionMode = Integer.parseInt(commandLine.getOptionValue("enableEncryptionMode"));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (commandLine.hasOption(optEncryptionMode)) {
+            try {
+                encryptionMode = Integer.parseInt(commandLine.getOptionValue("encryptionMode"));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (commandLine.hasOption(optEncryptionKey)) {
+            try {
+                encryptionKey = commandLine.getOptionValue("encryptionKey");
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -350,7 +375,8 @@ public class AgoraAiTest extends AgoraTest {
                 }
             });
             testTaskCount.incrementAndGet();
-            connTask.createConnectionAndTest(ccfg, token, channelId, userId);
+            connTask.createConnectionAndTest(ccfg, token, channelId, userId, enableEncryptionMode, encryptionMode,
+                    encryptionKey);
 
             try {
                 connectedLatch.await();
@@ -361,12 +387,14 @@ public class AgoraAiTest extends AgoraTest {
             if (TestTask.SEND_PCM == testTask) {
                 connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, true);
             } else if (TestTask.SEND_H264 == testTask) {
-                connTask.sendH264Task(videoFile, 1000 / fps, 0, 0, true, enableEncryptionVideoMode);
+                connTask.sendH264Task(videoFile, 1000 / fps, 0, 0, true);
             } else if (TestTask.SEND_YUV == testTask) {
                 connTask.sendYuvTask(videoFile, 1000 / fps, height, width, fps, true);
             } else if (TestTask.SEND_AAC == testTask) {
                 connTask.sendAacTask(audioFile, 20, numOfChannels, sampleRate, true);
-            } else if (TestTask.SEND_DATA_STREAM == testTask) {
+            }  else if (TestTask.SEND_MP4 == testTask) {
+                connTask.sendAvMediaTask(audioFile, 50);
+            }else if (TestTask.SEND_DATA_STREAM == testTask) {
                 connTask.sendDataStreamTask(1, 50, true);
             } else if (TestTask.RECEIVE_PCM == testTask) {
                 connTask.registerPcmObserverTask(remoteUserId,

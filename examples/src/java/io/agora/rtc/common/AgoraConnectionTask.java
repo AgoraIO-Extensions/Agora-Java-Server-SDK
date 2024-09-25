@@ -20,6 +20,7 @@ import io.agora.rtc.DefaultLocalUserObserver;
 import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.EncodedAudioFrameInfo;
 import io.agora.rtc.EncodedVideoFrameInfo;
+import io.agora.rtc.EncryptionConfig;
 import io.agora.rtc.ExternalVideoFrame;
 import io.agora.rtc.Out;
 import io.agora.rtc.RtcConnConfig;
@@ -31,6 +32,8 @@ import io.agora.rtc.VideoFrame;
 import io.agora.rtc.VideoSubscriptionOptions;
 import io.agora.rtc.mediautils.AacReader;
 import io.agora.rtc.mediautils.H264Reader;
+import io.agora.rtc.mediautils.MediaDecode;
+import io.agora.rtc.mediautils.MediaDecodeUtils;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -115,7 +118,12 @@ public class AgoraConnectionTask {
         return conn;
     }
 
-    public void createConnectionAndTest(RtcConnConfig ccfg, String token, String channelId, String userId) {
+    public void createConnectionAndTest(RtcConnConfig ccfg, String token, String channelId, String userId,
+            int enableEncryptionMode, int encryptionMode, String encryptionKey) {
+        SampleLogger
+                .log("createConnectionAndTest channelId:" + channelId + " userId:" + userId + " enableEncryptionMode:"
+                        + enableEncryptionMode + " encryptionMode:" + encryptionMode + " encryptionKey:"
+                        + encryptionKey);
         if (null == service) {
             SampleLogger.log("createAndInitAgoraService fail");
             return;
@@ -166,6 +174,18 @@ public class AgoraConnectionTask {
         });
         SampleLogger.log("registerObserver ret:" + ret);
 
+        if (enableEncryptionMode == 1 && !Utils.isNullOrEmpty(encryptionKey)) {
+            EncryptionConfig encryptionConfig = new EncryptionConfig();
+            encryptionConfig.setEncryptionMode(encryptionMode);
+            encryptionConfig.setEncryptionKey(encryptionKey);
+            ret = conn.enableEncryption(enableEncryptionMode, encryptionConfig);
+            if (ret < 0) {
+                SampleLogger.log("Failed to enable encryption ret:" + ret);
+                return;
+            }
+            SampleLogger.log("Enable encryption successfully!");
+        }
+
         ret = conn.connect(token, channelId, userId);
         SampleLogger.log("Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
 
@@ -204,7 +224,7 @@ public class AgoraConnectionTask {
         } catch (Exception e) {
             userRole = random.nextInt();
         }
-        conn.getLocalUser().setUserRole(userRole);
+        // conn.getLocalUser().setUserRole(userRole);
 
     }
 
@@ -339,8 +359,7 @@ public class AgoraConnectionTask {
         }
     }
 
-    public void sendH264Task(String filePath, int interval, int height, int width, boolean waitRelease,
-            boolean optEnableEncryptionVideoMode) {
+    public void sendH264Task(String filePath, int interval, int height, int width, boolean waitRelease) {
         SampleLogger.log("sendH264Task filePath:" + filePath + " interval:" + interval + " height:" + height + " width:"
                 + width);
         customEncodedImageSender = mediaNodeFactory.createVideoEncodedImageSender();
@@ -621,6 +640,76 @@ public class AgoraConnectionTask {
             if (null != callback) {
                 callback.onTestFinished();
             }
+        }
+    }
+
+    public void sendAvMediaTask(String filePath, int interval) {
+        SampleLogger.log("sendAvMediaTask filePath:" + filePath + " interval:" + interval);
+        MediaDecodeUtils mediaDecodeUtils = new MediaDecodeUtils();
+
+        boolean initRet = mediaDecodeUtils.init(filePath, interval, (int) testDuration,
+                new MediaDecodeUtils.MediaDecodeCallback() {
+                    @Override
+                    public void onAudioFrame(MediaDecode.MediaFrame frame, long basePts) {
+                        if (audioFrameSender == null) {
+                            audioFrameSender = mediaNodeFactory.createAudioPcmDataSender();
+                            // Create audio track
+                            customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
+                            customAudioTrack.setMaxBufferAudioFrameNumber(1000);
+                            conn.getLocalUser().publishAudio(customAudioTrack);
+                        }
+
+                        int ret = audioFrameSender.send(frame.buffer, (int) (frame.pts + basePts),
+                                frame.samples, frame.bytesPerSample,
+                                frame.channels,
+                                frame.sampleRate);
+                        SampleLogger.log("SendPcmData frame.pts:" + frame.pts + " ret:" + ret);
+                    }
+
+                    @Override
+                    public void onVideoFrame(MediaDecode.MediaFrame frame, long basePts) {
+                        if (videoFrameSender == null) {
+                            videoFrameSender = mediaNodeFactory.createVideoFrameSender();
+
+                            customVideoTrack = service.createCustomVideoTrackFrame(videoFrameSender);
+                            VideoEncoderConfig config = new VideoEncoderConfig();
+                            config.setCodecType(Constants.VIDEO_CODEC_H264);
+                            config.setDimensions(new VideoDimensions(frame.width, frame.height));
+                            config.setFrameRate(frame.fps);
+                            customVideoTrack.setVideoEncoderConfig(config);
+                            customVideoTrack.setEnabled(1);
+                            // Publish video track
+                            conn.getLocalUser().publishVideo(customVideoTrack);
+                        }
+
+                        ExternalVideoFrame externalVideoFrame = new ExternalVideoFrame();
+                        ByteBuffer buffer = ByteBuffer.allocateDirect(frame.buffer.length);
+                        buffer.put(frame.buffer);
+                        externalVideoFrame.setBuffer(buffer);
+                        externalVideoFrame.setHeight(frame.height);
+                        externalVideoFrame.setStride(frame.stride);
+                        externalVideoFrame.setRotation(0);
+                        externalVideoFrame.setFormat(Constants.EXTERNAL_VIDEO_FRAME_PIXEL_FORMAT_I420);
+                        externalVideoFrame.setType(Constants.EXTERNAL_VIDEO_FRAME_BUFFER_TYPE_RAW_DATA);
+                        externalVideoFrame.setTimestamp(frame.pts + basePts);
+                        int ret = videoFrameSender.send(externalVideoFrame);
+                        SampleLogger.log("SendVideoFrame frame.pts:" + frame.pts + " ret:" + ret);
+                    }
+                });
+
+        SampleLogger.log("sendAvMediaTask initRet:" + initRet);
+        if (initRet) {
+            mediaDecodeUtils.start();
+        }
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        releaseConn();
+        if (null != callback) {
+            callback.onTestFinished();
         }
     }
 

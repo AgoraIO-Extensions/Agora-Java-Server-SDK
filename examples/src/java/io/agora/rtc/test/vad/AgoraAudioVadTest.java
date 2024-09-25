@@ -1,4 +1,4 @@
-package io.agora.rtc.test.ai;
+package io.agora.rtc.test.vad;
 
 import io.agora.rtc.AgoraAudioVad;
 import io.agora.rtc.AgoraAudioVadConfig;
@@ -8,6 +8,7 @@ import io.agora.rtc.common.FileSender;
 import io.agora.rtc.common.FileWriter;
 import io.agora.rtc.common.SampleLogger;
 import io.agora.rtc.common.Utils;
+import io.agora.rtc.test.ai.AgoraAiTest;
 import java.io.File;
 import java.io.FileInputStream;
 

@@ -74,12 +74,12 @@ set -e
 
 cd examples
 ./build.sh
-./script/ai/MultipleConnectionPcmSendTest.sh
+./script/MultipleConnectionPcmSendTest.sh
 ```
 
 1. **集成 SDK**：确保在 `examples/libs` 目录下集成 SDK。
 2. **编译示例**：进入 `examples` 目录并执行 `build.sh` 进行编译。
-3. **运行测试**：执行 `/script/ai/MultipleConnectionPcmSendTest.sh` 脚本进行测试。
+3. **运行测试**：执行 `/script/MultipleConnectionPcmSendTest.sh` 脚本进行测试。
 
 ### 注意事项
 

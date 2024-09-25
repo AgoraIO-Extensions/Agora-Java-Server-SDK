@@ -98,4 +98,8 @@ public class Utils {
 
         return new String[] { appId, token };
     }
+
+    public static boolean isNullOrEmpty(String str) {
+        return str == null || str.isEmpty();
+    }
 }

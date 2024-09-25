@@ -1,62 +1,121 @@
-# Examples
+# Agora Linux Java SDK Example Guide
 
-## Configuring APP_ID and TOKEN
+## Table of Contents
 
-Create a file named `.keys` in the `examples` directory and add the values for `APP_ID` and `TOKEN` in the following format:
+1. [Environment Setup](#environment-setup)
+2. [Project Configuration](#project-configuration)
+3. [Compilation Steps](#compilation-steps)
+4. [Running Tests](#running-tests)
+5. [Important Notes](#important-notes)
 
-```
-APP_ID=XXX
-TOKEN=XXX
-```
+## Environment Setup
 
-> **Note**: If you do not have the corresponding values, you can leave them empty.
+### FFmpeg Development Library Installation (Optional)
 
----
+> **Note**: This step is mandatory if you need to test MP4-related cases.
+
+1. Update system packages:
+
+   ```bash
+   sudo apt update
+   ```
+
+2. Install FFmpeg (version 7.0 or above required):
+
+   ```bash
+   sudo apt install ffmpeg
+   ```
+
+   *If your system doesn't support direct installation via apt, you'll need to install from source.*
+
+3. Install FFmpeg development libraries:
+
+   ```bash
+   sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
+   ```
+
+4. Check library dependency paths:
+
+   ```bash
+   pkg-config --cflags --libs libavformat libavcodec libavutil libswresample libswscale
+   ```
+
+5. Update `FFMPEG_INCLUDE_DIR` and `FFMPEG_LIB_DIR` paths in `build.sh` based on the output from step 4.
+
+## Project Configuration
+
+### Configure APP_ID and TOKEN
+
+1. Create a `.keys` file in the `examples` directory.
+2. Add the following content (replace XXX with actual values):
+
+   ```
+   APP_ID=XXX
+   TOKEN=XXX
+   ```
+
+   *If the certificate is not enabled, the TOKEN value can be empty, for example:*
+
+   ```
+   APP_ID=abcd1234
+   TOKEN=
+   ```
 
 ## Compilation Steps
 
-1. **Add SDK JAR**:
-   - Place the `agora-sdk.jar` file into the `libs` directory (if it does not exist, please create the `libs` folder manually).
+1. **Add SDK JAR**
+   - Place `agora-sdk.jar` in the `libs` directory.
 
-2. **Extract SO Files**:
-   - Extract the shared object (`.so`) files from `agora-sdk.jar` and place them in the `libs` directory. Use the following command to extract the contents:
+2. **Extract SO Files**
+   - Unzip `agora-sdk.jar`:
 
-   ```bash
-   jar xvf agora-sdk.jar
+     ```bash
+     jar xvf agora-sdk.jar
+     ```
+
+   - Move `.so` files from `native/linux/x86_64/` to the `libs` directory.
+
+   The directory structure should look like this:
+
+   ```
+   libs/
+   ├── agora-sdk.jar
+   └── lib***.so
    ```
 
-   - The extracted `.so` files are usually located in the `native/linux/x86_64/` directory.
-
-3. **Compile the Project**:
-   - Run the following command to compile the project:
+3. **Compile the Project**
 
    ```bash
-   ./build.sh
+   ./build.sh [options]
    ```
 
----
+   Options:
+   - `-ff`: Compile FFmpeg-related libraries (required for MP4 testing)
+   - `-vad`: Test VAD library cases (required)
+
+   Examples:
+   - To test MP4 files: `./build.sh -ff`
+   - To test Vad: `./build.sh -vad`
 
 ## Running Tests
 
-1. **Enter the Examples Directory**:
-   - Switch to the `examples` directory.
-
-2. **Execute the Test Script**:
-   - Use the following command to run the test script:
+1. Enter the examples directory:
 
    ```bash
-   ./script/ai/TestCashName.sh
+   cd examples
    ```
 
-3. **Modify Test Parameters**:
-   - If you need to modify the test parameters, simply edit the corresponding `.sh` file.
+2. Execute the test script:
 
-> **Tip**: Make sure to follow the steps in the specified order to avoid any dependency issues.
+   ```bash
+   ./script/TestCaseName.sh
+   ```
 
----
+3. Modify test parameters: Edit the corresponding `.sh` file directly.
 
-## Additional Notes
+## Important Notes
 
-- Ensure that you have the Java environment installed and properly configured.
-- Make sure that the version of `agora-sdk.jar` is compatible with your project.
-- Before running tests, confirm that `APP_ID` and `TOKEN` are correctly configured.
+- Ensure Java environment is installed and properly configured.
+- Verify that the `agora-sdk.jar` version is compatible with your project.
+- Confirm that `APP_ID` and `TOKEN` are correctly configured before running tests.
+- Follow the steps in order to avoid dependency issues.

@@ -74,12 +74,12 @@ set -e
 
 cd examples
 ./build.sh
-./script/ai/MultipleConnectionPcmSendTest.sh
+./script/MultipleConnectionPcmSendTest.sh
 ```
 
 1. **Integrate SDK**: Ensure the SDK is integrated in the `examples/libs` directory.
 2. **Compile Examples**: Enter the `examples` directory and run `build.sh` to compile.
-3. **Run Test**: Execute the `/script/ai/MultipleConnectionPcmSendTest.sh` script to run the test.
+3. **Run Test**: Execute the `/script/MultipleConnectionPcmSendTest.sh` script to run the test.
 
 ### Notes
 

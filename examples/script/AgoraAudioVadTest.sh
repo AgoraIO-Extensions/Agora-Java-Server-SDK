@@ -1,0 +1,1 @@
+sh run.zsh io.agora.rtc.test.vad.AgoraAudioVadTest -channelId vadChannel -userId 11111 -sampleRate 16000 -numOfChannels 1 -audioFile test_data/vad_test.pcm -audioExpectedFile test_data/vad_test_expected.pcm -audioOutFile test_data_out/vad_test_out.pcm

@@ -1,4 +1,4 @@
-package io.agora.rtc;
+package io.agora.rtc.test;
 
 import io.agora.rtc.common.Utils;
 import org.junit.Test;
