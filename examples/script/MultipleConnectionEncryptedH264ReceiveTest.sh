@@ -1,1 +1,1 @@
-sh run.zsh io.agora.rtc.test.ai.MultipleConnectionH264ReceiveTest -channelId encryptedH264Channel -userId 11118 -connectionCount 3 -videoFile test_data/send_video.h264 -videoOutFile test_data_out/received_encrypted_h264 -frameCount 300 -enableEncryptionMode 1 -encryptionKey 111
+sh run.zsh io.agora.rtc.test.ai.MultipleConnectionH264ReceiveTest -channelId encryptedH264Channel -userId 11118 -connectionCount 1 -videoFile test_data/send_video.h264 -videoOutFile test_data_out/received_encrypted_h264 -frameCount 300 -enableEncryptionMode 1 -encryptionMode 4 -encryptionKey 123456

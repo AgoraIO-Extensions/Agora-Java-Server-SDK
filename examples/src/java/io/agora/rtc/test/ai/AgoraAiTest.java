@@ -51,6 +51,7 @@ public class AgoraAiTest extends AgoraTest {
     protected int enableEncryptionMode = 0;
     protected int encryptionMode = Constants.ENCRYPTION_MODE_SM4_128_ECB;
     protected String encryptionKey = "";
+    protected int enableAudioLabel = 0;
 
     protected int useStringUid = 0;
     private AtomicInteger testTaskCount = new AtomicInteger(0);
@@ -97,6 +98,8 @@ public class AgoraAiTest extends AgoraTest {
                 "encryptionMode");
         Option optEncryptionKey = new Option("encryptionKey", true,
                 "encryptionKey");
+        Option optEnableAudioLabel = new Option("enableAudioLabel", true,
+                "enableAudioLabel");
 
         options.addOption(optToken);
         options.addOption(optChannelId);
@@ -123,6 +126,7 @@ public class AgoraAiTest extends AgoraTest {
         options.addOption(optEnableEncryptionMode);
         options.addOption(optEncryptionMode);
         options.addOption(optEncryptionKey);
+        options.addOption(optEnableAudioLabel);
 
         CommandLine commandLine = null;
         CommandLineParser parser = new DefaultParser();
@@ -322,6 +326,14 @@ public class AgoraAiTest extends AgoraTest {
                 e.printStackTrace();
             }
         }
+
+        if (commandLine.hasOption(optEnableAudioLabel)) {
+            try {
+                enableAudioLabel = Integer.parseInt(commandLine.getOptionValue("enableAudioLabel"));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
@@ -344,6 +356,10 @@ public class AgoraAiTest extends AgoraTest {
         SampleLogger.log("connectionCount:" + connectionCount);
 
         service = SampleCommon.createAndInitAgoraService(0, 1, 1, useStringUid, APPID);
+
+        if (enableAudioLabel == 1) {
+            service.enableExtension("agora.builtin", "agora_audio_label_generator", "", true);
+        }
 
     }
 
@@ -392,9 +408,9 @@ public class AgoraAiTest extends AgoraTest {
                 connTask.sendYuvTask(videoFile, 1000 / fps, height, width, fps, true);
             } else if (TestTask.SEND_AAC == testTask) {
                 connTask.sendAacTask(audioFile, 20, numOfChannels, sampleRate, true);
-            }  else if (TestTask.SEND_MP4 == testTask) {
+            } else if (TestTask.SEND_MP4 == testTask) {
                 connTask.sendAvMediaTask(audioFile, 50);
-            }else if (TestTask.SEND_DATA_STREAM == testTask) {
+            } else if (TestTask.SEND_DATA_STREAM == testTask) {
                 connTask.sendDataStreamTask(1, 50, true);
             } else if (TestTask.RECEIVE_PCM == testTask) {
                 connTask.registerPcmObserverTask(remoteUserId,

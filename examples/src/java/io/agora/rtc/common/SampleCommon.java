@@ -21,6 +21,7 @@ public class SampleCommon {
         config.setEnableAudioProcessor(enableAudioProcessor);
         config.setEnableVideo(enableVideo);
         config.setUseStringUid(useStringUid);
+        config.setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
 
         int ret = service.initialize(config);
         if (ret != 0) {

@@ -813,6 +813,7 @@ public class AgoraConnectionTask {
                 if (null == frame) {
                     return 0;
                 }
+                SampleLogger.log("onPlaybackAudioFrameBeforeMixing frame:" + frame);
                 int writeBytes = frame.getSamplesPerChannel() * frame.getChannels() * 2;
                 // Write PCM samples
                 SampleLogger.log("onPlaybackAudioFrameBeforeMixing audioFrame size " + frame.getBuffer().capacity()

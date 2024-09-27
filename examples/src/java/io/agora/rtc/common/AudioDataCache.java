@@ -1,7 +1,6 @@
 package io.agora.rtc.common;
 
-import java.util.LinkedList;
-import java.util.Queue;
+import java.nio.ByteBuffer;
 
 public class AudioDataCache {
     // Constants
@@ -15,7 +14,7 @@ public class AudioDataCache {
     private final int sampleRate;
     private final int oneFrameSize;
     private int startCacheDataSize;
-    private final Queue<Byte> cacheQueue;
+    private ByteBuffer buffer;
     private long startedTimestamp;
     private long lastSendTimestamp;
     private long lastPushDataTimestamp;
@@ -27,7 +26,7 @@ public class AudioDataCache {
         this.sampleRate = sampleRate;
         this.oneFrameSize = numOfChannels * (sampleRate / 1000) * INTERVAL_ONE_FRAME * 2;
         this.startCacheDataSize = oneFrameSize * START_BY_CACHE_FRAME_SIZE;
-        this.cacheQueue = new LinkedList<>();
+        this.buffer = ByteBuffer.allocate(startCacheDataSize * 2); // 初始容量，可根据需要调整
         this.startedTimestamp = 0;
         this.lastSendTimestamp = 0;
         this.lastPushDataTimestamp = 0;
@@ -56,9 +55,21 @@ public class AudioDataCache {
                 lastSendTimestamp = 0;
                 consumedFrameSize = 0;
             }
-            for (byte b : data) {
-                cacheQueue.offer(b);
+
+            if (buffer.remaining() < data.length) {
+                // 如果缓冲区空间不足，创建一个更大的缓冲区
+                int newCapacity = Math.max(buffer.capacity() * 2, buffer.position() + data.length);
+                ByteBuffer newBuffer = ByteBuffer.allocate(newCapacity);
+
+                // 将当前缓冲区的内容复制到新缓冲区
+                buffer.flip();
+                newBuffer.put(buffer);
+
+                // 切换到新的缓冲区，并确保它处于正确的写入位置
+                buffer = newBuffer;
             }
+
+            buffer.put(data);
             lastPushDataTimestamp = System.currentTimeMillis();
         } catch (Exception e) {
             e.printStackTrace();
@@ -70,7 +81,7 @@ public class AudioDataCache {
         long currentTime = System.currentTimeMillis();
         try {
             if (startedTimestamp == 0) {
-                if (cacheQueue.size() >= startCacheDataSize) {
+                if (getBufferSize() >= startCacheDataSize) {
                     startedTimestamp = currentTime;
                     return extractData(startCacheDataSize, currentTime);
                 }
@@ -86,7 +97,7 @@ public class AudioDataCache {
                 int requiredFrameSize = startedAllFrameSize - consumedFrameSize;
                 if (requiredFrameSize > 0) {
                     int requiredSize = requiredFrameSize * oneFrameSize;
-                    if (requiredSize <= cacheQueue.size()) {
+                    if (requiredSize <= getBufferSize()) {
                         consumedFrameSize += requiredFrameSize;
                         if (consumedFrameSize < 0) {
                             consumedFrameSize = 0;
@@ -102,17 +113,18 @@ public class AudioDataCache {
         return null;
     }
 
-    // Helper method to extract data from the queue
+    // Helper method to extract data from the buffer
     private byte[] extractData(int size, long currentTime) {
         byte[] data = new byte[size];
-        try {
-            for (int i = 0; i < size; i++) {
-                data[i] = cacheQueue.poll();
-            }
-            lastSendTimestamp = currentTime;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        buffer.flip();
+        buffer.get(data);
+        buffer.compact();
+        lastSendTimestamp = currentTime;
         return data;
+    }
+
+    private int getBufferSize() {
+        // 写模式下的position是写入的位置，limit是缓冲区的容量
+        return buffer.position();
     }
 }
