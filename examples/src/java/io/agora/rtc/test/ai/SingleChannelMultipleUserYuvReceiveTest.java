@@ -4,10 +4,10 @@ import io.agora.rtc.AudioSubscriptionOptions;
 import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
 
-public class SingleChannelMultipleUserPcmReceiveTest extends AgoraAiTest {
+public class SingleChannelMultipleUserYuvReceiveTest extends AgoraAiTest {
 
     public static void main(String[] args) {
-        startTest(args, new SingleChannelMultipleUserPcmReceiveTest());
+        startTest(args, new SingleChannelMultipleUserYuvReceiveTest());
     }
 
     @Override
@@ -15,18 +15,10 @@ public class SingleChannelMultipleUserPcmReceiveTest extends AgoraAiTest {
         super.setup();
 
         // Create Agora connection
-        AudioSubscriptionOptions audioSubOpt = new AudioSubscriptionOptions();
-        audioSubOpt.setBytesPerSample(2 * numOfChannels);
-        audioSubOpt.setNumberOfChannels(numOfChannels);
-        audioSubOpt.setSampleRateHz(sampleRate);
-
         RtcConnConfig ccfg = new RtcConnConfig();
         ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
-        ccfg.setAudioSubsOptions(audioSubOpt);
-        ccfg.setAutoSubscribeAudio(1);
-        ccfg.setAutoSubscribeVideo(0);
-        ccfg.setEnableAudioRecordingOrPlayout(1);
-        ccfg.setChannelProfile(Constants.CHANNEL_PROFILE_LIVE_BROADCASTING);
+        ccfg.setAutoSubscribeAudio(0);
+        ccfg.setAutoSubscribeVideo(1);
 
         try {
             int userIdInt = Integer.parseInt(userId);
@@ -36,7 +28,7 @@ public class SingleChannelMultipleUserPcmReceiveTest extends AgoraAiTest {
                     saveFile = i % 5 == 0;
                 }
                 createConnectionAndTest(ccfg, channelId, String.valueOf(userIdInt + i),
-                        TestTask.RECEIVE_PCM,
+                        TestTask.RECEIVE_YUV,
                         testTime, saveFile);
             }
         } catch (Exception e) {

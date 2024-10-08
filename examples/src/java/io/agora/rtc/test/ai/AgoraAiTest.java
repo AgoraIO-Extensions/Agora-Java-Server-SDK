@@ -33,7 +33,9 @@ public class AgoraAiTest extends AgoraTest {
     protected String audioFile = "test_data/send_audio_16k_1ch.pcm";
     protected String audioExpectedFile = "test_data/vad_test_expected.pcm";
     protected String audioOutFile = "test_data_out/vad_test_out.pcm";
-    protected String videoFile = "received_video.h264";
+    protected String videoFile = "test_data/send_video.h264";
+    private String highVideoFile = "test_data/send_video.h264";
+    private String lowVideoFile = "test_data/send_video.h264";
     protected String videoOutFile = "test_data_out/received_video";
     protected int sampleRate = 16000;
     protected int numOfChannels = 1;
@@ -52,13 +54,21 @@ public class AgoraAiTest extends AgoraTest {
     protected int encryptionMode = Constants.ENCRYPTION_MODE_SM4_128_ECB;
     protected String encryptionKey = "";
     protected int enableAudioLabel = 0;
+    protected int enableCloudProxy = 0;
+    protected int enableSimulcastStream = 0;
+    protected int enableRandomTest = 0;
+    protected int randomTestTime = 0; // s
 
     protected int useStringUid = 0;
     private AtomicInteger testTaskCount = new AtomicInteger(0);
 
     public enum TestTask {
-        NONE, SEND_PCM, SEND_YUV, SEND_H264, SEND_AAC, SEND_MP4, SEND_DATA_STREAM, RECEIVE_PCM, RECEIVE_YUV,
-        RECEIVE_H264,
+        NONE, SEND_PCM, SEND_YUV, SEND_YUV_DUAL_STREAM, SEND_H264, SEND_H264_DUAL_STREAM, SEND_AAC, SEND_OPUS, SEND_MP4,
+        SEND_RGBA_PCM,
+        SEND_VP8_PCM,
+        SEND_DATA_STREAM,
+        RECEIVE_PCM, RECEIVE_YUV,
+        RECEIVE_H264, RECEIVE_MIXED_AUDIO,
         SEND_RECEIVE_PCM_YUV
     }
 
@@ -78,6 +88,8 @@ public class AgoraAiTest extends AgoraTest {
         Option optAudioExpectedFile = new Option("audioExpectedFile", true, "Output audio file");
         Option optAudioOutFile = new Option("audioOutFile", true, "Output audio file");
         Option optVideoFile = new Option("videoFile", true, "Output video file");
+        Option optHighVideoFile = new Option("highVideoFile", true, "Output video file");
+        Option optLowVideoFile = new Option("lowVideoFile", true, "Output video file");
         Option optVideoOutFile = new Option("videoOutFile", true, "Output video file");
         Option optSampleRate = new Option("sampleRate", true, "Sample rate for received audio");
         Option optNumOfChannels = new Option("numOfChannels", true, "Number of channels for received audio");
@@ -100,6 +112,14 @@ public class AgoraAiTest extends AgoraTest {
                 "encryptionKey");
         Option optEnableAudioLabel = new Option("enableAudioLabel", true,
                 "enableAudioLabel");
+        Option optEnableCloudProxy = new Option("enableCloudProxy", true,
+                "enableCloudProxy");
+        Option optEnableSimulcastStream = new Option("enableSimulcastStream", true,
+                "enableSimulcastStream");
+        Option optEnableRandomTest = new Option("enableRandomTest", true,
+                "enableRandomTest");
+        Option optRandomTestTime = new Option("randomTestTime", true,
+                "randomTestTime");
 
         options.addOption(optToken);
         options.addOption(optChannelId);
@@ -109,6 +129,8 @@ public class AgoraAiTest extends AgoraTest {
         options.addOption(optAudioExpectedFile);
         options.addOption(optAudioOutFile);
         options.addOption(optVideoFile);
+        options.addOption(optHighVideoFile);
+        options.addOption(optLowVideoFile);
         options.addOption(optVideoOutFile);
         options.addOption(optSampleRate);
         options.addOption(optNumOfChannels);
@@ -127,6 +149,10 @@ public class AgoraAiTest extends AgoraTest {
         options.addOption(optEncryptionMode);
         options.addOption(optEncryptionKey);
         options.addOption(optEnableAudioLabel);
+        options.addOption(optEnableCloudProxy);
+        options.addOption(optEnableSimulcastStream);
+        options.addOption(optEnableRandomTest);
+        options.addOption(optRandomTestTime);
 
         CommandLine commandLine = null;
         CommandLineParser parser = new DefaultParser();
@@ -151,6 +177,20 @@ public class AgoraAiTest extends AgoraTest {
             String o_videoFile = commandLine.getOptionValue("videoFile");
             if (o_videoFile != null) {
                 videoFile = o_videoFile;
+            }
+        }
+
+        if (commandLine.hasOption(optHighVideoFile)) {
+            String o_highVideoFile = commandLine.getOptionValue("highVideoFile");
+            if (o_highVideoFile != null) {
+                highVideoFile = o_highVideoFile;
+            }
+        }
+
+        if (commandLine.hasOption(optLowVideoFile)) {
+            String o_lowVideoFile = commandLine.getOptionValue("lowVideoFile");
+            if (o_lowVideoFile != null) {
+                lowVideoFile = o_lowVideoFile;
             }
         }
 
@@ -334,6 +374,38 @@ public class AgoraAiTest extends AgoraTest {
                 e.printStackTrace();
             }
         }
+
+        if (commandLine.hasOption(optEnableCloudProxy)) {
+            try {
+                enableCloudProxy = Integer.parseInt(commandLine.getOptionValue("enableCloudProxy"));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (commandLine.hasOption(optEnableSimulcastStream)) {
+            try {
+                enableSimulcastStream = Integer.parseInt(commandLine.getOptionValue("enableSimulcastStream"));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (commandLine.hasOption(optEnableRandomTest)) {
+            try {
+                enableRandomTest = Integer.parseInt(commandLine.getOptionValue("enableRandomTest"));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (commandLine.hasOption(optRandomTestTime)) {
+            try {
+                randomTestTime = Integer.parseInt(commandLine.getOptionValue("randomTestTime"));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
@@ -353,7 +425,7 @@ public class AgoraAiTest extends AgoraTest {
             connectionCount = 1;
         }
 
-        SampleLogger.log("connectionCount:" + connectionCount);
+        SampleLogger.log("connectionCount:" + connectionCount + " enableStringUid:" + enableStringUid);
 
         service = SampleCommon.createAndInitAgoraService(0, 1, 1, useStringUid, APPID);
 
@@ -365,8 +437,13 @@ public class AgoraAiTest extends AgoraTest {
 
     protected boolean createConnectionAndTest(RtcConnConfig ccfg, String channelId, String userId, TestTask testTask,
             long testDuration) {
+        return createConnectionAndTest(ccfg, channelId, userId, testTask, testDuration, true);
+    }
+
+    protected boolean createConnectionAndTest(RtcConnConfig ccfg, String channelId, String userId, TestTask testTask,
+            long testDuration, boolean enableSaveFile) {
         SampleLogger.log("createConnectionAndTest start ccfg:" + ccfg + " channelId:" + channelId + " userId:" + userId
-                + " testTask:" + testTask + " testDuration:" + testDuration);
+                + " testTask:" + testTask + " testDuration:" + testDuration + " enableSaveFile:" + enableSaveFile);
         testTaskExecutorService.execute(() -> {
             final CountDownLatch testFinishLatch = new CountDownLatch(1);
             final CountDownLatch connectedLatch = new CountDownLatch(1);
@@ -401,35 +478,66 @@ public class AgoraAiTest extends AgoraTest {
             }
 
             if (TestTask.SEND_PCM == testTask) {
-                connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, true);
-            } else if (TestTask.SEND_H264 == testTask) {
-                connTask.sendH264Task(videoFile, 1000 / fps, 0, 0, true);
-            } else if (TestTask.SEND_YUV == testTask) {
-                connTask.sendYuvTask(videoFile, 1000 / fps, height, width, fps, true);
+                connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, enableCloudProxy == 1, true);
             } else if (TestTask.SEND_AAC == testTask) {
                 connTask.sendAacTask(audioFile, 20, numOfChannels, sampleRate, true);
+            } else if (TestTask.SEND_OPUS == testTask) {
+                connTask.sendOpusTask(audioFile, 20, true);
+            } else if (TestTask.SEND_YUV == testTask) {
+                connTask.sendYuvTask(videoFile, 1000 / fps, height, width, fps, Constants.VIDEO_STREAM_HIGH,
+                        enableSimulcastStream == 1, true);
+            } else if (TestTask.SEND_YUV_DUAL_STREAM == testTask) {
+                connTask.sendYuvTask(videoFile, 1000 / fps, height, width, fps, Constants.VIDEO_STREAM_HIGH,
+                        enableSimulcastStream == 1, true);
+            } else if (TestTask.SEND_H264 == testTask) {
+                connTask.sendH264Task(videoFile, 1000 / fps, 0, 0, Constants.VIDEO_STREAM_HIGH, false, true);
+            } else if (TestTask.SEND_H264_DUAL_STREAM == testTask) {
+                connTask.sendH264Task(highVideoFile, 1000 / fps, 0, 0, Constants.VIDEO_STREAM_HIGH, true, false);
+                connTask.sendH264Task(lowVideoFile, 1000 / fps, 0, 0, Constants.VIDEO_STREAM_LOW, true, true);
+            } else if (TestTask.SEND_RGBA_PCM == testTask) {
+                connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, enableCloudProxy == 1, false);
+                connTask.sendRgbaTask(videoFile, 1000 / fps, height, width, fps, true);
+            } else if (TestTask.SEND_VP8_PCM == testTask) {
+                // connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate,
+                // enableCloudProxy == 1, false);
+                connTask.sendVp8Task(videoFile, 1000 / fps, height, width, fps, Constants.VIDEO_STREAM_HIGH,
+                        enableSimulcastStream == 1, true);
             } else if (TestTask.SEND_MP4 == testTask) {
                 connTask.sendAvMediaTask(audioFile, 50);
             } else if (TestTask.SEND_DATA_STREAM == testTask) {
                 connTask.sendDataStreamTask(1, 50, true);
             } else if (TestTask.RECEIVE_PCM == testTask) {
                 connTask.registerPcmObserverTask(remoteUserId,
-                        ("".equals(audioOutFile)) ? "" : (audioOutFile + "_" + channelId + ".pcm"), numOfChannels,
+                        ("".equals(audioOutFile)) ? "" : (audioOutFile + "_" + channelId + "_" + userId + ".pcm"),
+                        numOfChannels,
+                        sampleRate, true, enableSaveFile, randomTestTime);
+            } else if (TestTask.RECEIVE_MIXED_AUDIO == testTask) {
+                connTask.registerMixedAudioObserverTask(remoteUserId,
+                        ("".equals(audioOutFile)) ? "" : (audioOutFile + "_" + channelId + "_" + userId + ".pcm"),
+                        numOfChannels,
                         sampleRate, true);
             } else if (TestTask.RECEIVE_YUV == testTask) {
                 connTask.registerYuvObserverTask(remoteUserId,
-                        ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + ".yuv"), streamType, true);
+                        ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + "_" + userId + ".yuv"),
+                        streamType, true,
+                        enableSaveFile, randomTestTime);
             } else if (TestTask.RECEIVE_H264 == testTask) {
                 connTask.registerH264ObserverTask(remoteUserId,
-                        ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + ".h264"), streamType, true);
+                        ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + "_" + userId + ".h264"),
+                        streamType, true);
             } else if (TestTask.SEND_RECEIVE_PCM_YUV == testTask) {
-                connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, false);
-                connTask.sendYuvTask(videoFile, 1000 / fps, height, width, fps, false);
+                connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, enableCloudProxy == 1, false);
+                connTask.sendYuvTask(videoFile, 1000 / fps, height, width, fps, Constants.VIDEO_STREAM_HIGH,
+                        enableSimulcastStream == 1, false);
                 connTask.registerPcmObserverTask(remoteUserId,
-                        ("".equals(audioOutFile)) ? "" : (audioOutFile + "_" + channelId + ".pcm"), numOfChannels,
-                        sampleRate, false);
+                        ("".equals(audioOutFile)) ? ""
+                                : (audioOutFile + "_" + channelId + "_" + userId + "_" + userId + ".pcm"),
+                        numOfChannels,
+                        sampleRate, false, enableSaveFile, randomTestTime);
                 connTask.registerYuvObserverTask(remoteUserId,
-                        ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + ".yuv"), streamType, true);
+                        ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + "_" + userId + ".yuv"),
+                        streamType, true,
+                        enableSaveFile, randomTestTime);
             }
 
             onConnected(connTask.getConn(), channelId, userId);

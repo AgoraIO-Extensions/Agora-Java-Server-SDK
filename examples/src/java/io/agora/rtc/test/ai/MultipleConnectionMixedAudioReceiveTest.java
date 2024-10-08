@@ -4,10 +4,10 @@ import io.agora.rtc.AudioSubscriptionOptions;
 import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
 
-public class SingleChannelMultipleUserPcmReceiveTest extends AgoraAiTest {
+public class MultipleConnectionMixedAudioReceiveTest extends AgoraAiTest {
 
     public static void main(String[] args) {
-        startTest(args, new SingleChannelMultipleUserPcmReceiveTest());
+        startTest(args, new MultipleConnectionMixedAudioReceiveTest());
     }
 
     @Override
@@ -28,19 +28,12 @@ public class SingleChannelMultipleUserPcmReceiveTest extends AgoraAiTest {
         ccfg.setEnableAudioRecordingOrPlayout(1);
         ccfg.setChannelProfile(Constants.CHANNEL_PROFILE_LIVE_BROADCASTING);
 
-        try {
-            int userIdInt = Integer.parseInt(userId);
+        if (connectionCount == 1) {
+            createConnectionAndTest(ccfg, channelId, userId, TestTask.RECEIVE_MIXED_AUDIO, testTime);
+        } else {
             for (int i = 0; i < connectionCount; i++) {
-                boolean saveFile = true;
-                if (enableRandomTest == 1) {
-                    saveFile = i % 5 == 0;
-                }
-                createConnectionAndTest(ccfg, channelId, String.valueOf(userIdInt + i),
-                        TestTask.RECEIVE_PCM,
-                        testTime, saveFile);
+                createConnectionAndTest(ccfg, channelId + i, userId, TestTask.RECEIVE_MIXED_AUDIO, testTime);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
 
     }

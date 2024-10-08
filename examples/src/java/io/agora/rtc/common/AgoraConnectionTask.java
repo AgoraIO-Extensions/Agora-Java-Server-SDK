@@ -6,6 +6,7 @@ import io.agora.rtc.AgoraLocalAudioTrack;
 import io.agora.rtc.AgoraLocalUser;
 import io.agora.rtc.AgoraLocalVideoTrack;
 import io.agora.rtc.AgoraMediaNodeFactory;
+import io.agora.rtc.AgoraParameter;
 import io.agora.rtc.AgoraRtcConn;
 import io.agora.rtc.AgoraService;
 import io.agora.rtc.AgoraVideoEncodedFrameObserver;
@@ -26,6 +27,7 @@ import io.agora.rtc.Out;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
 import io.agora.rtc.SenderOptions;
+import io.agora.rtc.SimulcastStreamConfig;
 import io.agora.rtc.VideoDimensions;
 import io.agora.rtc.VideoEncoderConfig;
 import io.agora.rtc.VideoFrame;
@@ -34,10 +36,13 @@ import io.agora.rtc.mediautils.AacReader;
 import io.agora.rtc.mediautils.H264Reader;
 import io.agora.rtc.mediautils.MediaDecode;
 import io.agora.rtc.mediautils.MediaDecodeUtils;
+import io.agora.rtc.mediautils.OpusReader;
+import io.agora.rtc.mediautils.Vp8Reader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -73,7 +78,6 @@ public class AgoraConnectionTask {
 
     private String channelId;
     private String userId;
-    private int userRole;
     private final Random random;
     private final ExecutorService singleExecutorService;
     private final ExecutorService testTaskExecutorService;
@@ -171,6 +175,16 @@ public class AgoraConnectionTask {
                     callback.onUserLeft(user_id);
                 }
             }
+
+            @Override
+            public void onChangeRoleSuccess(AgoraRtcConn agora_rtc_conn, int old_role, int new_role) {
+                SampleLogger.log("onChangeRoleSuccess old_role:" + old_role + " new_role:" + new_role);
+            }
+
+            @Override
+            public void onChangeRoleFailure(AgoraRtcConn agora_rtc_conn) {
+                SampleLogger.log("onChangeRoleFailure");
+            }
         });
         SampleLogger.log("registerObserver ret:" + ret);
 
@@ -216,16 +230,9 @@ public class AgoraConnectionTask {
                                 + new_state + " userRole:" + agora_local_user.getUserRole());
             }
         });
+        conn.getLocalUser().setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
 
         mediaNodeFactory = service.createMediaNodeFactory();
-
-        try {
-            userRole = Integer.parseInt(userId);
-        } catch (Exception e) {
-            userRole = random.nextInt();
-        }
-        // conn.getLocalUser().setUserRole(userRole);
-
     }
 
     public void releaseConn() {
@@ -235,7 +242,7 @@ public class AgoraConnectionTask {
         }
 
         if (null != customAudioTrack && null != audioFrameSender) {
-            customAudioTrack.clearBuffer();
+            customAudioTrack.clearSenderBuffer();
             conn.getLocalUser().unpublishAudio(customAudioTrack);
         }
 
@@ -265,19 +272,36 @@ public class AgoraConnectionTask {
             SampleLogger.log("conn.disconnect fail ret=" + ret);
         }
         conn.destroy();
+        customAudioTrack = null;
+        customEncodedVideoTrack = null;
+        customVideoTrack = null;
+        customEncodedAudioTrack = null;
+        audioFrameSender = null;
+        customEncodedImageSender = null;
+        videoFrameSender = null;
+        audioEncodedFrameSender = null;
+        localUserObserver = null;
+        mediaNodeFactory = null;
         conn = null;
 
         SampleLogger.log("Disconnected from Agora channel successfully\n");
     }
 
-    public void sendPcmTask(String filePath, int interval, int numOfChannels, int sampleRate, boolean waitRelease) {
+    public void sendPcmTask(String filePath, int interval, int numOfChannels, int sampleRate, boolean enableCloudProxy,
+            boolean waitRelease) {
         SampleLogger
                 .log("sendPcmTask filePath:" + filePath + " interval:" + interval + " numOfChannels:" + numOfChannels
-                        + " sampleRate:" + sampleRate);
+                        + " sampleRate:" + sampleRate + " enableCloudProxy:" + enableCloudProxy);
+        if (enableCloudProxy) {
+            AgoraParameter agoraParameter = conn.getAgoraParameter();
+            int ret = agoraParameter.setBool("rtc.enable_proxy", true);
+            SampleLogger.log("setBool rtc.enable_proxy ret:" + ret);
+        }
         audioFrameSender = mediaNodeFactory.createAudioPcmDataSender();
         // Create audio track
         customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
-        customAudioTrack.setMaxBufferAudioFrameNumber(1000);
+        customAudioTrack.setMaxBufferedAudioFrameNumber(1000);
+        customAudioTrack.setSendDelayMs(100);
         conn.getLocalUser().publishAudio(customAudioTrack);
         AudioDataCache audioDataCache = new AudioDataCache(numOfChannels, sampleRate);
 
@@ -297,17 +321,21 @@ public class AgoraConnectionTask {
                     return;
                 }
 
-                int ret = audioFrameSender.send(sendData, 0,
-                        audioDataCache.getSamplesPerChannel(sendData.length), 2,
-                        numOfChannels,
-                        sampleRate);
-                SampleLogger.log("send pcm frame data size:" + sendData.length + " frame size:"
-                        + (sendData.length / audioDataCache.getOneFrameSize()) + " sampleRate:" + sampleRate
-                        + " numOfChannels:" + numOfChannels
-                        + " to channelId:"
-                        + channelId + " from userId:" + userId + " ret:" + ret + " testStartTime:"
-                        + Utils.formatTimestamp(testStartTime)
-                        + " testDuration:" + testDuration);
+                if (null != audioFrameSender) {
+                    int ret = audioFrameSender.send(sendData, 0,
+                            audioDataCache.getSamplesPerChannel(sendData.length), 2,
+                            numOfChannels,
+                            sampleRate);
+                    SampleLogger.log("send pcm frame data size:" + sendData.length + " frame size:"
+                            + (sendData.length / audioDataCache.getOneFrameSize()) + " sampleRate:" + sampleRate
+                            + " numOfChannels:" + numOfChannels
+                            + " to channelId:"
+                            + channelId + " from userId:" + userId + " ret:" + ret + " testStartTime:"
+                            + Utils.formatTimestamp(testStartTime)
+                            + " testDuration:" + testDuration);
+                } else {
+                    release(false);
+                }
             }
 
             @Override
@@ -351,201 +379,6 @@ public class AgoraConnectionTask {
                 e.printStackTrace();
             }
             SampleLogger.log("sendPcmTask end");
-
-            releaseConn();
-            if (null != callback) {
-                callback.onTestFinished();
-            }
-        }
-    }
-
-    public void sendH264Task(String filePath, int interval, int height, int width, boolean waitRelease) {
-        SampleLogger.log("sendH264Task filePath:" + filePath + " interval:" + interval + " height:" + height + " width:"
-                + width);
-        customEncodedImageSender = mediaNodeFactory.createVideoEncodedImageSender();
-        // Create video track
-        SenderOptions option = new SenderOptions();
-        option.setCcMode(1);
-        customEncodedVideoTrack = service.createCustomVideoTrackEncoded(customEncodedImageSender, option);
-        // Publish video track
-        int ret = conn.getLocalUser().publishVideo(customEncodedVideoTrack);
-        SampleLogger.log("sendH264Task publishVideo ret:" + ret);
-
-        H264Reader h264Reader = new H264Reader(filePath);
-        int fps = 1000 / interval;
-
-        FileSender h264SendThread = new FileSender(filePath, interval) {
-            int lastFrameType = 0;
-            int frameIndex = 0;
-
-            @Override
-            public void sendOneFrame(byte[] data, long timestamp) {
-                if (data == null) {
-                    return;
-                }
-                EncodedVideoFrameInfo info = new EncodedVideoFrameInfo();
-                long currentTime = timestamp;
-                info.setFrameType(lastFrameType);
-                info.setWidth(width);
-                info.setHeight(height);
-                info.setCodecType(Constants.VIDEO_CODEC_H264);
-                info.setCaptureTimeMs(currentTime);
-                info.setDecodeTimeMs(currentTime);
-                info.setFramesPerSecond(fps);
-                info.setRotation(0);
-                customEncodedImageSender.send(data, data.length, info);
-                frameIndex++;
-                SampleLogger.log("send h264 frame data size:" + data.length +
-                        " timestamp:" + timestamp + " frameIndex:" + frameIndex + " testStartTime:"
-                        + Utils.formatTimestamp(testStartTime)
-                        + " currentTime:" + Utils.getCurrentTime() + " testDuration:" +
-                        testDuration);
-            }
-
-            @Override
-            public byte[] readOneFrame(FileInputStream fos) {
-                H264Reader.H264Frame frame = h264Reader.readNextFrame();
-                if (testDuration > 0) {
-                    if (System.currentTimeMillis() - testStartTime >= testDuration * 1000) {
-                        release(false);
-                        return null;
-                    } else {
-                        if (frame == null) {
-                            reset();
-                            frameIndex = 0;
-                            return null;
-                        }
-                    }
-                } else {
-                    if (frame == null) {
-                        release(false);
-                        return null;
-                    }
-                }
-
-                if (frame != null) {
-                    lastFrameType = frame.frameType;
-                    return frame.data;
-                } else {
-                    return null;
-                }
-            }
-        };
-
-        h264SendThread.start();
-        SampleLogger.log("sendH264Task start");
-
-        if (waitRelease) {
-            try {
-                h264SendThread.join();
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            SampleLogger.log("sendH264Task end");
-
-            releaseConn();
-            if (null != callback) {
-                callback.onTestFinished();
-            }
-        }
-    }
-
-    public void sendYuvTask(String filePath, int interval, int height, int width, int fps, boolean waitRelease) {
-        videoFrameSender = mediaNodeFactory.createVideoFrameSender();
-
-        // Create video track
-        customVideoTrack = service.createCustomVideoTrackFrame(videoFrameSender);
-        VideoEncoderConfig config = new VideoEncoderConfig();
-        config.setCodecType(Constants.VIDEO_CODEC_H264);
-        config.setDimensions(new VideoDimensions(width, height));
-        config.setFrameRate(fps);
-        customVideoTrack.setVideoEncoderConfig(config);
-        customVideoTrack.setEnabled(1);
-        // Publish video track
-        conn.getLocalUser().publishVideo(customVideoTrack);
-
-        int bufferLen = (int) (height * width * 1.5);
-        byte[] buffer = new byte[bufferLen];
-
-        FileSender yuvSender = new FileSender(filePath, interval) {
-            private int frameIndex = 0;
-
-            @Override
-            public void sendOneFrame(byte[] data, long timestamp) {
-                if (data == null) {
-                    return;
-                }
-
-                if (timestamp == 0) {
-                    timestamp = System.currentTimeMillis();
-                }
-                ExternalVideoFrame externalVideoFrame = new ExternalVideoFrame();
-                externalVideoFrame.setHeight(height);
-                ByteBuffer buffer = ByteBuffer.allocateDirect(data.length);
-                buffer.put(data);
-                externalVideoFrame.setBuffer(buffer);
-                externalVideoFrame.setRotation(0);
-                externalVideoFrame.setFormat(Constants.EXTERNAL_VIDEO_FRAME_PIXEL_FORMAT_I420);
-                externalVideoFrame.setStride(width);
-                externalVideoFrame.setType(Constants.EXTERNAL_VIDEO_FRAME_BUFFER_TYPE_RAW_DATA);
-                externalVideoFrame.setTimestamp(timestamp);
-                String testMetaData = "testMetaData";
-                externalVideoFrame.setMetadataBuffer(testMetaData.getBytes());
-                externalVideoFrame.setMetadataSize(testMetaData.getBytes().length);
-                videoFrameSender.send(externalVideoFrame);
-                frameIndex++;
-
-                SampleLogger.log("send yuv frame data size:" + data.length +
-                        " timestamp:" + timestamp + " frameIndex:" + frameIndex + " testStartTime:"
-                        + Utils.formatTimestamp(testStartTime)
-                        + " currentTime:" + Utils.getCurrentTime() + " testDuration:" +
-                        testDuration);
-
-            }
-
-            @Override
-            public byte[] readOneFrame(FileInputStream fos) {
-                if (fos == null) {
-                    return null;
-                }
-                try {
-                    int size = fos.read(buffer, 0, bufferLen);
-                    if (testDuration > 0) {
-                        if (System.currentTimeMillis() - testStartTime >= testDuration * 1000) {
-                            release(false);
-                            return null;
-                        } else {
-                            if (size < 0) {
-                                reset();
-                                frameIndex = 0;
-                                return null;
-                            }
-                        }
-                    } else {
-                        if (size < 0) {
-                            release(false);
-                            return null;
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                return buffer;
-            }
-        };
-
-        yuvSender.start();
-        SampleLogger.log("sendYuvTask start");
-
-        if (waitRelease) {
-            try {
-                yuvSender.join();
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            SampleLogger.log("sendYuvTask end");
 
             releaseConn();
             if (null != callback) {
@@ -643,6 +476,582 @@ public class AgoraConnectionTask {
         }
     }
 
+    public void sendOpusTask(String filePath, int interval, boolean waitRelease) {
+        SampleLogger
+                .log("sendOpusTask filePath:" + filePath + " interval:" + interval);
+        // Create audio track
+        audioEncodedFrameSender = mediaNodeFactory.createAudioEncodedFrameSender();
+        customEncodedAudioTrack = service.createCustomAudioTrackEncoded(audioEncodedFrameSender, 0);
+        conn.getLocalUser().publishAudio(customEncodedAudioTrack);
+
+        OpusReader opusReader = new OpusReader(filePath);
+        EncodedAudioFrameInfo encodedInfo = new EncodedAudioFrameInfo();
+
+        FileSender opusSendThread = new FileSender(filePath, interval) {
+            @Override
+            public void sendOneFrame(byte[] data, long timestamp) {
+                if (data == null) {
+                    return;
+                }
+                if (timestamp == 0) {
+                    timestamp = System.currentTimeMillis();
+                }
+
+                int ret = audioEncodedFrameSender.send(data, data.length, encodedInfo);
+                SampleLogger.log("send opus frame data size:" + data.length + " timestamp:"
+                        + timestamp + " sampleRate:" + encodedInfo.getSampleRateHz() + " numOfChannels:"
+                        + encodedInfo.getNumberOfChannels()
+                        + " to channelId:"
+                        + channelId + " from userId:" + userId + " ret:" + ret + " testStartTime:"
+                        + Utils.formatTimestamp(testStartTime)
+                        + " currentTime:" + Utils.getCurrentTime() + " testDuration:" +
+                        testDuration);
+            }
+
+            @Override
+            public byte[] readOneFrame(FileInputStream fos) {
+                io.agora.rtc.mediautils.AudioFrame opusFrame = opusReader.getAudioFrame(interval);
+                if (testDuration > 0) {
+                    if (System.currentTimeMillis() - testStartTime >= testDuration * 1000) {
+                        release(false);
+                        return null;
+                    } else {
+                        if (opusFrame == null) {
+                            opusReader.reset();
+                            reset();
+                            return null;
+                        }
+                    }
+                } else {
+                    if (opusFrame == null) {
+                        opusReader.reset();
+                        release(false);
+                        return null;
+                    }
+                }
+                if (opusFrame != null) {
+                    encodedInfo.setCodec(opusFrame.codec);
+                    encodedInfo.setNumberOfChannels(opusFrame.numberOfChannels);
+                    encodedInfo.setSampleRateHz(opusFrame.sampleRate);
+                    encodedInfo.setSamplesPerChannel(opusFrame.samplesPerChannel);
+                    return opusFrame.buffer;
+                } else {
+                    opusReader.reset();
+                    release();
+                    return null;
+                }
+            }
+        };
+
+        opusSendThread.start();
+
+        SampleLogger.log("sendOpusTask start");
+
+        if (waitRelease) {
+            try {
+                opusSendThread.join();
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            SampleLogger.log("sendAacTask end");
+
+            releaseConn();
+            if (null != callback) {
+                callback.onTestFinished();
+            }
+        }
+    }
+
+    public void sendYuvTask(String filePath, int interval, int height, int width, int fps, int streamType,
+            boolean enableSimulcastStream, boolean waitRelease) {
+        SampleLogger.log("sendYuvTask filePath:" + filePath + " interval:" + interval + " height:" + height + " width:"
+                + width + " streamType:" + streamType + " enableSimulcastStream:" + enableSimulcastStream);
+
+        if (videoFrameSender == null) {
+            videoFrameSender = mediaNodeFactory.createVideoFrameSender();
+
+            // Create video track
+            customVideoTrack = service.createCustomVideoTrackFrame(videoFrameSender);
+            VideoEncoderConfig config = new VideoEncoderConfig();
+            config.setCodecType(Constants.VIDEO_CODEC_H264);
+            config.setDimensions(new VideoDimensions(width, height));
+            config.setFrameRate(fps);
+            customVideoTrack.setVideoEncoderConfig(config);
+            if (enableSimulcastStream) {
+                VideoDimensions lowDimensions = new VideoDimensions(width / 2, height / 2);
+                SimulcastStreamConfig lowStreamConfig = new SimulcastStreamConfig();
+                lowStreamConfig.setDimensions(lowDimensions);
+                // lowStreamConfig.setBitrate(targetBitrate/2);
+                int ret = customVideoTrack.enableSimulcastStream(1, lowStreamConfig);
+                SampleLogger.log("sendYuvTask enableSimulcastStream ret:" + ret);
+            }
+
+            customVideoTrack.setEnabled(1);
+            // Publish video track
+            conn.getLocalUser().publishVideo(customVideoTrack);
+        }
+
+        int bufferLen = (int) (height * width * 1.5);
+        byte[] buffer = new byte[bufferLen];
+
+        FileSender yuvSender = new FileSender(filePath, interval) {
+            private int frameIndex = 0;
+
+            @Override
+            public void sendOneFrame(byte[] data, long timestamp) {
+                if (data == null) {
+                    return;
+                }
+
+                if (timestamp == 0) {
+                    timestamp = System.currentTimeMillis();
+                }
+                ExternalVideoFrame externalVideoFrame = new ExternalVideoFrame();
+                externalVideoFrame.setHeight(height);
+                ByteBuffer buffer = ByteBuffer.allocateDirect(data.length);
+                buffer.put(data);
+                externalVideoFrame.setBuffer(buffer);
+                externalVideoFrame.setRotation(0);
+                externalVideoFrame.setFormat(Constants.EXTERNAL_VIDEO_FRAME_PIXEL_FORMAT_I420);
+                externalVideoFrame.setStride(width);
+                externalVideoFrame.setType(Constants.EXTERNAL_VIDEO_FRAME_BUFFER_TYPE_RAW_DATA);
+                externalVideoFrame.setTimestamp(timestamp);
+                String testMetaData = "testMetaData";
+                externalVideoFrame.setMetadataBuffer(testMetaData.getBytes());
+                externalVideoFrame.setMetadataSize(testMetaData.getBytes().length);
+                videoFrameSender.send(externalVideoFrame);
+                frameIndex++;
+
+                SampleLogger.log("send yuv frame data size:" + data.length +
+                        " timestamp:" + timestamp + " frameIndex:" + frameIndex + " testStartTime:"
+                        + Utils.formatTimestamp(testStartTime)
+                        + " currentTime:" + Utils.getCurrentTime() + " testDuration:" +
+                        testDuration + " from channelId:" + channelId + " userId:" + userId);
+
+            }
+
+            @Override
+            public byte[] readOneFrame(FileInputStream fos) {
+                if (fos == null) {
+                    return null;
+                }
+                try {
+                    int size = fos.read(buffer, 0, bufferLen);
+                    if (testDuration > 0) {
+                        if (System.currentTimeMillis() - testStartTime >= testDuration * 1000) {
+                            release(false);
+                            return null;
+                        } else {
+                            if (size < 0) {
+                                reset();
+                                frameIndex = 0;
+                                return null;
+                            }
+                        }
+                    } else {
+                        if (size < 0) {
+                            release(false);
+                            return null;
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return buffer;
+            }
+        };
+
+        yuvSender.start();
+        SampleLogger.log("sendYuvTask start");
+
+        if (waitRelease) {
+            try {
+                yuvSender.join();
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            SampleLogger.log("sendYuvTask end");
+
+            releaseConn();
+            if (null != callback) {
+                callback.onTestFinished();
+            }
+        }
+    }
+
+    public void sendH264Task(String filePath, int interval, int height, int width, int streamType,
+            boolean enableSimulcastStream,
+            boolean waitRelease) {
+        SampleLogger.log("sendH264Task filePath:" + filePath + " interval:" + interval + " height:" + height + " width:"
+                + width + " streamType:" + streamType + " enableSimulcastStream:" + enableSimulcastStream);
+        int fps = 1000 / interval;
+        if (customEncodedImageSender == null) {
+            customEncodedImageSender = mediaNodeFactory.createVideoEncodedImageSender();
+            // Create video track
+            SenderOptions option = new SenderOptions();
+            option.setCcMode(Constants.TCC_ENABLED);
+            customEncodedVideoTrack = service.createCustomVideoTrackEncoded(customEncodedImageSender, option);
+
+            if (enableSimulcastStream) {
+                SimulcastStreamConfig lowStreamConfig = new SimulcastStreamConfig();
+                lowStreamConfig.setBitrate(65);
+                lowStreamConfig.setFramerate(fps);
+                VideoDimensions dimensions = new VideoDimensions(width, height);
+                lowStreamConfig.setDimensions(dimensions);
+                customEncodedVideoTrack.enableSimulcastStream(1, lowStreamConfig);
+            }
+
+            // Publish video track
+            int ret = conn.getLocalUser().publishVideo(customEncodedVideoTrack);
+            SampleLogger.log("sendH264Task publishVideo ret:" + ret);
+        }
+
+        H264Reader h264Reader = new H264Reader(filePath);
+
+        FileSender h264SendThread = new FileSender(filePath, interval) {
+            int lastFrameType = 0;
+            int frameIndex = 0;
+
+            @Override
+            public void sendOneFrame(byte[] data, long timestamp) {
+                if (data == null) {
+                    return;
+                }
+                EncodedVideoFrameInfo info = new EncodedVideoFrameInfo();
+                long currentTime = timestamp;
+                info.setFrameType(lastFrameType);
+                info.setStreamType(streamType);
+                info.setWidth(width);
+                info.setHeight(height);
+                info.setCodecType(Constants.VIDEO_CODEC_H264);
+                info.setCaptureTimeMs(currentTime);
+                info.setDecodeTimeMs(currentTime);
+                info.setFramesPerSecond(fps);
+                info.setRotation(0);
+                customEncodedImageSender.send(data, data.length, info);
+                frameIndex++;
+                SampleLogger.log("send h264 frame data size:" + data.length +
+                        " timestamp:" + timestamp + " frameIndex:" + frameIndex + " testStartTime:"
+                        + Utils.formatTimestamp(testStartTime)
+                        + " currentTime:" + Utils.getCurrentTime() + " testDuration:" +
+                        testDuration + " from channelId:" + channelId + " userId:" + userId);
+            }
+
+            @Override
+            public byte[] readOneFrame(FileInputStream fos) {
+                H264Reader.H264Frame frame = h264Reader.readNextFrame();
+                if (testDuration > 0) {
+                    if (System.currentTimeMillis() - testStartTime >= testDuration * 1000) {
+                        release(false);
+                        return null;
+                    } else {
+                        if (frame == null) {
+                            reset();
+                            frameIndex = 0;
+                            return null;
+                        }
+                    }
+                } else {
+                    if (frame == null) {
+                        release(false);
+                        return null;
+                    }
+                }
+
+                if (frame != null) {
+                    lastFrameType = frame.frameType;
+                    return frame.data;
+                } else {
+                    return null;
+                }
+            }
+        };
+
+        h264SendThread.start();
+        SampleLogger.log("sendH264Task start");
+
+        if (waitRelease) {
+            try {
+                h264SendThread.join();
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            SampleLogger.log("sendH264Task end");
+
+            releaseConn();
+            if (null != callback) {
+                callback.onTestFinished();
+            }
+        }
+    }
+
+    public void sendRgbaTask(String filePath, int interval, int height, int width, int fps, boolean waitRelease) {
+        SampleLogger.log("sendRgbaTask filePath:" + filePath + " interval:" + interval + " height:" + height + " width:"
+                + width);
+        videoFrameSender = mediaNodeFactory.createVideoFrameSender();
+
+        // Create video track
+        customVideoTrack = service.createCustomVideoTrackFrame(videoFrameSender);
+        VideoEncoderConfig config = new VideoEncoderConfig();
+        config.setCodecType(Constants.VIDEO_CODEC_H264);
+        config.setDimensions(new VideoDimensions(width, height));
+        config.setFrameRate(fps);
+        customVideoTrack.setVideoEncoderConfig(config);
+        customVideoTrack.setEnabled(1);
+        // Publish video track
+        conn.getLocalUser().publishVideo(customVideoTrack);
+
+        FileSender rgbaSender = new FileSender(filePath, interval) {
+            // For RGBA, each pixel takes 4 bytes.
+            int bufferLen = height * width * 4;
+            byte[] buffer = new byte[bufferLen];
+
+            private int frameIndex = 0;
+            ByteBuffer byteBuffer;
+            ByteBuffer alphaBuffer;
+            byte[] alphadata;
+
+            public byte[] extractAlphaChannel(byte[] rgbaData, int width, int height) {
+                int pixelCount = width * height;
+                byte[] alphaData = new byte[pixelCount]; // Alpha 数据,每个像素1字节
+
+                for (int i = 0; i < pixelCount; i++) {
+                    alphaData[i] = rgbaData[4 * i + 3]; // RGBA中的A分量
+                }
+
+                return alphaData;
+            }
+
+            @Override
+            public void sendOneFrame(byte[] data, long timestamp) {
+                if (data == null) {
+                    return;
+                }
+
+                if (timestamp == 0) {
+                    timestamp = System.currentTimeMillis();
+                }
+
+                // 通过ByteBuffer直接分配内存,确保其为DirectByteBuffer,满足Agora SDK要求
+                if (byteBuffer == null) {
+                    byteBuffer = ByteBuffer.allocateDirect(data.length);
+                }
+                byteBuffer.put(data);
+                byteBuffer.flip(); // 重置position,以便Agora SDK能从头开始读取数据
+
+                // 提取Alpha通道数据
+                byte[] alphaData = extractAlphaChannel(data, width, height);
+                // 创建一个新的DirectByteBuffer来存储Alpha通道数据
+                if (alphaBuffer == null) {
+                    alphaBuffer = ByteBuffer.allocateDirect(alphaData.length);
+                }
+                alphaBuffer.put(alphaData);
+                alphaBuffer.flip(); // 重置position,以便从头开始读取
+
+                ExternalVideoFrame externalVideoFrame = new ExternalVideoFrame();
+                externalVideoFrame.setType(Constants.EXTERNAL_VIDEO_FRAME_BUFFER_TYPE_RAW_DATA);
+                externalVideoFrame.setFormat(Constants.EXTERNAL_VIDEO_FRAME_PIXEL_FORMAT_RGBA);
+                externalVideoFrame.setStride(width);
+                externalVideoFrame.setHeight(height);
+                externalVideoFrame.setBuffer(byteBuffer);
+                externalVideoFrame.setAlphaBuffer(alphaBuffer);
+                externalVideoFrame.setTimestamp(timestamp);
+                externalVideoFrame.setRotation(0);
+                videoFrameSender.send(externalVideoFrame);
+                frameIndex++;
+
+                SampleLogger.log("send rgba frame data size:" + data.length +
+                        " timestamp:" + timestamp + " frameIndex:" + frameIndex + " testStartTime:"
+                        + Utils.formatTimestamp(testStartTime)
+                        + " currentTime:" + Utils.getCurrentTime() + " testDuration:" +
+                        testDuration);
+
+            }
+
+            @Override
+            public byte[] readOneFrame(FileInputStream fos) {
+                if (fos == null) {
+                    return null;
+                }
+                int size = 0;
+                try {
+                    size = fos.read(buffer, 0, bufferLen);
+                    if (testDuration > 0) {
+                        if (System.currentTimeMillis() - testStartTime >= testDuration * 1000) {
+                            release(false);
+                            return null;
+                        } else {
+                            if (size < 0) {
+                                reset();
+                                frameIndex = 0;
+                                return null;
+                            }
+                        }
+                    } else {
+                        if (size < 0) {
+                            release(false);
+                            return null;
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return Arrays.copyOf(buffer, size);
+            }
+        };
+
+        rgbaSender.start();
+        SampleLogger.log("sendRgbaTask start");
+
+        if (waitRelease) {
+            try {
+                rgbaSender.join();
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            SampleLogger.log("sendRgbaTask end");
+
+            releaseConn();
+            if (null != callback) {
+                callback.onTestFinished();
+            }
+        }
+    }
+
+    public void sendVp8Task(String filePath, int interval, int height, int width, int fps, int streamType,
+            boolean enableSimulcastStream,
+            boolean waitRelease) {
+        SampleLogger.log("sendVp8Task filePath:" + filePath + " interval:" + interval + " height:" + height + " width:"
+                + width + " fps:" + fps + " streamType:" + streamType + " enableSimulcastStream:"
+                + enableSimulcastStream);
+        if (customEncodedImageSender == null) {
+            customEncodedImageSender = mediaNodeFactory.createVideoEncodedImageSender();
+            // Create video track
+            SenderOptions option = new SenderOptions();
+            option.setCcMode(Constants.TCC_ENABLED);
+            customEncodedVideoTrack = service.createCustomVideoTrackEncoded(customEncodedImageSender, option);
+
+            if (enableSimulcastStream) {
+                SimulcastStreamConfig lowStreamConfig = new SimulcastStreamConfig();
+                // lowStreamConfig.setBitrate(65);
+                lowStreamConfig.setFramerate(fps);
+                VideoDimensions dimensions = new VideoDimensions(width, height);
+                lowStreamConfig.setDimensions(dimensions);
+                customEncodedVideoTrack.enableSimulcastStream(1, lowStreamConfig);
+            }
+
+            VideoEncoderConfig config = new VideoEncoderConfig();
+            config.setCodecType(Constants.VIDEO_CODEC_VP8);
+            customEncodedVideoTrack.setVideoEncoderConfig(config);
+
+            // Publish video track
+            int ret = conn.getLocalUser().publishVideo(customEncodedVideoTrack);
+            // wait for 3 seconds to publish video for vp8
+            try {
+                Thread.sleep(3 * 1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            SampleLogger.log("sendVp8Task publishVideo ret:" + ret);
+        }
+
+        Vp8Reader vp8Reader = new Vp8Reader(filePath);
+
+        FileSender vp8SendThread = new FileSender(filePath, interval, false) {
+            private int lastFrameType = 0;
+            private int frameIndex = 0;
+            private int height;
+            private int width;
+
+            @Override
+            public void sendOneFrame(byte[] data, long timestamp) {
+                if (data == null) {
+                    return;
+                }
+                if (timestamp == 0) {
+                    timestamp = System.currentTimeMillis();
+                }
+                EncodedVideoFrameInfo info = new EncodedVideoFrameInfo();
+                long currentTime = timestamp;
+                info.setFrameType(lastFrameType);
+                info.setWidth(width);
+                info.setHeight(height);
+                info.setCodecType(Constants.VIDEO_CODEC_VP8);
+                info.setCaptureTimeMs(currentTime);
+                info.setDecodeTimeMs(currentTime);
+                info.setFramesPerSecond(fps);
+                info.setRotation(0);
+                int ret = customEncodedImageSender.send(data, data.length, info);
+                frameIndex++;
+                SampleLogger.log("send vp8 ret:" + ret + " frame data size:" + data.length + " width:" + width
+                        + " height:" + height + " lastFrameType:" + lastFrameType + " fps:" + fps +
+                        " timestamp:" + timestamp + " frameIndex:" + frameIndex + " testStartTime:"
+                        + Utils.formatTimestamp(testStartTime)
+                        + " currentTime:" + Utils.getCurrentTime() + " testDuration:" +
+                        testDuration + " from channelId:" + channelId + " userId:" + userId);
+            }
+
+            @Override
+            public byte[] readOneFrame(FileInputStream fos) {
+                io.agora.rtc.mediautils.VideoFrame frame = vp8Reader.readNextFrame();
+                int retry = 0;
+                while (frame == null && retry < 4) {
+                    vp8Reader.reset();
+                    frame = vp8Reader.readNextFrame();
+                    retry++;
+                }
+                if (testDuration > 0) {
+                    if (System.currentTimeMillis() - testStartTime >= testDuration * 1000) {
+                        release(false);
+                        return null;
+                    } else {
+                        if (frame == null) {
+                            reset();
+                            frameIndex = 0;
+                            return null;
+                        }
+                    }
+                } else {
+                    if (frame == null) {
+                        release(false);
+                        return null;
+                    }
+                }
+
+                if (frame != null) {
+                    lastFrameType = frame.frameType;
+                    width = frame.width;
+                    height = frame.height;
+                    return frame.data;
+                } else {
+                    return null;
+                }
+            }
+        };
+
+        vp8SendThread.start();
+        SampleLogger.log("sendVp8Task start");
+
+        if (waitRelease) {
+            try {
+                vp8SendThread.join();
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            SampleLogger.log("sendVp8Task end");
+
+            releaseConn();
+            if (null != callback) {
+                callback.onTestFinished();
+            }
+        }
+    }
+
     public void sendAvMediaTask(String filePath, int interval) {
         SampleLogger.log("sendAvMediaTask filePath:" + filePath + " interval:" + interval);
         MediaDecodeUtils mediaDecodeUtils = new MediaDecodeUtils();
@@ -655,7 +1064,7 @@ public class AgoraConnectionTask {
                             audioFrameSender = mediaNodeFactory.createAudioPcmDataSender();
                             // Create audio track
                             customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
-                            customAudioTrack.setMaxBufferAudioFrameNumber(1000);
+                            customAudioTrack.setMaxBufferedAudioFrameNumber(1000);
                             conn.getLocalUser().publishAudio(customAudioTrack);
                         }
 
@@ -783,10 +1192,12 @@ public class AgoraConnectionTask {
     }
 
     public void registerPcmObserverTask(String remoteUserId, String audioOutFile, int numOfChannels, int sampleRate,
-            boolean waitRelease) {
+            boolean waitRelease, boolean enableSaveFile, int saveFileInterval) {
         SampleLogger.log("registerPcmObserverTask remoteUserId:" + remoteUserId + " audioOutFile:" + audioOutFile
                 + " numOfChannels:"
-                + numOfChannels + " sampleRate:" + sampleRate);
+                + numOfChannels + " sampleRate:" + sampleRate + " enableSaveFile:" + enableSaveFile
+                + " saveFileInterval:"
+                + saveFileInterval);
         if (waitRelease) {
             userLeftLatch = new CountDownLatch(1);
         }
@@ -806,7 +1217,10 @@ public class AgoraConnectionTask {
             SampleLogger.log("setPlaybackAudioFrameBeforeMixingParameters fail ret=" + ret);
             return;
         }
+
         localUserObserver.setAudioFrameObserver(new SampleAudioFrameObserver(audioOutFile) {
+            long startSaveFileTime = 0;
+
             @Override
             public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agora_local_user, String channel_id, String uid,
                     AudioFrame frame) {
@@ -819,6 +1233,82 @@ public class AgoraConnectionTask {
                 SampleLogger.log("onPlaybackAudioFrameBeforeMixing audioFrame size " + frame.getBuffer().capacity()
                         + " channel_id:"
                         + channel_id + " uid:" + uid + " writeBytes:" + writeBytes + " with current channelId:"
+                        + channelId
+                        + "  userId:" + userId);
+                boolean needSaveFile = enableSaveFile;
+                if (needSaveFile && saveFileInterval > 0 && startSaveFileTime != 0) {
+                    if (System.currentTimeMillis() - startSaveFileTime >= saveFileInterval * 1000 + 50) {
+                        needSaveFile = false;
+                    }
+                }
+                if (needSaveFile) {
+                    writeAudioFrameToFile(frame.getBuffer(), writeBytes);
+                    if (startSaveFileTime == 0) {
+                        startSaveFileTime = System.currentTimeMillis();
+                    }
+                }
+                if (testDuration > 0 && System.currentTimeMillis() - testStartTime >= testDuration * 1000
+                        && null != userLeftLatch) {
+                    userLeftLatch.countDown();
+                }
+                return 1;
+            }
+
+        });
+
+        if (waitRelease) {
+            try {
+                userLeftLatch.await();
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            releaseConn();
+            if (null != callback) {
+                callback.onTestFinished();
+            }
+        }
+    }
+
+    public void registerMixedAudioObserverTask(String remoteUserId, String audioOutFile, int numOfChannels,
+            int sampleRate,
+            boolean waitRelease) {
+        SampleLogger.log("registerMixedAudioObserverTask remoteUserId:" + remoteUserId + " audioOutFile:" + audioOutFile
+                + " numOfChannels:"
+                + numOfChannels + " sampleRate:" + sampleRate);
+        if (waitRelease) {
+            userLeftLatch = new CountDownLatch(1);
+        }
+
+        conn.getLocalUser().subscribeAllAudio();
+        // Register local user observer
+        if (null == localUserObserver) {
+            localUserObserver = new SampleLocalUserObserver(conn.getLocalUser());
+        }
+        conn.getLocalUser().registerObserver(localUserObserver);
+
+        // Register audio frame observer to receive audio stream
+        int ret = conn.getLocalUser().setPlaybackAudioFrameParameters(numOfChannels, sampleRate, 0,
+                sampleRate / 100 * numOfChannels);
+        SampleLogger.log("setPlaybackAudioFrameBeforeMixingParameters numOfChannels:" + numOfChannels + " sampleRate:"
+                + sampleRate);
+        if (ret > 0) {
+            SampleLogger.log("setPlaybackAudioFrameBeforeMixingParameters fail ret=" + ret);
+            return;
+        }
+        localUserObserver.setAudioFrameObserver(new SampleAudioFrameObserver(audioOutFile) {
+            @Override
+            public int onPlaybackAudioFrame(AgoraLocalUser agora_local_user, String channel_id, AudioFrame frame) {
+                if (null == frame) {
+                    return 0;
+                }
+                SampleLogger.log("onPlaybackAudioFrame frame:" + frame);
+                int writeBytes = frame.getSamplesPerChannel() * frame.getChannels() * 2;
+                // Write PCM samples
+                SampleLogger.log("onPlaybackAudioFrame audioFrame size " + frame.getBuffer().capacity()
+                        + " channel_id:"
+                        + channel_id + " writeBytes:" + writeBytes + " with current channelId:"
                         + channelId
                         + "  userId:" + userId);
                 writeAudioFrameToFile(frame.getBuffer(), writeBytes);
@@ -847,8 +1337,10 @@ public class AgoraConnectionTask {
     }
 
     public void registerYuvObserverTask(String remoteUserId, String videoOutFile, String streamType,
-            boolean waitRelease) {
-        SampleLogger.log("registerYuvObserverTask remoteUserId:" + remoteUserId + " videoOutFile:" + videoOutFile);
+            boolean waitRelease, boolean enableSaveFile, int saveFileInterval) {
+        SampleLogger.log("registerYuvObserverTask remoteUserId:" + remoteUserId + " videoOutFile:" + videoOutFile
+                + " streamType:" + streamType
+                + " enableSaveFile:" + enableSaveFile + " saveFileInterval:" + saveFileInterval);
         if (waitRelease) {
             userLeftLatch = new CountDownLatch(1);
         }
@@ -870,6 +1362,8 @@ public class AgoraConnectionTask {
         conn.getLocalUser().registerObserver(localUserObserver);
 
         localUserObserver.setVideoFrameObserver(new SampleVideFrameObserver(videoOutFile) {
+            long startSaveFileTime = 0;
+
             @Override
             public void onFrame(AgoraVideoFrameObserver2 agora_video_frame_observer2, String channel_id,
                     String remote_uid,
@@ -889,7 +1383,18 @@ public class AgoraConnectionTask {
                     SampleLogger.log("onFrame metaDataBuffer:" + frame.getMetadataBuffer());
                 }
 
-                writeVideoFrameToFile(frame);
+                boolean needSaveFile = enableSaveFile;
+                if (needSaveFile && saveFileInterval > 0 && startSaveFileTime != 0) {
+                    if (System.currentTimeMillis() - startSaveFileTime >= saveFileInterval * 1000 + 50) {
+                        needSaveFile = false;
+                    }
+                }
+                if (needSaveFile) {
+                    writeVideoFrameToFile(frame);
+                    if (startSaveFileTime == 0) {
+                        startSaveFileTime = System.currentTimeMillis();
+                    }
+                }
 
                 if (testDuration > 0 && System.currentTimeMillis() - testStartTime >= testDuration * 1000
                         && null != userLeftLatch) {

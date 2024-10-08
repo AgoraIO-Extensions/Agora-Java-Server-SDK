@@ -1,0 +1,1 @@
+sh run.zsh io.agora.rtc.test.ai.MultipleConnectionH264DualStreamSendTest -channelId h264DualChannel -userId 202409294 -connectionCount 3 -highVideoFile test_data/send_video.h264 -lowVideoFile test_data/send_video.h264 -height 360 -width 640 -fps 15
