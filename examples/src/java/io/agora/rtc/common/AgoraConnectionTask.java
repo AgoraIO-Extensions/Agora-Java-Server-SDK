@@ -123,11 +123,11 @@ public class AgoraConnectionTask {
     }
 
     public void createConnectionAndTest(RtcConnConfig ccfg, String token, String channelId, String userId,
-            int enableEncryptionMode, int encryptionMode, String encryptionKey) {
+            int enableEncryptionMode, int encryptionMode, String encryptionKey, boolean enableCloudProxy) {
         SampleLogger
                 .log("createConnectionAndTest channelId:" + channelId + " userId:" + userId + " enableEncryptionMode:"
                         + enableEncryptionMode + " encryptionMode:" + encryptionMode + " encryptionKey:"
-                        + encryptionKey);
+                        + encryptionKey + " enableCloudProxy:" + enableCloudProxy);
         if (null == service) {
             SampleLogger.log("createAndInitAgoraService fail");
             return;
@@ -198,6 +198,12 @@ public class AgoraConnectionTask {
                 return;
             }
             SampleLogger.log("Enable encryption successfully!");
+        }
+
+        if (enableCloudProxy) {
+            AgoraParameter agoraParameter = conn.getAgoraParameter();
+            ret = agoraParameter.setBool("rtc.enable_proxy", true);
+            SampleLogger.log("setBool rtc.enable_proxy ret:" + ret);
         }
 
         ret = conn.connect(token, channelId, userId);
@@ -287,16 +293,11 @@ public class AgoraConnectionTask {
         SampleLogger.log("Disconnected from Agora channel successfully\n");
     }
 
-    public void sendPcmTask(String filePath, int interval, int numOfChannels, int sampleRate, boolean enableCloudProxy,
+    public void sendPcmTask(String filePath, int interval, int numOfChannels, int sampleRate,
             boolean waitRelease) {
         SampleLogger
                 .log("sendPcmTask filePath:" + filePath + " interval:" + interval + " numOfChannels:" + numOfChannels
-                        + " sampleRate:" + sampleRate + " enableCloudProxy:" + enableCloudProxy);
-        if (enableCloudProxy) {
-            AgoraParameter agoraParameter = conn.getAgoraParameter();
-            int ret = agoraParameter.setBool("rtc.enable_proxy", true);
-            SampleLogger.log("setBool rtc.enable_proxy ret:" + ret);
-        }
+                        + " sampleRate:" + sampleRate);
         audioFrameSender = mediaNodeFactory.createAudioPcmDataSender();
         // Create audio track
         customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);

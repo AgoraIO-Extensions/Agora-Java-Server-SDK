@@ -8,11 +8,11 @@ import io.agora.rtc.common.FileSender;
 import io.agora.rtc.common.FileWriter;
 import io.agora.rtc.common.SampleLogger;
 import io.agora.rtc.common.Utils;
-import io.agora.rtc.test.ai.AgoraAiTest;
+import io.agora.rtc.test.common.AgoraTest;
 import java.io.File;
 import java.io.FileInputStream;
 
-public class AgoraAudioVadTest extends AgoraAiTest {
+public class AgoraAudioVadTest extends AgoraTest {
     private FileWriter fileWriter;
     private AgoraAudioVad audioVad;
 

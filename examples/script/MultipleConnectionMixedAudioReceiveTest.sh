@@ -1,1 +1,1 @@
-sh run.zsh io.agora.rtc.test.ai.MultipleConnectionMixedAudioReceiveTest -channelId encodedAudioChannel -userId 202409292 -connectionCount 3 -sampleRate 48000 -numOfChannels 2 -audioOutFile test_data_out/received_mixed_audio -enableAudioLabel 1
+sh run.zsh io.agora.rtc.test.mixedaudio.MultipleConnectionMixedAudioReceiveTest -channelId encodedAudioChannel -userId 202409292 -connectionCount 3 -sampleRate 48000 -numOfChannels 2 -audioOutFile test_data_out/received_mixed_audio -enableAudioLabel 1

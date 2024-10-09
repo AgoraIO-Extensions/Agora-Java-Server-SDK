@@ -1,1 +1,1 @@
-sh run.zsh io.agora.rtc.test.ai.SingleChannelMultipleUserYuvReceiveTest -channelId yuvTestChannel -userId 13200 -connectionCount 10 -videoOutFile test_data_out/received_yuv_random -frameCount 60 -testTime 86400 -enableRandomTest 1 -randomTestTime 1
+sh run.zsh io.agora.rtc.test.yuv.SingleChannelMultipleUserYuvReceiveTest -channelId yuvTestChannel -userId 13200 -connectionCount 10 -videoOutFile test_data_out/received_yuv_random -frameCount 60 -testTime 86400 -enableRandomTest 1 -randomTestTime 1

@@ -4,11 +4,11 @@ import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.common.AgoraConnectionTask;
 import io.agora.rtc.common.SampleLogger;
-import io.agora.rtc.test.ai.AgoraAiTest;
+import io.agora.rtc.test.common.AgoraTest;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class FullTest extends AgoraAiTest {
+public class FullTest extends AgoraTest {
     protected final ExecutorService executorService = Executors.newCachedThreadPool();
 
     public static void main(String[] args) {
@@ -47,7 +47,7 @@ public class FullTest extends AgoraAiTest {
                     }
                 });
                 connTask.createConnectionAndTest(ccfg, token, channelId, userId, enableEncryptionMode, encryptionMode,
-                        encryptionKey);
+                        encryptionKey, enableCloudProxy == 1);
             }
         });
     }
