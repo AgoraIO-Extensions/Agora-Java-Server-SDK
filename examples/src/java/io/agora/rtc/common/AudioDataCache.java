@@ -18,7 +18,7 @@ public class AudioDataCache {
     private long startedTimestamp;
     private long lastSendTimestamp;
     private long lastPushDataTimestamp;
-    private int consumedFrameSize;
+    private int consumedFrameCount;
 
     // Constructor
     public AudioDataCache(int numOfChannels, int sampleRate) {
@@ -26,11 +26,11 @@ public class AudioDataCache {
         this.sampleRate = sampleRate;
         this.oneFrameSize = numOfChannels * (sampleRate / 1000) * INTERVAL_ONE_FRAME * 2;
         this.startCacheDataSize = oneFrameSize * START_BY_CACHE_FRAME_SIZE;
-        this.buffer = ByteBuffer.allocate(startCacheDataSize * 2); // 初始容量，可根据需要调整
+        this.buffer = ByteBuffer.allocate(startCacheDataSize * 2);
         this.startedTimestamp = 0;
         this.lastSendTimestamp = 0;
         this.lastPushDataTimestamp = 0;
-        this.consumedFrameSize = 0;
+        this.consumedFrameCount = 0;
     }
 
     public int getOneFrameSize() {
@@ -53,19 +53,18 @@ public class AudioDataCache {
                 startCacheDataSize = oneFrameSize * CONTINUE_BY_CACHE_FRAME_SIZE;
                 startedTimestamp = 0;
                 lastSendTimestamp = 0;
-                consumedFrameSize = 0;
+                consumedFrameCount = 0;
             }
-
             if (buffer.remaining() < data.length) {
-                // 如果缓冲区空间不足，创建一个更大的缓冲区
+                // If the buffer space is insufficient, create a larger buffer
                 int newCapacity = Math.max(buffer.capacity() * 2, buffer.position() + data.length);
                 ByteBuffer newBuffer = ByteBuffer.allocate(newCapacity);
 
-                // 将当前缓冲区的内容复制到新缓冲区
+                // Copy the contents of the current buffer to the new buffer
                 buffer.flip();
                 newBuffer.put(buffer);
 
-                // 切换到新的缓冲区，并确保它处于正确的写入位置
+                // Switch to the new buffer and ensure it's in the correct write position
                 buffer = newBuffer;
             }
 
@@ -93,18 +92,17 @@ public class AudioDataCache {
                     elapsedTime = currentTime - startedTimestamp;
                 }
 
-                int startedAllFrameSize = (int) (elapsedTime / INTERVAL_ONE_FRAME);
-                int requiredFrameSize = startedAllFrameSize - consumedFrameSize;
-                if (requiredFrameSize > 0) {
-                    int requiredSize = requiredFrameSize * oneFrameSize;
-                    if (requiredSize <= getBufferSize()) {
-                        consumedFrameSize += requiredFrameSize;
-                        if (consumedFrameSize < 0) {
-                            consumedFrameSize = 0;
-                            startedTimestamp = currentTime;
-                        }
-                        return extractData(requiredSize, currentTime);
+                int startedAllFrameCount = (int) (elapsedTime / INTERVAL_ONE_FRAME);
+                int requiredFrameCount = startedAllFrameCount - consumedFrameCount;
+                int wantedFrameCount = Math.min(requiredFrameCount, getBufferSize() / oneFrameSize);
+                if (wantedFrameCount > 0) {
+                    int requiredFrameSize = wantedFrameCount * oneFrameSize;
+                    consumedFrameCount += requiredFrameCount;
+                    if (consumedFrameCount < 0) {
+                        consumedFrameCount = 0;
+                        startedTimestamp = currentTime;
                     }
+                    return extractData(requiredFrameSize, currentTime);
                 }
             }
         } catch (Exception e) {
@@ -124,7 +122,8 @@ public class AudioDataCache {
     }
 
     private int getBufferSize() {
-        // 写模式下的position是写入的位置，limit是缓冲区的容量
+        // In write mode, position is the write position, and limit is the buffer's
+        // capacity
         return buffer.position();
     }
 }
