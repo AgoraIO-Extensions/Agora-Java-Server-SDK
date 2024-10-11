@@ -1,0 +1,189 @@
+package io.agora.rtc.scenario;
+
+import io.agora.rtc.AgoraAudioPcmDataSender;
+import io.agora.rtc.AgoraLocalAudioTrack;
+import io.agora.rtc.AgoraLocalUser;
+import io.agora.rtc.AgoraMediaNodeFactory;
+import io.agora.rtc.AgoraRtcConn;
+import io.agora.rtc.AgoraService;
+import io.agora.rtc.AgoraServiceConfig;
+import io.agora.rtc.Constants;
+import io.agora.rtc.DefaultLocalUserObserver;
+import io.agora.rtc.DefaultRtcConnObserver;
+import io.agora.rtc.RtcConnConfig;
+import io.agora.rtc.RtcConnInfo;
+import io.agora.rtc.SDK;
+import io.agora.rtc.common.AudioDataCache;
+import io.agora.rtc.common.SampleLogger;
+import io.agora.rtc.common.Utils;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class SendPcmFileTest {
+    private static String appId;
+    private static String token;
+    private static String DEFAULT_LOG_PATH = "agora_logs/agorasdk.log";
+    private static int DEFAULT_LOG_SIZE = 512 * 1024; // default log size is 512 kb
+    private static String channelId = "agaa";
+    private static String userId = "12345";
+
+    private static AgoraService service;
+    private static CountDownLatch exitLatch;
+
+    private static int numOfChannels = 1;
+    private static int sampleRate = 16000;
+
+    private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
+
+    public static void main(String[] args) {
+        String[] keys = Utils.readAppIdAndToken(".keys");
+        appId = keys[0];
+        token = keys[1];
+        SampleLogger.log("read appId: " + appId + " token: " + token + " from .keys");
+
+        SDK.load(); // ensure JNI library load
+        service = new AgoraService();
+        AgoraServiceConfig config = new AgoraServiceConfig();
+        config.setAppId(appId);
+        config.setEnableAudioDevice(0);
+        config.setEnableAudioProcessor(1);
+        config.setEnableVideo(1);
+        config.setUseStringUid(0);
+        config.setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
+
+        int ret = service.initialize(config);
+        if (ret != 0) {
+            SampleLogger.log("createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
+            return;
+        }
+
+        ret = service.setLogFile(DEFAULT_LOG_PATH, DEFAULT_LOG_SIZE);
+        service.setLogFilter(Constants.LOG_FILTER_DEBUG);
+        if (ret != 0) {
+            SampleLogger.log("createAndInitAgoraService AgoraService.setLogFile fail ret:" + ret);
+            return;
+        }
+
+        RtcConnConfig ccfg = new RtcConnConfig();
+        ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
+        ccfg.setAutoSubscribeAudio(0);
+        ccfg.setAutoSubscribeVideo(0);
+        ccfg.setChannelProfile(Constants.CHANNEL_PROFILE_LIVE_BROADCASTING);
+
+        AgoraRtcConn conn = service.agoraRtcConnCreate(ccfg);
+        if (conn == null) {
+            SampleLogger.log("AgoraService.agoraRtcConnCreate fail\n");
+            return;
+        }
+
+        ret = conn.registerObserver(new DefaultRtcConnObserver() {
+            @Override
+            public void onConnected(AgoraRtcConn agora_rtc_conn, RtcConnInfo conn_info, int reason) {
+                super.onConnected(agora_rtc_conn, conn_info, reason);
+                SampleLogger.log(
+                        "onConnected chennalId:" + conn_info.getChannelId() + " userId:" + conn_info.getLocalUserId());
+                testTaskExecutorService.execute(() -> onConnConnected(agora_rtc_conn, conn_info, reason));
+            }
+
+            @Override
+            public void onUserJoined(AgoraRtcConn agora_rtc_conn, String user_id) {
+                super.onUserJoined(agora_rtc_conn, user_id);
+                SampleLogger.log("onUserJoined user_id:" + user_id);
+
+            }
+
+            @Override
+            public void onUserLeft(AgoraRtcConn agora_rtc_conn, String user_id, int reason) {
+                super.onUserLeft(agora_rtc_conn, user_id, reason);
+                SampleLogger.log("onUserLeft user_id:" + user_id + " reason:" + reason);
+
+            }
+
+            @Override
+            public void onChangeRoleSuccess(AgoraRtcConn agora_rtc_conn, int old_role, int new_role) {
+                SampleLogger.log("onChangeRoleSuccess old_role:" + old_role + " new_role:" + new_role);
+            }
+
+            @Override
+            public void onChangeRoleFailure(AgoraRtcConn agora_rtc_conn) {
+                SampleLogger.log("onChangeRoleFailure");
+            }
+        });
+        SampleLogger.log("registerObserver ret:" + ret);
+
+        ret = conn.connect(token, channelId, userId);
+        SampleLogger.log("Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
+
+        conn.getLocalUser().registerObserver(new DefaultLocalUserObserver() {
+            @Override
+            public void onStreamMessage(AgoraLocalUser agora_local_user, String user_id, int stream_id, String data,
+                    long length) {
+                SampleLogger.log("onStreamMessage: userid " + user_id + " stream_id " + stream_id + "  data " + data);
+            }
+
+            @Override
+            public void onAudioPublishStateChanged(AgoraLocalUser agora_local_user, String channel, int old_state,
+                    int new_state, int elapse_since_last_state) {
+                SampleLogger
+                        .log("onAudioPublishStateChanged channel:" + channel + " old_state:" + old_state + " new_state:"
+                                + new_state + " userRole:" + agora_local_user.getUserRole());
+            }
+
+            @Override
+            public void onVideoPublishStateChanged(AgoraLocalUser agora_local_user, String channel, int old_state,
+                    int new_state, int elapse_since_last_state) {
+                // TODO Auto-generated method stub
+                SampleLogger
+                        .log("onVideoPublishStateChanged channel:" + channel + " old_state:" + old_state + " new_state:"
+                                + new_state + " userRole:" + agora_local_user.getUserRole());
+            }
+        });
+
+        conn.getLocalUser().setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
+
+        exitLatch = new CountDownLatch(1);
+        try {
+            exitLatch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
+        AgoraMediaNodeFactory mediaNodeFactory = service.createMediaNodeFactory();
+
+        AgoraAudioPcmDataSender audioFrameSender = mediaNodeFactory.createAudioPcmDataSender();
+        // Create audio track
+        AgoraLocalAudioTrack customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
+        conn.getLocalUser().publishAudio(customAudioTrack);
+
+        AudioDataCache audioDataCache = new AudioDataCache(numOfChannels, sampleRate);
+
+        final byte[] pcmData = Utils.readPcmFromFile("test_data/send_audio_16k_1ch.pcm");
+
+        audioDataCache.pushData(pcmData);
+        SampleLogger.log("pushData");
+
+        byte[] sendData = null;
+        while (true) {
+            // If the remaining cache duration is less than 60 ms, push data into the cache
+            if (audioDataCache.getRemainingCacheDurationInMs() < 60) {
+                audioDataCache.pushData(pcmData);
+                SampleLogger.log("pushData");
+            }
+            sendData = audioDataCache.getData();
+            int ret = audioFrameSender.send(sendData, 0,
+                    audioDataCache.getSamplesPerChannel(sendData.length), 2,
+                    numOfChannels,
+                    sampleRate);
+            // SampleLogger.log("send ret:" + ret);
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+}
