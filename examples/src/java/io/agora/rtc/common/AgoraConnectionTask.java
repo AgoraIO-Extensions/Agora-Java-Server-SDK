@@ -598,6 +598,7 @@ public class AgoraConnectionTask {
 
         FileSender yuvSender = new FileSender(filePath, interval) {
             private int frameIndex = 0;
+            private ByteBuffer byteBuffer;
 
             @Override
             public void sendOneFrame(byte[] data, long timestamp) {
@@ -610,9 +611,13 @@ public class AgoraConnectionTask {
                 }
                 ExternalVideoFrame externalVideoFrame = new ExternalVideoFrame();
                 externalVideoFrame.setHeight(height);
-                ByteBuffer buffer = ByteBuffer.allocateDirect(data.length);
-                buffer.put(data);
-                externalVideoFrame.setBuffer(buffer);
+                if (null == byteBuffer) {
+                    byteBuffer = ByteBuffer.allocateDirect(data.length);
+                }
+                byteBuffer.put(data);
+                byteBuffer.flip();
+
+                externalVideoFrame.setBuffer(byteBuffer);
                 externalVideoFrame.setRotation(0);
                 externalVideoFrame.setFormat(Constants.EXTERNAL_VIDEO_FRAME_PIXEL_FORMAT_I420);
                 externalVideoFrame.setStride(width);
@@ -641,6 +646,7 @@ public class AgoraConnectionTask {
                     int size = fos.read(buffer, 0, bufferLen);
                     if (testDuration > 0) {
                         if (System.currentTimeMillis() - testStartTime >= testDuration * 1000) {
+                            Utils.cleanDirectBuffer(byteBuffer);
                             release(false);
                             return null;
                         } else {
@@ -652,6 +658,7 @@ public class AgoraConnectionTask {
                         }
                     } else {
                         if (size < 0) {
+                            Utils.cleanDirectBuffer(byteBuffer);
                             release(false);
                             return null;
                         }
@@ -882,6 +889,8 @@ public class AgoraConnectionTask {
                     size = fos.read(buffer, 0, bufferLen);
                     if (testDuration > 0) {
                         if (System.currentTimeMillis() - testStartTime >= testDuration * 1000) {
+                            Utils.cleanDirectBuffer(byteBuffer);
+                            Utils.cleanDirectBuffer(alphaBuffer);
                             release(false);
                             return null;
                         } else {
@@ -893,6 +902,8 @@ public class AgoraConnectionTask {
                         }
                     } else {
                         if (size < 0) {
+                            Utils.cleanDirectBuffer(byteBuffer);
+                            Utils.cleanDirectBuffer(alphaBuffer);
                             release(false);
                             return null;
                         }
@@ -1056,9 +1067,11 @@ public class AgoraConnectionTask {
     public void sendAvMediaTask(String filePath, int interval) {
         SampleLogger.log("sendAvMediaTask filePath:" + filePath + " interval:" + interval);
         MediaDecodeUtils mediaDecodeUtils = new MediaDecodeUtils();
-
+        
         boolean initRet = mediaDecodeUtils.init(filePath, interval, (int) testDuration,
                 new MediaDecodeUtils.MediaDecodeCallback() {
+                    private ByteBuffer byteBuffer;
+
                     @Override
                     public void onAudioFrame(MediaDecode.MediaFrame frame, long basePts) {
                         if (audioFrameSender == null) {
@@ -1093,9 +1106,12 @@ public class AgoraConnectionTask {
                         }
 
                         ExternalVideoFrame externalVideoFrame = new ExternalVideoFrame();
-                        ByteBuffer buffer = ByteBuffer.allocateDirect(frame.buffer.length);
-                        buffer.put(frame.buffer);
-                        externalVideoFrame.setBuffer(buffer);
+                        if (null == byteBuffer) {
+                            byteBuffer = ByteBuffer.allocateDirect(frame.buffer.length);
+                        }
+                        byteBuffer.put(frame.buffer);
+                        byteBuffer.flip();
+                        externalVideoFrame.setBuffer(byteBuffer);
                         externalVideoFrame.setHeight(frame.height);
                         externalVideoFrame.setStride(frame.stride);
                         externalVideoFrame.setRotation(0);

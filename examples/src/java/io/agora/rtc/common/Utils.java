@@ -11,6 +11,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.nio.ByteBuffer;
+import java.lang.reflect.Method;
 
 public class Utils {
     public static boolean areFilesIdentical(String file1Path, String file2Path) {
@@ -110,5 +112,20 @@ public class Utils {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public static void cleanDirectBuffer(ByteBuffer buffer) {
+        if (buffer.isDirect()) {
+            try {
+                // maybe different in different JDK version
+                Method cleanerMethod = buffer.getClass().getMethod("cleaner");
+                cleanerMethod.setAccessible(true);
+                Object cleaner = cleanerMethod.invoke(buffer);
+                Method cleanMethod = cleaner.getClass().getMethod("clean");
+                cleanMethod.invoke(cleaner);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
