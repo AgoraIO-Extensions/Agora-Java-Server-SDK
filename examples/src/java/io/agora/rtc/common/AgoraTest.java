@@ -535,8 +535,10 @@ public class AgoraTest {
             } else if (TestTask.SEND_H264 == testTask) {
                 connTask.sendH264Task(videoFile, 1000 / fps, 0, 0, Constants.VIDEO_STREAM_HIGH, false, true);
             } else if (TestTask.SEND_H264_DUAL_STREAM == testTask) {
-                connTask.sendH264Task(highVideoFile, 1000 / fps, 0, 0, Constants.VIDEO_STREAM_HIGH, enableSimulcastStream == 1, false);
-                connTask.sendH264Task(lowVideoFile, 1000 / fps, 0, 0, Constants.VIDEO_STREAM_LOW, enableSimulcastStream == 1, true);
+                connTask.sendH264Task(highVideoFile, 1000 / fps, 0, 0, Constants.VIDEO_STREAM_HIGH,
+                        enableSimulcastStream == 1, false);
+                connTask.sendH264Task(lowVideoFile, 1000 / fps, 0, 0, Constants.VIDEO_STREAM_LOW,
+                        enableSimulcastStream == 1, true);
             } else if (TestTask.SEND_RGBA_PCM == testTask) {
                 connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, false);
                 connTask.sendRgbaTask(videoFile, 1000 / fps, height, width, fps, true);
@@ -606,7 +608,7 @@ public class AgoraTest {
                     exitTest();
                 });
             }
-            SampleLogger.log("createConnectionAndTest done");
+            SampleLogger.log("createConnectionAndTest done for connTask:" + testTask + " and exit connection");
         });
         return true;
     }

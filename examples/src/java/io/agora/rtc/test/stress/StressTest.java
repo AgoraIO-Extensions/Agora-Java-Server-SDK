@@ -31,6 +31,13 @@ public class StressTest extends AgoraTest {
             int t2 = random.nextInt(500);
             int t3 = random.nextInt(5);
 
+            // 0 is send full file and set to 1 second
+            if (t1 == 0) {
+                t1 = 1;
+            }
+            if (t3 == 0) {
+                t3 = 1;
+            }
             createConnectionAndTest(ccfg, channelId + taskCount, userId, TestTask.SEND_PCM, t1);
 
             try {
@@ -48,7 +55,7 @@ public class StressTest extends AgoraTest {
             SampleLogger.log("taskCount: " + taskCount);
 
             try {
-                Thread.sleep(sleepTime);
+                Thread.sleep(sleepTime * 1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
