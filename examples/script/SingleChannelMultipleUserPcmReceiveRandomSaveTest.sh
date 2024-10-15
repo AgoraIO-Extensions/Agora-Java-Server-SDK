@@ -1,1 +1,0 @@
-sh run.zsh io.agora.rtc.test.pcm.SingleChannelMultipleUserPcmReceiveTest -channelId pcmTestChannel -userId 12200 -connectionCount 10 -sampleRate 16000 -numOfChannels 1 -audioOutFile test_data_out/received_pcm_random -testTime 86400 -enableRandomTest 1 -randomTestTime 1

@@ -24,13 +24,9 @@ public class SingleChannelMultipleUserYuvReceiveTest extends AgoraTest {
         try {
             int userIdInt = Integer.parseInt(userId);
             for (int i = 0; i < connectionCount; i++) {
-                boolean saveFile = true;
-                if (enableRandomTest == 1) {
-                    saveFile = i % 5 == 0;
-                }
                 createConnectionAndTest(ccfg, channelId, String.valueOf(userIdInt + i),
                         TestTask.RECEIVE_YUV,
-                        testTime, saveFile);
+                        testTime);
             }
         } catch (Exception e) {
             e.printStackTrace();

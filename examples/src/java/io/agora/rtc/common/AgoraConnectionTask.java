@@ -55,7 +55,7 @@ public class AgoraConnectionTask {
 
     private final AgoraService service;
     // in seconds
-    private final long testDuration;
+    private final long testTime;
     private final long testStartTime;
 
     private TaskCallback callback;
@@ -105,9 +105,9 @@ public class AgoraConnectionTask {
         }
     }
 
-    public AgoraConnectionTask(AgoraService service, long testDuration) {
+    public AgoraConnectionTask(AgoraService service, long testTime) {
         this.service = service;
-        this.testDuration = testDuration;
+        this.testTime = testTime;
         this.testStartTime = System.currentTimeMillis();
         this.singleExecutorService = Executors.newSingleThreadExecutor();
         this.testTaskExecutorService = Executors.newCachedThreadPool();
@@ -165,7 +165,7 @@ public class AgoraConnectionTask {
             public void onUserLeft(AgoraRtcConn agora_rtc_conn, String user_id, int reason) {
                 super.onUserLeft(agora_rtc_conn, user_id, reason);
                 SampleLogger.log("onUserLeft user_id:" + user_id + " reason:" + reason);
-                if (testDuration == 0) {
+                if (testTime == 0) {
                     if (null != userLeftLatch) {
                         userLeftLatch.countDown();
                     }
@@ -333,7 +333,7 @@ public class AgoraConnectionTask {
                             + " to channelId:"
                             + channelId + " from userId:" + userId + " ret:" + ret + " testStartTime:"
                             + Utils.formatTimestamp(testStartTime)
-                            + " testDuration:" + testDuration);
+                            + " testTime:" + testTime);
                 } else {
                     release(false);
                 }
@@ -344,8 +344,8 @@ public class AgoraConnectionTask {
                 if (fos != null) {
                     try {
                         int size = fos.read(buffer, 0, bufferSize);
-                        if (testDuration > 0) {
-                            if (System.currentTimeMillis() - testStartTime >= testDuration * 1000) {
+                        if (testTime > 0) {
+                            if (System.currentTimeMillis() - testStartTime >= testTime * 1000) {
                                 release(false);
                                 return null;
                             } else {
@@ -418,15 +418,15 @@ public class AgoraConnectionTask {
                         + " to channelId:"
                         + channelId + " from userId:" + userId + " ret:" + ret + " testStartTime:"
                         + Utils.formatTimestamp(testStartTime)
-                        + " currentTime:" + Utils.getCurrentTime() + " testDuration:" +
-                        testDuration);
+                        + " currentTime:" + Utils.getCurrentTime() + " testTime:" +
+                        testTime);
             }
 
             @Override
             public byte[] readOneFrame(FileInputStream fos) {
                 AacReader.AacFrame aacFrame = aacReader.getAudioFrame(interval);
-                if (testDuration > 0) {
-                    if (System.currentTimeMillis() - testStartTime >= testDuration * 1000) {
+                if (testTime > 0) {
+                    if (System.currentTimeMillis() - testStartTime >= testTime * 1000) {
                         release(false);
                         return null;
                     } else {
@@ -505,15 +505,15 @@ public class AgoraConnectionTask {
                         + " to channelId:"
                         + channelId + " from userId:" + userId + " ret:" + ret + " testStartTime:"
                         + Utils.formatTimestamp(testStartTime)
-                        + " currentTime:" + Utils.getCurrentTime() + " testDuration:" +
-                        testDuration);
+                        + " currentTime:" + Utils.getCurrentTime() + " testTime:" +
+                        testTime);
             }
 
             @Override
             public byte[] readOneFrame(FileInputStream fos) {
                 io.agora.rtc.mediautils.AudioFrame opusFrame = opusReader.getAudioFrame(interval);
-                if (testDuration > 0) {
-                    if (System.currentTimeMillis() - testStartTime >= testDuration * 1000) {
+                if (testTime > 0) {
+                    if (System.currentTimeMillis() - testStartTime >= testTime * 1000) {
                         release(false);
                         return null;
                     } else {
@@ -632,8 +632,8 @@ public class AgoraConnectionTask {
                 SampleLogger.log("send yuv frame data size:" + data.length +
                         " timestamp:" + timestamp + " frameIndex:" + frameIndex + " testStartTime:"
                         + Utils.formatTimestamp(testStartTime)
-                        + " currentTime:" + Utils.getCurrentTime() + " testDuration:" +
-                        testDuration + " from channelId:" + channelId + " userId:" + userId);
+                        + " currentTime:" + Utils.getCurrentTime() + " testTime:" +
+                        testTime + " from channelId:" + channelId + " userId:" + userId);
 
             }
 
@@ -644,8 +644,8 @@ public class AgoraConnectionTask {
                 }
                 try {
                     int size = fos.read(buffer, 0, bufferLen);
-                    if (testDuration > 0) {
-                        if (System.currentTimeMillis() - testStartTime >= testDuration * 1000) {
+                    if (testTime > 0) {
+                        if (System.currentTimeMillis() - testStartTime >= testTime * 1000) {
                             Utils.cleanDirectBuffer(byteBuffer);
                             release(false);
                             return null;
@@ -743,15 +743,15 @@ public class AgoraConnectionTask {
                 SampleLogger.log("send h264 frame data size:" + data.length +
                         " timestamp:" + timestamp + " frameIndex:" + frameIndex + " testStartTime:"
                         + Utils.formatTimestamp(testStartTime)
-                        + " currentTime:" + Utils.getCurrentTime() + " testDuration:" +
-                        testDuration + " from channelId:" + channelId + " userId:" + userId);
+                        + " currentTime:" + Utils.getCurrentTime() + " testTime:" +
+                        testTime + " from channelId:" + channelId + " userId:" + userId);
             }
 
             @Override
             public byte[] readOneFrame(FileInputStream fos) {
                 H264Reader.H264Frame frame = h264Reader.readNextFrame();
-                if (testDuration > 0) {
-                    if (System.currentTimeMillis() - testStartTime >= testDuration * 1000) {
+                if (testTime > 0) {
+                    if (System.currentTimeMillis() - testStartTime >= testTime * 1000) {
                         release(false);
                         return null;
                     } else {
@@ -874,8 +874,8 @@ public class AgoraConnectionTask {
                 SampleLogger.log("send rgba frame data size:" + data.length +
                         " timestamp:" + timestamp + " frameIndex:" + frameIndex + " testStartTime:"
                         + Utils.formatTimestamp(testStartTime)
-                        + " currentTime:" + Utils.getCurrentTime() + " testDuration:" +
-                        testDuration);
+                        + " currentTime:" + Utils.getCurrentTime() + " testTime:" +
+                        testTime);
 
             }
 
@@ -887,8 +887,8 @@ public class AgoraConnectionTask {
                 int size = 0;
                 try {
                     size = fos.read(buffer, 0, bufferLen);
-                    if (testDuration > 0) {
-                        if (System.currentTimeMillis() - testStartTime >= testDuration * 1000) {
+                    if (testTime > 0) {
+                        if (System.currentTimeMillis() - testStartTime >= testTime * 1000) {
                             Utils.cleanDirectBuffer(byteBuffer);
                             Utils.cleanDirectBuffer(alphaBuffer);
                             release(false);
@@ -1003,8 +1003,8 @@ public class AgoraConnectionTask {
                         + " height:" + height + " lastFrameType:" + lastFrameType + " fps:" + fps +
                         " timestamp:" + timestamp + " frameIndex:" + frameIndex + " testStartTime:"
                         + Utils.formatTimestamp(testStartTime)
-                        + " currentTime:" + Utils.getCurrentTime() + " testDuration:" +
-                        testDuration + " from channelId:" + channelId + " userId:" + userId);
+                        + " currentTime:" + Utils.getCurrentTime() + " testTime:" +
+                        testTime + " from channelId:" + channelId + " userId:" + userId);
             }
 
             @Override
@@ -1016,8 +1016,8 @@ public class AgoraConnectionTask {
                     frame = vp8Reader.readNextFrame();
                     retry++;
                 }
-                if (testDuration > 0) {
-                    if (System.currentTimeMillis() - testStartTime >= testDuration * 1000) {
+                if (testTime > 0) {
+                    if (System.currentTimeMillis() - testStartTime >= testTime * 1000) {
                         release(false);
                         return null;
                     } else {
@@ -1067,8 +1067,8 @@ public class AgoraConnectionTask {
     public void sendAvMediaTask(String filePath, int interval) {
         SampleLogger.log("sendAvMediaTask filePath:" + filePath + " interval:" + interval);
         MediaDecodeUtils mediaDecodeUtils = new MediaDecodeUtils();
-        
-        boolean initRet = mediaDecodeUtils.init(filePath, interval, (int) testDuration,
+
+        boolean initRet = mediaDecodeUtils.init(filePath, interval, (int) testTime,
                 new MediaDecodeUtils.MediaDecodeCallback() {
                     private ByteBuffer byteBuffer;
 
@@ -1209,12 +1209,10 @@ public class AgoraConnectionTask {
     }
 
     public void registerPcmObserverTask(String remoteUserId, String audioOutFile, int numOfChannels, int sampleRate,
-            boolean waitRelease, boolean enableSaveFile, int saveFileInterval) {
+            boolean waitRelease, boolean enableSaveFile) {
         SampleLogger.log("registerPcmObserverTask remoteUserId:" + remoteUserId + " audioOutFile:" + audioOutFile
                 + " numOfChannels:"
-                + numOfChannels + " sampleRate:" + sampleRate + " enableSaveFile:" + enableSaveFile
-                + " saveFileInterval:"
-                + saveFileInterval);
+                + numOfChannels + " sampleRate:" + sampleRate + " enableSaveFile:" + enableSaveFile);
         if (waitRelease) {
             userLeftLatch = new CountDownLatch(1);
         }
@@ -1236,8 +1234,6 @@ public class AgoraConnectionTask {
         }
 
         localUserObserver.setAudioFrameObserver(new SampleAudioFrameObserver(audioOutFile) {
-            long startSaveFileTime = 0;
-
             @Override
             public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agora_local_user, String channel_id, String uid,
                     AudioFrame frame) {
@@ -1252,19 +1248,10 @@ public class AgoraConnectionTask {
                         + channel_id + " uid:" + uid + " writeBytes:" + writeBytes + " with current channelId:"
                         + channelId
                         + "  userId:" + userId);
-                boolean needSaveFile = enableSaveFile;
-                if (needSaveFile && saveFileInterval > 0 && startSaveFileTime != 0) {
-                    if (System.currentTimeMillis() - startSaveFileTime >= saveFileInterval * 1000 + 50) {
-                        needSaveFile = false;
-                    }
-                }
-                if (needSaveFile) {
+                if (enableSaveFile) {
                     writeAudioFrameToFile(frame.getBuffer(), writeBytes);
-                    if (startSaveFileTime == 0) {
-                        startSaveFileTime = System.currentTimeMillis();
-                    }
                 }
-                if (testDuration > 0 && System.currentTimeMillis() - testStartTime >= testDuration * 1000
+                if (testTime > 0 && System.currentTimeMillis() - testStartTime >= testTime * 1000
                         && null != userLeftLatch) {
                     userLeftLatch.countDown();
                 }
@@ -1329,7 +1316,7 @@ public class AgoraConnectionTask {
                         + channelId
                         + "  userId:" + userId);
                 writeAudioFrameToFile(frame.getBuffer(), writeBytes);
-                if (testDuration > 0 && System.currentTimeMillis() - testStartTime >= testDuration * 1000
+                if (testTime > 0 && System.currentTimeMillis() - testStartTime >= testTime * 1000
                         && null != userLeftLatch) {
                     userLeftLatch.countDown();
                 }
@@ -1354,10 +1341,10 @@ public class AgoraConnectionTask {
     }
 
     public void registerYuvObserverTask(String remoteUserId, String videoOutFile, String streamType,
-            boolean waitRelease, boolean enableSaveFile, int saveFileInterval) {
+            boolean waitRelease, boolean enableSaveFile) {
         SampleLogger.log("registerYuvObserverTask remoteUserId:" + remoteUserId + " videoOutFile:" + videoOutFile
                 + " streamType:" + streamType
-                + " enableSaveFile:" + enableSaveFile + " saveFileInterval:" + saveFileInterval);
+                + " enableSaveFile:" + enableSaveFile);
         if (waitRelease) {
             userLeftLatch = new CountDownLatch(1);
         }
@@ -1379,8 +1366,6 @@ public class AgoraConnectionTask {
         conn.getLocalUser().registerObserver(localUserObserver);
 
         localUserObserver.setVideoFrameObserver(new SampleVideFrameObserver(videoOutFile) {
-            long startSaveFileTime = 0;
-
             @Override
             public void onFrame(AgoraVideoFrameObserver2 agora_video_frame_observer2, String channel_id,
                     String remote_uid,
@@ -1399,21 +1384,11 @@ public class AgoraConnectionTask {
                 if (null != frame.getMetadataBuffer()) {
                     SampleLogger.log("onFrame metaDataBuffer:" + frame.getMetadataBuffer());
                 }
-
-                boolean needSaveFile = enableSaveFile;
-                if (needSaveFile && saveFileInterval > 0 && startSaveFileTime != 0) {
-                    if (System.currentTimeMillis() - startSaveFileTime >= saveFileInterval * 1000 + 50) {
-                        needSaveFile = false;
-                    }
-                }
-                if (needSaveFile) {
+                if (enableSaveFile) {
                     writeVideoFrameToFile(frame);
-                    if (startSaveFileTime == 0) {
-                        startSaveFileTime = System.currentTimeMillis();
-                    }
                 }
 
-                if (testDuration > 0 && System.currentTimeMillis() - testStartTime >= testDuration * 1000
+                if (testTime > 0 && System.currentTimeMillis() - testStartTime >= testTime * 1000
                         && null != userLeftLatch) {
                     userLeftLatch.countDown();
                 }
@@ -1472,8 +1447,8 @@ public class AgoraConnectionTask {
                                         + "  userId:" + userId);
                                 writeVideoDataToFile(image_buffer, (int) length);
 
-                                if (testDuration > 0
-                                        && System.currentTimeMillis() - testStartTime >= testDuration * 1000
+                                if (testTime > 0
+                                        && System.currentTimeMillis() - testStartTime >= testTime * 1000
                                         && null != userLeftLatch) {
                                     userLeftLatch.countDown();
                                 }

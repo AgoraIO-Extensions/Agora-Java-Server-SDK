@@ -32,13 +32,9 @@ public class SingleChannelMultipleUserPcmReceiveTest extends AgoraTest {
         try {
             int userIdInt = Integer.parseInt(userId);
             for (int i = 0; i < connectionCount; i++) {
-                boolean saveFile = true;
-                if (enableRandomTest == 1) {
-                    saveFile = i % 5 == 0;
-                }
                 createConnectionAndTest(ccfg, channelId, String.valueOf(userIdInt + i),
                         TestTask.RECEIVE_PCM,
-                        testTime, saveFile);
+                        testTime);
             }
         } catch (Exception e) {
             e.printStackTrace();

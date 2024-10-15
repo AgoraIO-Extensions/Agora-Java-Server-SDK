@@ -65,8 +65,7 @@ public class AgoraTest {
     protected int enableAudioLabel = 0;
     protected int enableCloudProxy = 0;
     protected int enableSimulcastStream = 0;
-    protected int enableRandomTest = 0;
-    protected int randomTestTime = 0; // s
+    protected int enableSaveFile = 1;
 
     protected int useStringUid = 0;
     private AtomicInteger testTaskCount = new AtomicInteger(0);
@@ -156,10 +155,8 @@ public class AgoraTest {
                 "enableCloudProxy");
         Option optEnableSimulcastStream = new Option("enableSimulcastStream", true,
                 "enableSimulcastStream");
-        Option optEnableRandomTest = new Option("enableRandomTest", true,
-                "enableRandomTest");
-        Option optRandomTestTime = new Option("randomTestTime", true,
-                "randomTestTime");
+        Option optEnableSaveFile = new Option("enableSaveFile", true,
+                "enableSaveFile");
 
         options.addOption(optToken);
         options.addOption(optChannelId);
@@ -191,8 +188,7 @@ public class AgoraTest {
         options.addOption(optEnableAudioLabel);
         options.addOption(optEnableCloudProxy);
         options.addOption(optEnableSimulcastStream);
-        options.addOption(optEnableRandomTest);
-        options.addOption(optRandomTestTime);
+        options.addOption(optEnableSaveFile);
 
         CommandLine commandLine = null;
         CommandLineParser parser = new DefaultParser();
@@ -431,17 +427,9 @@ public class AgoraTest {
             }
         }
 
-        if (commandLine.hasOption(optEnableRandomTest)) {
+        if (commandLine.hasOption(optEnableSaveFile)) {
             try {
-                enableRandomTest = Integer.parseInt(commandLine.getOptionValue("enableRandomTest"));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        if (commandLine.hasOption(optRandomTestTime)) {
-            try {
-                randomTestTime = Integer.parseInt(commandLine.getOptionValue("randomTestTime"));
+                enableSaveFile = Integer.parseInt(commandLine.getOptionValue("enableSaveFile"));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -475,18 +463,13 @@ public class AgoraTest {
     }
 
     protected boolean createConnectionAndTest(RtcConnConfig ccfg, String channelId, String userId, TestTask testTask,
-            long testDuration) {
-        return createConnectionAndTest(ccfg, channelId, userId, testTask, testDuration, true);
-    }
-
-    protected boolean createConnectionAndTest(RtcConnConfig ccfg, String channelId, String userId, TestTask testTask,
-            long testDuration, boolean enableSaveFile) {
+            long testTime) {
         SampleLogger.log("createConnectionAndTest start ccfg:" + ccfg + " channelId:" + channelId + " userId:" + userId
-                + " testTask:" + testTask + " testDuration:" + testDuration + " enableSaveFile:" + enableSaveFile);
+                + " testTask:" + testTask + " testTime:" + testTime);
         testTaskExecutorService.execute(() -> {
             final CountDownLatch testFinishLatch = new CountDownLatch(1);
             final CountDownLatch connectedLatch = new CountDownLatch(1);
-            AgoraConnectionTask connTask = new AgoraConnectionTask(service, testDuration);
+            AgoraConnectionTask connTask = new AgoraConnectionTask(service, testTime);
             connTask.setCallback(new AgoraConnectionTask.TaskCallback() {
                 @Override
                 public void onConnected() {
@@ -554,7 +537,7 @@ public class AgoraTest {
                 connTask.registerPcmObserverTask(remoteUserId,
                         ("".equals(audioOutFile)) ? "" : (audioOutFile + "_" + channelId + "_" + userId + ".pcm"),
                         numOfChannels,
-                        sampleRate, true, enableSaveFile, randomTestTime);
+                        sampleRate, true, enableSaveFile == 1);
             } else if (TestTask.RECEIVE_MIXED_AUDIO == testTask) {
                 connTask.registerMixedAudioObserverTask(remoteUserId,
                         ("".equals(audioOutFile)) ? "" : (audioOutFile + "_" + channelId + "_" + userId + ".pcm"),
@@ -564,7 +547,7 @@ public class AgoraTest {
                 connTask.registerYuvObserverTask(remoteUserId,
                         ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + "_" + userId + ".yuv"),
                         streamType, true,
-                        enableSaveFile, randomTestTime);
+                        enableSaveFile == 1);
             } else if (TestTask.RECEIVE_H264 == testTask) {
                 connTask.registerH264ObserverTask(remoteUserId,
                         ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + "_" + userId + ".h264"),
@@ -577,11 +560,11 @@ public class AgoraTest {
                         ("".equals(audioOutFile)) ? ""
                                 : (audioOutFile + "_" + channelId + "_" + userId + "_" + userId + ".pcm"),
                         numOfChannels,
-                        sampleRate, false, enableSaveFile, randomTestTime);
+                        sampleRate, false, enableSaveFile == 1);
                 connTask.registerYuvObserverTask(remoteUserId,
                         ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + "_" + userId + ".yuv"),
                         streamType, true,
-                        enableSaveFile, randomTestTime);
+                        enableSaveFile == 1);
             }
 
             onConnected(connTask.getConn(), channelId, userId);
@@ -594,7 +577,7 @@ public class AgoraTest {
                 }
             } else {
                 try {
-                    Thread.sleep(testDuration * 1000);
+                    Thread.sleep(testTime * 1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
