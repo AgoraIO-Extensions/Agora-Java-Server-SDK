@@ -1,13 +1,13 @@
-package io.agora.rtc.test.mp4;
+package io.agora.rtc.scenario;
 
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.Constants;
 import io.agora.rtc.test.common.AgoraTest;
 
-public class MultipleConnectionMp4SendTest extends AgoraTest {
+public class SendMp4Test extends AgoraTest {
 
     public static void main(String[] args) {
-        startTest(args, new MultipleConnectionMp4SendTest());
+        startTest(args, new SendMp4Test());
     }
 
     @Override

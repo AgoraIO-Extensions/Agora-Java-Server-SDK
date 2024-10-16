@@ -302,7 +302,7 @@ public class AgoraConnectionTask {
         // Create audio track
         customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
         customAudioTrack.setMaxBufferedAudioFrameNumber(1000);
-        customAudioTrack.setSendDelayMs(100);
+        customAudioTrack.setSendDelayMs(10);
         conn.getLocalUser().publishAudio(customAudioTrack);
         AudioDataCache audioDataCache = new AudioDataCache(numOfChannels, sampleRate);
 

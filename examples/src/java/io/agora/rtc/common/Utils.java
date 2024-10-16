@@ -116,16 +116,8 @@ public class Utils {
 
     public static void cleanDirectBuffer(ByteBuffer buffer) {
         if (buffer.isDirect()) {
-            try {
-                // maybe different in different JDK version
-                Method cleanerMethod = buffer.getClass().getMethod("cleaner");
-                cleanerMethod.setAccessible(true);
-                Object cleaner = cleanerMethod.invoke(buffer);
-                Method cleanMethod = cleaner.getClass().getMethod("clean");
-                cleanMethod.invoke(cleaner);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            buffer = null;
+            System.gc(); 
         }
     }
 }
