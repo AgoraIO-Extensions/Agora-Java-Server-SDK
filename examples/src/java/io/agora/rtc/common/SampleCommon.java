@@ -25,15 +25,15 @@ public class SampleCommon {
 
         int ret = service.initialize(config);
         if (ret != 0) {
-            System.out.printf("createAndInitAgoraService AgoraService.initialize fail ret=%d\n", ret);
+            SampleLogger.log("createAndInitAgoraService AgoraService.initialize fail ret=" + ret);
             return null;
         }
 
-        System.out.printf("createAndInitAgoraService created log file at %s\n", DEFAULT_LOG_PATH);
+        SampleLogger.log("createAndInitAgoraService created log file at:" + DEFAULT_LOG_PATH);
         ret = service.setLogFile(DEFAULT_LOG_PATH, DEFAULT_LOG_SIZE);
         service.setLogFilter(Constants.LOG_FILTER_DEBUG);
         if (ret != 0) {
-            System.out.printf("createAndInitAgoraService AgoraService.setLogFile fail ret=%d\n", ret);
+            SampleLogger.log("createAndInitAgoraService AgoraService.setLogFile fail ret=%d" + ret);
             return null;
         }
 

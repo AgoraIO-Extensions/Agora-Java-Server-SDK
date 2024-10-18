@@ -29,6 +29,12 @@ public class SendPcmFileTest {
     private static String userId = "12345";
 
     private static AgoraService service;
+    private static AgoraRtcConn conn;
+    private static AgoraMediaNodeFactory mediaNodeFactory;
+
+    private static AgoraAudioPcmDataSender audioFrameSender;
+    private static AgoraLocalAudioTrack customAudioTrack;
+
     private static CountDownLatch exitLatch;
 
     private static int numOfChannels = 1;
@@ -71,7 +77,7 @@ public class SendPcmFileTest {
         ccfg.setAutoSubscribeVideo(0);
         ccfg.setChannelProfile(Constants.CHANNEL_PROFILE_LIVE_BROADCASTING);
 
-        AgoraRtcConn conn = service.agoraRtcConnCreate(ccfg);
+        conn = service.agoraRtcConnCreate(ccfg);
         if (conn == null) {
             SampleLogger.log("AgoraService.agoraRtcConnCreate fail\n");
             return;
@@ -142,20 +148,22 @@ public class SendPcmFileTest {
 
         conn.getLocalUser().setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
 
+        mediaNodeFactory = service.createMediaNodeFactory();
+
         exitLatch = new CountDownLatch(1);
         try {
             exitLatch.await();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        releaseConn();
     }
 
     private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
-        AgoraMediaNodeFactory mediaNodeFactory = service.createMediaNodeFactory();
-
-        AgoraAudioPcmDataSender audioFrameSender = mediaNodeFactory.createAudioPcmDataSender();
+        audioFrameSender = mediaNodeFactory.createAudioPcmDataSender();
         // Create audio track
-        AgoraLocalAudioTrack customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
+        customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
         conn.getLocalUser().publishAudio(customAudioTrack);
 
         AudioDataCache audioDataCache = new AudioDataCache(numOfChannels, sampleRate);
@@ -184,6 +192,53 @@ public class SendPcmFileTest {
                 e.printStackTrace();
             }
         }
+
+        // if (null != exitLatch) {
+        // exitLatch.countDown();
+        // }
+    }
+
+    private static void releaseConn() {
+        SampleLogger.log("releaseConn for channelId:" + channelId + " userId:" + userId);
+        if (conn == null) {
+            return;
+        }
+
+        if (null != customAudioTrack && null != audioFrameSender) {
+            customAudioTrack.clearSenderBuffer();
+            conn.getLocalUser().unpublishAudio(customAudioTrack);
+        }
+
+        // if (null != customEncodedVideoTrack && null != customEncodedImageSender) {
+        // conn.getLocalUser().unpublishVideo(customEncodedVideoTrack);
+        // }
+
+        // if (null != customVideoTrack && null != videoFrameSender) {
+        // conn.getLocalUser().unpublishVideo(customVideoTrack);
+        // }
+
+        // if (null != customEncodedAudioTrack && null != audioEncodedFrameSender) {
+        // conn.getLocalUser().unpublishAudio(customEncodedAudioTrack);
+        // }
+
+        // if (null != localUserObserver) {
+        // localUserObserver.unsetAudioFrameObserver();
+        // localUserObserver.unsetVideoFrameObserver();
+        // }
+
+        // Unregister connection observer
+        conn.unregisterObserver();
+        conn.getLocalUser().unregisterObserver();
+
+        int ret = conn.disconnect();
+        if (ret != 0) {
+            SampleLogger.log("conn.disconnect fail ret=" + ret);
+        }
+        conn.destroy();
+
+        conn = null;
+
+        SampleLogger.log("Disconnected from Agora channel successfully");
     }
 
 }

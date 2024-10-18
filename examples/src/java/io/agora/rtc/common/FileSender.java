@@ -32,7 +32,7 @@ public abstract class FileSender extends Thread {
                 fos = new FileInputStream(new File(filePath));
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
-                System.out.println("cannot open file :" + filePath);
+                SampleLogger.log("cannot open file :" + filePath);
                 return;
             }
         }

@@ -3,6 +3,7 @@ package io.agora.rtc.test;
 import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.common.AgoraConnectionTask;
+import io.agora.rtc.common.AgoraRtcConnPool;
 import io.agora.rtc.common.SampleLogger;
 import io.agora.rtc.test.common.AgoraTest;
 import java.util.concurrent.ExecutorService;
@@ -17,6 +18,8 @@ public class FullTest extends AgoraTest {
 
     public void setup() {
         super.setup();
+
+        AgoraRtcConnPool connPool = new AgoraRtcConnPool(10);
 
         RtcConnConfig ccfg = new RtcConnConfig();
         ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
@@ -46,8 +49,9 @@ public class FullTest extends AgoraTest {
                                 + " data: " + data + " length: " + length);
                     }
                 });
-                connTask.createConnectionAndTest(ccfg, token, channelId, userId, enableEncryptionMode, encryptionMode,
-                        encryptionKey, enableCloudProxy == 1);
+                connTask.createConnectionAndTest(ccfg, token, channelId, userId,
+                        enableEncryptionMode, encryptionMode,
+                        encryptionKey, enableCloudProxy == 1, connPool.getRtcConn(service, ccfg, false));
             }
         });
     }

@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import io.agora.rtc.common.SampleLogger;
 import io.agora.rtc.test.pcm.MultipleConnectionPcmReceiveTest;
 import java.io.*;
 import java.lang.reflect.Field;
@@ -41,7 +42,7 @@ public class SmallWeb {
             server.createContext("/get", new GetHttpHandler());
             server.createContext("/post", new PostHttpHandler());
             server.start();
-            System.out.println("http://localhost:" + port + " start...");
+            SampleLogger.log("http://localhost:" + port + " start...");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -72,24 +73,24 @@ public class SmallWeb {
             if (name == null || "".equals(name)) {
                 name = "world";
             }
-            System.out.println("handle get " + name);
+            SampleLogger.log("handle get " + name);
             response.append("hello " + name + " !\n");
             byte[] responseByte = response.toString().getBytes("utf-8");
             synchronized (processHashMap) {
-                System.out.println("handle process " + name);
+                SampleLogger.log("handle process " + name);
                 if (processHashMap.containsKey(name)) {
-                    System.out.println("handle process cleanup" + name);
+                    SampleLogger.log("handle process cleanup" + name);
                     MultipleConnectionPcmReceiveTest process = processHashMap.get(name);
                     process.cleanup();
                     processHashMap.remove(name);
                 } else {
-                    System.out.println("handle process setup" + name);
+                    SampleLogger.log("handle process setup" + name);
                     MultipleConnectionPcmReceiveTest process = new MultipleConnectionPcmReceiveTest();
                     processHashMap.put(name, process);
                     process.setup();
                 }
             }
-            System.out.println("handle return " + name);
+            SampleLogger.log("handle return " + name);
 
             // 返回
             httpExchange.getResponseHeaders().add("Content-Type:", "text/html;charset=utf-8");
@@ -122,11 +123,11 @@ public class SmallWeb {
     static class PostHttpHandler implements HttpHandler {
         public void handle(HttpExchange httpExchange) throws IOException {
             String method = httpExchange.getRequestMethod();
-            System.out.println("Method: " + method);
+            SampleLogger.log("Method: " + method);
 
             InputStream is = httpExchange.getRequestBody();
             String response = "hello " + is2string(is) + " !";
-            System.out.println("response: " + response);
+            SampleLogger.log("response: " + response);
             is.close();
 
             byte[] responseByte = response.getBytes("utf-8");

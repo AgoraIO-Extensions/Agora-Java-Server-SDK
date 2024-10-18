@@ -1,5 +1,6 @@
 package io.agora.rtc.test;
 
+import io.agora.rtc.common.SampleLogger;
 import io.agora.rtc.common.Utils;
 import org.junit.Test;
 
@@ -19,13 +20,13 @@ public class GeneralTest {
     public static class ConnObserver extends DefaultRtcConnObserver {
         @Override
         public void onConnected(AgoraRtcConn conn, RtcConnInfo rtcConnInfo, int reason) {
-            System.out.println("join success");
+            SampleLogger.log("join success");
         }
 
         @Override
         public void onUserJoined(AgoraRtcConn agora_rtc_conn, String user_id) {
             super.onUserJoined(agora_rtc_conn, user_id);
-            System.out.println("user join success: " + user_id);
+            SampleLogger.log("user join success: " + user_id);
         }
 
     }

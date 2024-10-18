@@ -4,14 +4,19 @@ import io.agora.rtc.AgoraService;
 import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.AgoraRtcConn;
+import io.agora.rtc.common.AgoraRtcConnPool;
 import io.agora.rtc.common.SampleCommon;
 import io.agora.rtc.common.SampleLogger;
 import io.agora.rtc.common.Utils;
 import java.io.File;
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.agora.rtc.common.AgoraConnectionTask;
@@ -27,12 +32,12 @@ import sun.misc.SignalHandler;
 
 public class AgoraTest {
     protected final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
-    protected final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
 
     protected static String APPID;
     protected static String TOKEN;
-    public static boolean exitFlag = false;
-    protected static AgoraService service;
+    public static volatile boolean exitFlag = false;
+    protected static volatile AgoraService service;
+    protected static volatile AgoraRtcConnPool connPool;
 
     protected String token = TOKEN;
     protected String userId = "";
@@ -83,7 +88,7 @@ public class AgoraTest {
 
     class SignalFunc implements SignalHandler {
         public void handle(Signal arg0) {
-            System.out.println("catch signal " + arg0);
+            SampleLogger.log("catch signal " + arg0);
             exitFlag = true;
         }
     }
@@ -460,13 +465,15 @@ public class AgoraTest {
             service.enableExtension("agora.builtin", "agora_audio_label_generator", "", true);
         }
 
+        connPool = new AgoraRtcConnPool((int) Math.ceil(connectionCount * 1.5));
+
     }
 
     protected boolean createConnectionAndTest(RtcConnConfig ccfg, String channelId, String userId, TestTask testTask,
             long testTime) {
         SampleLogger.log("createConnectionAndTest start ccfg:" + ccfg + " channelId:" + channelId + " userId:" + userId
                 + " testTask:" + testTask + " testTime:" + testTime);
-        testTaskExecutorService.execute(() -> {
+        CompletableFuture.supplyAsync(() -> {
             final CountDownLatch testFinishLatch = new CountDownLatch(1);
             final CountDownLatch connectedLatch = new CountDownLatch(1);
             AgoraConnectionTask connTask = new AgoraConnectionTask(service, testTime);
@@ -491,7 +498,7 @@ public class AgoraTest {
             });
             testTaskCount.incrementAndGet();
             connTask.createConnectionAndTest(ccfg, token, channelId, userId, enableEncryptionMode, encryptionMode,
-                    encryptionKey, enableCloudProxy == 1);
+                    encryptionKey, enableCloudProxy == 1, connPool.getRtcConn(service, ccfg, false));
 
             try {
                 connectedLatch.await();
@@ -586,12 +593,18 @@ public class AgoraTest {
             }
 
             SampleLogger.log("testTaskCount:" + testTaskCount.get());
-            if (testTaskCount.get() == 0) {
+            if (testTaskCount.get() == 0 && !exitFlag) {
                 singleExecutorService.execute(() -> {
                     exitTest();
                 });
             }
+            AgoraRtcConn conn = connTask.getConn();
+            connTask = null;
+            System.gc();
             SampleLogger.log("createConnectionAndTest done for connTask:" + testTask + " and exit connection");
+            return conn;
+        }).thenAccept(result -> {
+            connPool.addIdleConn(result);
         });
         return true;
     }
@@ -609,7 +622,7 @@ public class AgoraTest {
 
     public void cleanup() {
         singleExecutorService.shutdown();
-        testTaskExecutorService.shutdown();
+        connPool.releaseAllConn();
         // Destroy Agora Service
         if (null != service) {
             service.destroy();

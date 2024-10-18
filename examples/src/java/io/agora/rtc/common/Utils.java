@@ -1,6 +1,7 @@
 package io.agora.rtc.common;
 
 import java.io.FileInputStream;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -11,8 +12,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.nio.ByteBuffer;
-import java.lang.reflect.Method;
 
 public class Utils {
     public static boolean areFilesIdentical(String file1Path, String file2Path) {
@@ -115,9 +114,9 @@ public class Utils {
     }
 
     public static void cleanDirectBuffer(ByteBuffer buffer) {
-        if (buffer.isDirect()) {
+        if (null != buffer && buffer.isDirect()) {
             buffer = null;
-            System.gc(); 
+            System.gc();
         }
     }
 }
