@@ -332,41 +332,53 @@ public class AgoraConnectionTask {
     }
 
     public void sendPcmTask(String filePath, int interval, int numOfChannels, int sampleRate,
-            boolean waitRelease) {
+            boolean waitRelease, boolean enableAudioCache) {
         SampleLogger
                 .log("sendPcmTask filePath:" + filePath + " interval:" + interval + " numOfChannels:" + numOfChannels
-                        + " sampleRate:" + sampleRate);
+                        + " sampleRate:" + sampleRate + " enableAudioCache:" + enableAudioCache);
         audioFrameSender = mediaNodeFactory.createAudioPcmDataSender();
         // Create audio track
         customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
         customAudioTrack.setMaxBufferedAudioFrameNumber(1000);
         customAudioTrack.setSendDelayMs(10);
         conn.getLocalUser().publishAudio(customAudioTrack);
-        AudioDataCache audioDataCache = new AudioDataCache(numOfChannels, sampleRate);
 
         int bufferSize = numOfChannels * (sampleRate / 1000) * interval * 2;
         byte[] buffer = new byte[bufferSize];
 
         FileSender pcmSendThread = new FileSender(filePath, interval) {
+            private AudioDataCache audioDataCache = null;
+
             @Override
             public void sendOneFrame(byte[] data, long timestamp) {
                 if (data == null) {
                     return;
                 }
 
-                byte[] sendData = audioDataCache.getData();
+                byte[] sendData = null;
+                if (enableAudioCache && null != audioDataCache) {
+                    sendData = audioDataCache.getData();
+                } else {
+                    sendData = data;
+                }
 
                 if (sendData == null) {
                     return;
                 }
 
+                int samplesPerChannel;
+                if (enableAudioCache && null != audioDataCache) {
+                    samplesPerChannel = audioDataCache.getSamplesPerChannel(sendData.length);
+                } else {
+                    samplesPerChannel = sendData.length / 2 / numOfChannels;
+                }
+
                 if (null != audioFrameSender) {
                     int ret = audioFrameSender.send(sendData, 0,
-                            audioDataCache.getSamplesPerChannel(sendData.length), 2,
+                            samplesPerChannel, 2,
                             numOfChannels,
                             sampleRate);
-                    SampleLogger.log("send pcm frame data size:" + sendData.length + " frame size:"
-                            + (sendData.length / audioDataCache.getOneFrameSize()) + " sampleRate:" + sampleRate
+                    SampleLogger.log("send pcm frame data size:" + sendData.length + " sampleRate:" + sampleRate
                             + " numOfChannels:" + numOfChannels
                             + " to channelId:"
                             + channelId + " from userId:" + userId + " ret:" + ret + " testStartTime:"
@@ -402,14 +414,21 @@ public class AgoraConnectionTask {
                         e.printStackTrace();
                     }
                 }
-                audioDataCache.pushData(buffer);
+                if (enableAudioCache) {
+                    if (null == audioDataCache) {
+                        audioDataCache = new AudioDataCache(numOfChannels, sampleRate);
+                    }
+                    audioDataCache.pushData(buffer);
+                }
                 return buffer;
             }
 
             @Override
             public void release(boolean withJoin) {
                 super.release(withJoin);
-                audioDataCache.clear();
+                if (enableAudioCache && null != audioDataCache) {
+                    audioDataCache.clear();
+                }
             }
         };
 

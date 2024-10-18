@@ -71,6 +71,7 @@ public class AgoraTest {
     protected int enableCloudProxy = 0;
     protected int enableSimulcastStream = 0;
     protected int enableSaveFile = 1;
+    protected int enableAudioCache = 1;
 
     protected int useStringUid = 0;
     private AtomicInteger testTaskCount = new AtomicInteger(0);
@@ -162,6 +163,8 @@ public class AgoraTest {
                 "enableSimulcastStream");
         Option optEnableSaveFile = new Option("enableSaveFile", true,
                 "enableSaveFile");
+        Option optEnableAudioCache = new Option("enableAudioCache", true,
+                "enableAudioCache");
 
         options.addOption(optToken);
         options.addOption(optChannelId);
@@ -194,6 +197,7 @@ public class AgoraTest {
         options.addOption(optEnableCloudProxy);
         options.addOption(optEnableSimulcastStream);
         options.addOption(optEnableSaveFile);
+        options.addOption(optEnableAudioCache);
 
         CommandLine commandLine = null;
         CommandLineParser parser = new DefaultParser();
@@ -439,6 +443,14 @@ public class AgoraTest {
                 e.printStackTrace();
             }
         }
+
+        if (commandLine.hasOption(optEnableAudioCache)) {
+            try {
+                enableAudioCache = Integer.parseInt(commandLine.getOptionValue("enableAudioCache"));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public void setup() {
@@ -507,9 +519,9 @@ public class AgoraTest {
             }
 
             if (TestTask.SEND_PCM == testTask) {
-                connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, true);
+                connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, true, enableAudioCache == 1);
             } else if (TestTask.SEND_PCM_YUV == testTask) {
-                connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, false);
+                connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, false, enableAudioCache == 1);
                 connTask.sendYuvTask(videoFile, 1000 / fps, height, width, fps, Constants.VIDEO_STREAM_HIGH,
                         enableSimulcastStream == 1, true);
             } else if (TestTask.SEND_AAC == testTask) {
@@ -530,10 +542,10 @@ public class AgoraTest {
                 connTask.sendH264Task(lowVideoFile, 1000 / fps, 0, 0, Constants.VIDEO_STREAM_LOW,
                         enableSimulcastStream == 1, true);
             } else if (TestTask.SEND_RGBA_PCM == testTask) {
-                connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, false);
+                connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, false, enableAudioCache == 1);
                 connTask.sendRgbaTask(videoFile, 1000 / fps, height, width, fps, true);
             } else if (TestTask.SEND_VP8_PCM == testTask) {
-                connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, false);
+                connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, false, enableAudioCache == 1);
                 connTask.sendVp8Task(videoFile, 1000 / fps, height, width, fps, Constants.VIDEO_STREAM_HIGH,
                         enableSimulcastStream == 1, true);
             } else if (TestTask.SEND_MP4 == testTask) {
@@ -560,7 +572,7 @@ public class AgoraTest {
                         ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + "_" + userId + ".h264"),
                         streamType, true);
             } else if (TestTask.SEND_RECEIVE_PCM_YUV == testTask) {
-                connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, false);
+                connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, false, enableAudioCache == 1);
                 connTask.sendYuvTask(videoFile, 1000 / fps, height, width, fps, Constants.VIDEO_STREAM_HIGH,
                         enableSimulcastStream == 1, false);
                 connTask.registerPcmObserverTask(remoteUserId,
