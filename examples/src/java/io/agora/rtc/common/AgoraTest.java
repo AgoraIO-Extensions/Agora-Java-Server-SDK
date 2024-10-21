@@ -32,6 +32,12 @@ import sun.misc.SignalHandler;
 
 public class AgoraTest {
     protected final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
+    private final ThreadPoolExecutor testTaskExecutorService = new ThreadPoolExecutor(
+            0,
+            Integer.MAX_VALUE,
+            1L,
+            TimeUnit.SECONDS,
+            new SynchronousQueue<>());
 
     protected static String APPID;
     protected static String TOKEN;
@@ -477,15 +483,21 @@ public class AgoraTest {
             service.enableExtension("agora.builtin", "agora_audio_label_generator", "", true);
         }
 
-        connPool = new AgoraRtcConnPool((int) Math.ceil(connectionCount * 1.5));
+        // connPool = new AgoraRtcConnPool((int) Math.ceil(connectionCount * 1.5));
 
     }
 
     protected boolean createConnectionAndTest(RtcConnConfig ccfg, String channelId, String userId, TestTask testTask,
             long testTime) {
+        return createConnectionAndTest(ccfg, channelId, userId, testTask, testTime, true);
+    }
+
+    protected boolean createConnectionAndTest(RtcConnConfig ccfg, String channelId, String userId, TestTask testTask,
+            long testTime, boolean exitForAllTask) {
         SampleLogger.log("createConnectionAndTest start ccfg:" + ccfg + " channelId:" + channelId + " userId:" + userId
-                + " testTask:" + testTask + " testTime:" + testTime);
-        CompletableFuture.supplyAsync(() -> {
+                + " testTask:" + testTask + " testTime:" + testTime + " exitForAllTask:" + exitForAllTask);
+
+        testTaskExecutorService.execute(() -> {
             final CountDownLatch testFinishLatch = new CountDownLatch(1);
             final CountDownLatch connectedLatch = new CountDownLatch(1);
             AgoraConnectionTask connTask = new AgoraConnectionTask(service, testTime);
@@ -510,7 +522,7 @@ public class AgoraTest {
             });
             testTaskCount.incrementAndGet();
             connTask.createConnectionAndTest(ccfg, token, channelId, userId, enableEncryptionMode, encryptionMode,
-                    encryptionKey, enableCloudProxy == 1, connPool.getRtcConn(service, ccfg, false));
+                    encryptionKey, enableCloudProxy == 1);
 
             try {
                 connectedLatch.await();
@@ -605,18 +617,14 @@ public class AgoraTest {
             }
 
             SampleLogger.log("testTaskCount:" + testTaskCount.get());
-            if (testTaskCount.get() == 0 && !exitFlag) {
+            if (exitForAllTask && testTaskCount.get() == 0 && !exitFlag) {
                 singleExecutorService.execute(() -> {
                     exitTest();
                 });
             }
-            AgoraRtcConn conn = connTask.getConn();
             connTask = null;
             System.gc();
             SampleLogger.log("createConnectionAndTest done for connTask:" + testTask + " and exit connection");
-            return conn;
-        }).thenAccept(result -> {
-            connPool.addIdleConn(result);
         });
         return true;
     }
@@ -634,7 +642,8 @@ public class AgoraTest {
 
     public void cleanup() {
         singleExecutorService.shutdown();
-        connPool.releaseAllConn();
+        testTaskExecutorService.shutdown();
+        // connPool.releaseAllConn();
         // Destroy Agora Service
         if (null != service) {
             service.destroy();

@@ -5,9 +5,22 @@ import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.common.SampleLogger;
 import io.agora.rtc.test.common.AgoraTest;
 import java.util.Random;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
 
 public class StressTest extends AgoraTest {
     private long testStartTime;
+    private final ThreadPoolExecutor testTaskExecutorService;
+
+    public StressTest() {
+        this.testTaskExecutorService = new ThreadPoolExecutor(
+                0,
+                Integer.MAX_VALUE,
+                1L,
+                TimeUnit.SECONDS,
+                new SynchronousQueue<>());
+    }
 
     public static void main(String[] args) {
         startTest(args, new StressTest());
@@ -23,42 +36,28 @@ public class StressTest extends AgoraTest {
         ccfg.setAutoSubscribeVideo(0);
         ccfg.setChannelProfile(Constants.CHANNEL_PROFILE_LIVE_BROADCASTING);
 
-        int taskCount = 0;
         Random random = new Random();
 
-        while (checkTestTime()) {
-            int t1 = random.nextInt(5);
-            int t2 = random.nextInt(500);
-            int t3 = random.nextInt(5);
+        for (int i = 0; i < connectionCount; i++) {
+            final int threadId = i;
+            testTaskExecutorService.execute(() -> {
+                int taskCount = 0;
+                while (checkTestTime()) {
+                    int t1 = random.nextInt(5) + 5;
 
-            // 0 is send full file and set to 1 second
-            if (t1 == 0) {
-                t1 = 1;
-            }
-            if (t3 == 0) {
-                t3 = 1;
-            }
-            createConnectionAndTest(ccfg, channelId + taskCount, userId, TestTask.SEND_PCM, t1);
+                    createConnectionAndTest(ccfg, channelId + threadId + taskCount, userId, TestTask.SEND_PCM_YUV, t1,
+                            false);
 
-            try {
-                Thread.sleep(t2);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+                    taskCount++;
+                    SampleLogger.log("taskCount: " + taskCount);
 
-            if (videoFile.endsWith(".h264")) {
-                createConnectionAndTest(ccfg, channelId + taskCount, userId + "0", TestTask.SEND_H264, t3);
-            } else {
-                createConnectionAndTest(ccfg, channelId + taskCount, userId + "0", TestTask.SEND_YUV, t3);
-            }
-            taskCount++;
-            SampleLogger.log("taskCount: " + taskCount);
-
-            try {
-                Thread.sleep(sleepTime * 1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+                    try {
+                        Thread.sleep(sleepTime * 1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
         }
     }
 

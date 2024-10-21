@@ -51,7 +51,7 @@ public class FullTest extends AgoraTest {
                 });
                 connTask.createConnectionAndTest(ccfg, token, channelId, userId,
                         enableEncryptionMode, encryptionMode,
-                        encryptionKey, enableCloudProxy == 1, connPool.getRtcConn(service, ccfg, false));
+                        encryptionKey, enableCloudProxy == 1);
             }
         });
     }

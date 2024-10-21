@@ -130,8 +130,7 @@ public class AgoraConnectionTask {
     }
 
     public void createConnectionAndTest(RtcConnConfig ccfg, String token, String channelId, String userId,
-            int enableEncryptionMode, int encryptionMode, String encryptionKey, boolean enableCloudProxy,
-            AgoraRtcConn conn) {
+            int enableEncryptionMode, int encryptionMode, String encryptionKey, boolean enableCloudProxy) {
         SampleLogger
                 .log("createConnectionAndTest channelId:" + channelId + " userId:" + userId + " enableEncryptionMode:"
                         + enableEncryptionMode + " encryptionMode:" + encryptionMode + " encryptionKey:"
@@ -140,8 +139,8 @@ public class AgoraConnectionTask {
             SampleLogger.log("createAndInitAgoraService fail");
             return;
         }
-        this.conn = conn;
-        // conn = service.agoraRtcConnCreate(ccfg);
+        // this.conn = conn;
+        conn = service.agoraRtcConnCreate(ccfg);
         if (conn == null) {
             SampleLogger.log("AgoraService.agoraRtcConnCreate fail");
             return;
@@ -311,7 +310,7 @@ public class AgoraConnectionTask {
         conn.unregisterObserver();
         conn.getLocalUser().unregisterObserver();
 
-        // conn.destroy();
+        conn.destroy();
 
         customAudioTrack = null;
         customEncodedVideoTrack = null;
@@ -323,7 +322,7 @@ public class AgoraConnectionTask {
         audioEncodedFrameSender = null;
         localUserObserver = null;
         mediaNodeFactory = null;
-        // conn = null;
+        conn = null;
 
         singleExecutorService.shutdown();
         testTaskExecutorService.shutdown();
@@ -703,10 +702,10 @@ public class AgoraConnectionTask {
                 String testMetaData = "testMetaData";
                 externalVideoFrame.setMetadataBuffer(testMetaData.getBytes());
                 externalVideoFrame.setMetadataSize(testMetaData.getBytes().length);
-                videoFrameSender.send(externalVideoFrame);
+                int ret = videoFrameSender.send(externalVideoFrame);
                 frameIndex++;
 
-                SampleLogger.log("send yuv frame data size:" + data.length +
+                SampleLogger.log("send yuv frame data size:" + data.length + "  ret:" + ret +
                         " timestamp:" + timestamp + " frameIndex:" + frameIndex + " testStartTime:"
                         + Utils.formatTimestamp(testStartTime)
                         + " currentTime:" + Utils.getCurrentTime() + " testTime:" +
