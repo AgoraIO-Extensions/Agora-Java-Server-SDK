@@ -74,6 +74,8 @@ public class MediaDecodeUtils {
         Instant firstSendTime = Instant.now();
         try {
             SampleLogger.log("handleDecodedPcmYuv start duration:" + mediaDecode.getDuration());
+            long basePts = 0;
+            final long duration = mediaDecode.getDuration();
             while (started) {
                 long totalSendTime = Duration.between(firstSendTime, Instant.now()).toMillis();
                 MediaDecode.MediaFrame frame = mediaDecode.getFrame();
@@ -90,6 +92,10 @@ public class MediaDecodeUtils {
                             mediaDecode.close();
                             mediaDecode.open(filePath);
                             firstPts = 0;
+                            basePts += duration;
+                            if (basePts < 0) {
+                                basePts = 0;
+                            }
                         }
                         continue;
                     }
@@ -121,6 +127,7 @@ public class MediaDecodeUtils {
                     }
 
                     if (null != callback) {
+                        frame.pts += basePts;
                         callback.onAudioFrame(frame);
                     }
                 } else if (frame.frameType == MediaDecode.AVMediaType.VIDEO) {
@@ -130,6 +137,7 @@ public class MediaDecodeUtils {
                     }
 
                     if (null != callback) {
+                        frame.pts += basePts;
                         callback.onVideoFrame(frame);
                     }
                 } else {

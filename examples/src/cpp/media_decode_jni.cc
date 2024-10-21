@@ -146,8 +146,7 @@ JNIEXPORT jlong JNICALL Java_io_agora_rtc_mediautils_MediaDecode_getMediaDuratio
         return 0;
     }
 
-    // return get_media_duration((void *)decoder);
-    return 0;
+    return get_media_duration((void *)decoder);
 }
 
 JNIEXPORT jobject JNICALL Java_io_agora_rtc_mediautils_MediaDecode_getFrame(JNIEnv *env,
@@ -178,6 +177,7 @@ JNIEXPORT void JNICALL Java_io_agora_rtc_mediautils_MediaDecode_closeMediaFile(J
     if (decoder) {
         close_media_file((void *)decoder);
     }
+    currentPacket = nullptr;
 }
 
 JNIEXPORT jobject JNICALL Java_io_agora_rtc_mediautils_MediaDecode_getPacket(JNIEnv *env,
