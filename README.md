@@ -9,11 +9,10 @@ Ensure your server meets the following requirements:
 #### Operating System
 
 - Ubuntu (18.04 or later)
-- CentOS (6.6 or later)
+- CentOS (7.0 or later)
 
 #### CPU Architecture
 
-- arm64
 - x86-64
 
 > Note: For SDK integration on other architectures, please contact <sales@shengwang.cn>

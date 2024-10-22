@@ -9,11 +9,10 @@
 #### 操作系统
 
 - Ubuntu (18.04 或更高版本)
-- CentOS (6.6 或更高版本)
+- CentOS (7.0 或更高版本)
 
 #### CPU 架构
 
-- arm64
 - x86-64
 
 > 注：如需在其他架构上集成 SDK，请联系 <sales@shengwang.cn>
