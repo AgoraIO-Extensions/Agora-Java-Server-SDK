@@ -58,6 +58,12 @@ public class StressTest extends AgoraTest {
                 }
             });
         }
+
+        try {
+            Thread.sleep(testTime * 1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private boolean checkTestTime() {
