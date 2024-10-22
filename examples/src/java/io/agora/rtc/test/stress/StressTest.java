@@ -45,8 +45,7 @@ public class StressTest extends AgoraTest {
                 while (checkTestTime()) {
                     int t1 = random.nextInt(5) + 5;
 
-                    createConnectionAndTest(ccfg, channelId + threadId + taskCount, userId, TestTask.SEND_PCM_YUV, t1,
-                            false);
+                    createConnectionAndTest(ccfg, channelId + threadId + taskCount, userId, TestTask.SEND_PCM_YUV, t1);
 
                     taskCount++;
                     SampleLogger.log("taskCount: " + taskCount);

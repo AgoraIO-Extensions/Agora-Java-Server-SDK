@@ -1,1 +1,0 @@
-sh run.zsh io.agora.rtc.test.pcmyuv.LoopCreateDestroySendPcmYuvTest -channelId agaTdddest -userId 20241017 -connectionCount 25 -sampleRate 16000 -numOfChannels 1 -audioFile test_data/send_audio_16k_1ch.pcm -videoFile test_data/send_video_cif.yuv -height 288 -width 352 -fps 15 -testTime 86400 -sleepTime 10 -enableLog false

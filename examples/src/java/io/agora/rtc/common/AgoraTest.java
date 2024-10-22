@@ -41,7 +41,6 @@ public class AgoraTest {
 
     protected static String APPID;
     protected static String TOKEN;
-    public static volatile boolean exitFlag = false;
     protected static volatile AgoraService service;
     protected static volatile AgoraRtcConnPool connPool;
 
@@ -96,7 +95,7 @@ public class AgoraTest {
     class SignalFunc implements SignalHandler {
         public void handle(Signal arg0) {
             SampleLogger.log("catch signal " + arg0);
-            exitFlag = true;
+            testTaskCount.set(0);
         }
     }
 
@@ -117,7 +116,7 @@ public class AgoraTest {
         Signal.handle(new Signal("ABRT"), handler);
         Signal.handle(new Signal("INT"), handler);
         setup();
-        while (!exitFlag) {
+        while (testTaskCount.get() != 0) {
             try {
                 Thread.sleep(300);
             } catch (InterruptedException e) {
@@ -489,14 +488,9 @@ public class AgoraTest {
 
     protected boolean createConnectionAndTest(RtcConnConfig ccfg, String channelId, String userId, TestTask testTask,
             long testTime) {
-        return createConnectionAndTest(ccfg, channelId, userId, testTask, testTime, true);
-    }
-
-    protected boolean createConnectionAndTest(RtcConnConfig ccfg, String channelId, String userId, TestTask testTask,
-            long testTime, boolean exitForAllTask) {
         SampleLogger.log("createConnectionAndTest start ccfg:" + ccfg + " channelId:" + channelId + " userId:" + userId
-                + " testTask:" + testTask + " testTime:" + testTime + " exitForAllTask:" + exitForAllTask);
-
+                + " testTask:" + testTask + " testTime:" + testTime);
+        testTaskCount.incrementAndGet();
         testTaskExecutorService.execute(() -> {
             final CountDownLatch testFinishLatch = new CountDownLatch(1);
             final CountDownLatch connectedLatch = new CountDownLatch(1);
@@ -520,7 +514,6 @@ public class AgoraTest {
                     onStreamMessageReceive(userId, streamId, data, length);
                 }
             });
-            testTaskCount.incrementAndGet();
             connTask.createConnectionAndTest(ccfg, token, channelId, userId, enableEncryptionMode, encryptionMode,
                     encryptionKey, enableCloudProxy == 1);
 
@@ -617,11 +610,6 @@ public class AgoraTest {
             }
 
             SampleLogger.log("testTaskCount:" + testTaskCount.get());
-            if (exitForAllTask && testTaskCount.get() == 0 && !exitFlag) {
-                singleExecutorService.execute(() -> {
-                    exitTest();
-                });
-            }
             connTask = null;
             System.gc();
             SampleLogger.log("createConnectionAndTest done for connTask:" + testTask + " and exit connection");
@@ -649,15 +637,5 @@ public class AgoraTest {
             service.destroy();
             service = null;
         }
-    }
-
-    protected void exitTest() {
-        SampleLogger.log("all task test finished and exit test wait 3s");
-        try {
-            Thread.sleep(3000);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        exitFlag = true;
     }
 }
