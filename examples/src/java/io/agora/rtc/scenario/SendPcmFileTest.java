@@ -12,7 +12,6 @@ import io.agora.rtc.DefaultLocalUserObserver;
 import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
-import io.agora.rtc.SDK;
 import io.agora.rtc.common.AudioDataCache;
 import io.agora.rtc.common.SampleLogger;
 import io.agora.rtc.common.Utils;
@@ -48,7 +47,6 @@ public class SendPcmFileTest {
         token = keys[1];
         SampleLogger.log("read appId: " + appId + " token: " + token + " from .keys");
 
-        SDK.load(); // ensure JNI library load
         service = new AgoraService();
         AgoraServiceConfig config = new AgoraServiceConfig();
         config.setAppId(appId);
@@ -204,38 +202,77 @@ public class SendPcmFileTest {
             return;
         }
 
-        if (null != customAudioTrack && null != audioFrameSender) {
-            customAudioTrack.clearSenderBuffer();
-            conn.getLocalUser().unpublishAudio(customAudioTrack);
+        if (conn == null) {
+            return;
         }
 
-        // if (null != customEncodedVideoTrack && null != customEncodedImageSender) {
-        // conn.getLocalUser().unpublishVideo(customEncodedVideoTrack);
+        if (null != mediaNodeFactory) {
+            mediaNodeFactory.destroy();
+        }
+
+        if (null != audioFrameSender) {
+            audioFrameSender.destroy();
+        }
+
+        if (null != customAudioTrack) {
+            customAudioTrack.clearSenderBuffer();
+            conn.getLocalUser().unpublishAudio(customAudioTrack);
+            customAudioTrack.destroy();
+        }
+
+        // if (null != customEncodedImageSender) {
+        //     customEncodedImageSender.destroy();
         // }
 
-        // if (null != customVideoTrack && null != videoFrameSender) {
-        // conn.getLocalUser().unpublishVideo(customVideoTrack);
+        // if (null != customEncodedVideoTrack) {
+        //     conn.getLocalUser().unpublishVideo(customEncodedVideoTrack);
+        //     customEncodedVideoTrack.destroy();
         // }
 
-        // if (null != customEncodedAudioTrack && null != audioEncodedFrameSender) {
-        // conn.getLocalUser().unpublishAudio(customEncodedAudioTrack);
+        // if (null != videoFrameSender) {
+        //     videoFrameSender.destroy();
+        // }
+
+        // if (null != customVideoTrack) {
+        //     conn.getLocalUser().unpublishVideo(customVideoTrack);
+        //     customVideoTrack.destroy();
+        // }
+
+        // if (null != audioEncodedFrameSender) {
+        //     audioEncodedFrameSender.destroy();
+        // }
+
+        // if (null != customEncodedAudioTrack) {
+        //     conn.getLocalUser().unpublishAudio(customEncodedAudioTrack);
+        //     customEncodedAudioTrack.destroy();
         // }
 
         // if (null != localUserObserver) {
-        // localUserObserver.unsetAudioFrameObserver();
-        // localUserObserver.unsetVideoFrameObserver();
+        //     localUserObserver.unsetAudioFrameObserver();
+        //     localUserObserver.unsetVideoFrameObserver();
         // }
-
-        // Unregister connection observer
-        conn.unregisterObserver();
-        conn.getLocalUser().unregisterObserver();
 
         int ret = conn.disconnect();
         if (ret != 0) {
             SampleLogger.log("conn.disconnect fail ret=" + ret);
         }
+
+        // Unregister connection observer
+        conn.unregisterObserver();
+        conn.getLocalUser().unregisterObserver();
+
         conn.destroy();
 
+        customAudioTrack = null;
+        // customEncodedVideoTrack = null;
+        // customVideoTrack = null;
+        // customEncodedAudioTrack = null;
+        audioFrameSender = null;
+        // customEncodedImageSender = null;
+        // videoFrameSender = null;
+        // audioEncodedFrameSender = null;
+        // localUserObserver = null;
+        mediaNodeFactory = null;
         conn = null;
 
         SampleLogger.log("Disconnected from Agora channel successfully");

@@ -4,7 +4,6 @@ import io.agora.rtc.common.SampleLogger;
 import io.agora.rtc.common.Utils;
 import java.io.File;
 import java.util.Scanner;
-import io.agora.rtc.SDK;
 import io.agora.rtc.AgoraCameraCapturer;
 import io.agora.rtc.AgoraService;
 import io.agora.rtc.AgoraServiceConfig;
@@ -80,7 +79,6 @@ public class Publisher {
     }
 
     public static void main(String[] args) throws Exception {
-        SDK.load(); // ensure JNI library load
         AgoraService service = new AgoraService();
         AgoraServiceConfig config = new AgoraServiceConfig();
         config.setEnableAudioProcessor(1);

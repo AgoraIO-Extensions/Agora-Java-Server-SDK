@@ -19,7 +19,6 @@ import io.agora.rtc.EncodedVideoFrameInfo;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnInfo;
-import io.agora.rtc.SDK;
 import io.agora.rtc.VideoDimensions;
 import io.agora.rtc.VideoEncoderConfig;
 import io.agora.rtc.common.SampleLogger;
@@ -67,7 +66,6 @@ public class SendMp4Test {
         token = keys[1];
         SampleLogger.log("read appId: " + appId + " token: " + token + " from .keys");
 
-        SDK.load(); // ensure JNI library load
         service = new AgoraService();
         AgoraServiceConfig config = new AgoraServiceConfig();
         config.setAppId(appId);
@@ -288,21 +286,45 @@ public class SendMp4Test {
             return;
         }
 
-        if (null != customAudioTrack && null != audioFrameSender) {
+        if (null != mediaNodeFactory) {
+            mediaNodeFactory.destroy();
+        }
+
+        if (null != audioFrameSender) {
+            audioFrameSender.destroy();
+        }
+
+        if (null != customAudioTrack) {
             customAudioTrack.clearSenderBuffer();
             conn.getLocalUser().unpublishAudio(customAudioTrack);
+            customAudioTrack.destroy();
         }
 
-        if (null != customEncodedVideoTrack && null != customEncodedImageSender) {
+        if (null != customEncodedImageSender) {
+            customEncodedImageSender.destroy();
+        }
+
+        if (null != customEncodedVideoTrack) {
             conn.getLocalUser().unpublishVideo(customEncodedVideoTrack);
+            customEncodedVideoTrack.destroy();
         }
 
-        if (null != customVideoTrack && null != videoFrameSender) {
+        if (null != videoFrameSender) {
+            videoFrameSender.destroy();
+        }
+
+        if (null != customVideoTrack) {
             conn.getLocalUser().unpublishVideo(customVideoTrack);
+            customVideoTrack.destroy();
         }
 
-        // if (null != customEncodedAudioTrack && null != audioEncodedFrameSender) {
+        // if (null != audioEncodedFrameSender) {
+        // audioEncodedFrameSender.destroy();
+        // }
+
+        // if (null != customEncodedAudioTrack) {
         // conn.getLocalUser().unpublishAudio(customEncodedAudioTrack);
+        // customEncodedAudioTrack.destroy();
         // }
 
         // if (null != localUserObserver) {
@@ -310,16 +332,27 @@ public class SendMp4Test {
         // localUserObserver.unsetVideoFrameObserver();
         // }
 
-        // Unregister connection observer
-        conn.unregisterObserver();
-        conn.getLocalUser().unregisterObserver();
-
         int ret = conn.disconnect();
         if (ret != 0) {
             SampleLogger.log("conn.disconnect fail ret=" + ret);
         }
+
+        // Unregister connection observer
+        conn.unregisterObserver();
+        conn.getLocalUser().unregisterObserver();
+
         conn.destroy();
 
+        customAudioTrack = null;
+        customEncodedVideoTrack = null;
+        customVideoTrack = null;
+        // customEncodedAudioTrack = null;
+        audioFrameSender = null;
+        customEncodedImageSender = null;
+        videoFrameSender = null;
+        // audioEncodedFrameSender = null;
+        // localUserObserver = null;
+        mediaNodeFactory = null;
         conn = null;
 
         SampleLogger.log("Disconnected from Agora channel successfully");

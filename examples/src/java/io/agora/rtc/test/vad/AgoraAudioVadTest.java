@@ -2,7 +2,6 @@ package io.agora.rtc.test.vad;
 
 import io.agora.rtc.AgoraAudioVad;
 import io.agora.rtc.AgoraAudioVadConfig;
-import io.agora.rtc.SDK;
 import io.agora.rtc.VadProcessResult;
 import io.agora.rtc.common.FileSender;
 import io.agora.rtc.common.FileWriter;
@@ -58,6 +57,7 @@ public class AgoraAudioVadTest extends AgoraTest {
                 int length = fos.read(pcmData);
                 if (length == -1) {
                     SampleLogger.log("AudioVadTest readOneFrame end of file");
+                    testTaskCount.decrementAndGet();
                     testFinish();
                     release();
                     return null;
@@ -72,7 +72,6 @@ public class AgoraAudioVadTest extends AgoraTest {
     @Override
     public void setup() {
         super.setup();
-        SDK.load();
         audioVad = new AgoraAudioVad();
         int ret = audioVad.initialize(new AgoraAudioVadConfig());
         SampleLogger.log("AudioVadTest setup ret:" + ret);
@@ -81,6 +80,7 @@ public class AgoraAudioVadTest extends AgoraTest {
             if (output.exists()) {
                 output.delete();
             }
+            testTaskCount.incrementAndGet();
             fileWriter = new FileWriter(audioOutFile);
             PcmReader pcmReader = new PcmReader(audioFile, 10, audioVad);
             pcmReader.start();
@@ -95,7 +95,7 @@ public class AgoraAudioVadTest extends AgoraTest {
             File outFile = new File(audioOutFile);
             if (expectedFile.exists() && outFile.exists() && Utils.areFilesIdentical(audioExpectedFile, audioOutFile)) {
                 SampleLogger.log("AudioVadTest passed");
-                exitTest();
+                cleanup();
             } else {
                 SampleLogger.log("AudioVadTest failed");
             }

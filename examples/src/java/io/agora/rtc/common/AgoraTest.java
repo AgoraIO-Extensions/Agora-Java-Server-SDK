@@ -79,7 +79,7 @@ public class AgoraTest {
     protected int enableAudioCache = 1;
 
     protected int useStringUid = 0;
-    private AtomicInteger testTaskCount = new AtomicInteger(0);
+    protected AtomicInteger testTaskCount = new AtomicInteger(0);
 
     public enum TestTask {
         NONE, SEND_PCM, SEND_YUV, SEND_YUV_DUAL_STREAM, SEND_H264, SEND_H264_DUAL_STREAM, SEND_AAC, SEND_OPUS, SEND_MP4,

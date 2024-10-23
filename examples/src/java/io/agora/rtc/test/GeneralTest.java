@@ -6,7 +6,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.util.Scanner;
-import io.agora.rtc.SDK;
 import io.agora.rtc.AgoraService;
 import io.agora.rtc.AgoraServiceConfig;
 import io.agora.rtc.DefaultRtcConnObserver;
@@ -34,7 +33,6 @@ public class GeneralTest {
     @Test
     public void joinChannelTest() throws Exception {
         String token = Utils.readAppIdAndToken(".keys")[1];
-        SDK.load(); // ensure JNI library load
         AgoraService service = new AgoraService();
         AgoraServiceConfig config = new AgoraServiceConfig();
         config.setEnableAudioProcessor(0);

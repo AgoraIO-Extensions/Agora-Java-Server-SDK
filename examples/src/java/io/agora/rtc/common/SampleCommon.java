@@ -3,7 +3,6 @@ package io.agora.rtc.common;
 import io.agora.rtc.AgoraService;
 import io.agora.rtc.AgoraServiceConfig;
 import io.agora.rtc.Constants;
-import io.agora.rtc.SDK;
 
 public class SampleCommon {
 
@@ -13,7 +12,6 @@ public class SampleCommon {
     public static AgoraService createAndInitAgoraService(int enableAudioDevice, int enableAudioProcessor,
             int enableVideo,
             int useStringUid, String appId) {
-        SDK.load(); // ensure JNI library load
         AgoraService service = new AgoraService();
         AgoraServiceConfig config = new AgoraServiceConfig();
         config.setAppId(appId);
