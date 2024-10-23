@@ -312,16 +312,17 @@ public class AgoraConnectionTask {
 
         conn.destroy();
 
-        customAudioTrack = null;
-        customEncodedVideoTrack = null;
-        customVideoTrack = null;
-        customEncodedAudioTrack = null;
-        audioFrameSender = null;
-        customEncodedImageSender = null;
-        videoFrameSender = null;
-        audioEncodedFrameSender = null;
-        localUserObserver = null;
         mediaNodeFactory = null;
+        audioFrameSender = null;
+        customAudioTrack = null;
+        customEncodedImageSender = null;
+        customEncodedVideoTrack = null;
+        videoFrameSender = null;
+        customVideoTrack = null;
+        audioEncodedFrameSender = null;
+        customEncodedAudioTrack = null;
+        localUserObserver = null;
+
         conn = null;
 
         singleExecutorService.shutdown();

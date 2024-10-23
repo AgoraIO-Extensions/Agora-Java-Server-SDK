@@ -319,17 +319,17 @@ public class SendMp4Test {
         }
 
         // if (null != audioEncodedFrameSender) {
-        // audioEncodedFrameSender.destroy();
+        //     audioEncodedFrameSender.destroy();
         // }
 
         // if (null != customEncodedAudioTrack) {
-        // conn.getLocalUser().unpublishAudio(customEncodedAudioTrack);
-        // customEncodedAudioTrack.destroy();
+        //     conn.getLocalUser().unpublishAudio(customEncodedAudioTrack);
+        //     customEncodedAudioTrack.destroy();
         // }
 
         // if (null != localUserObserver) {
-        // localUserObserver.unsetAudioFrameObserver();
-        // localUserObserver.unsetVideoFrameObserver();
+        //     localUserObserver.unsetAudioFrameObserver();
+        //     localUserObserver.unsetVideoFrameObserver();
         // }
 
         int ret = conn.disconnect();
@@ -343,16 +343,17 @@ public class SendMp4Test {
 
         conn.destroy();
 
-        customAudioTrack = null;
-        customEncodedVideoTrack = null;
-        customVideoTrack = null;
-        // customEncodedAudioTrack = null;
-        audioFrameSender = null;
-        customEncodedImageSender = null;
-        videoFrameSender = null;
-        // audioEncodedFrameSender = null;
-        // localUserObserver = null;
         mediaNodeFactory = null;
+        audioFrameSender = null;
+        customAudioTrack = null;
+        customEncodedImageSender = null;
+        customEncodedVideoTrack = null;
+        videoFrameSender = null;
+        customVideoTrack = null;
+        // audioEncodedFrameSender = null;
+        // customEncodedAudioTrack = null;
+        // localUserObserver = null;
+
         conn = null;
 
         SampleLogger.log("Disconnected from Agora channel successfully");

@@ -13,19 +13,23 @@ import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
 import io.agora.rtc.common.AudioDataCache;
+import io.agora.rtc.common.FileSender;
 import io.agora.rtc.common.SampleLogger;
 import io.agora.rtc.common.Utils;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class SendPcmFileTest {
+public class SendPcmRealTimeTest {
     private static String appId;
     private static String token;
-    private static String DEFAULT_LOG_PATH = "agora_logs/agorasdk.log";
-    private static int DEFAULT_LOG_SIZE = 512 * 1024; // default log size is 512 kb
-    private static String channelId = "agaa";
-    private static String userId = "12345";
+    private static final String DEFAULT_LOG_PATH = "agora_logs/agorasdk.log";
+    private static final int DEFAULT_LOG_SIZE = 512 * 1024; // default log size is 512 kb
+    private static final String channelId = "agaa";
+    private static final String userId = "12345";
+    private static final String filePath = "test_data/send_audio_16k_1ch.pcm";
 
     private static AgoraService service;
     private static AgoraRtcConn conn;
@@ -164,36 +168,94 @@ public class SendPcmFileTest {
         customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
         conn.getLocalUser().publishAudio(customAudioTrack);
 
-        AudioDataCache audioDataCache = new AudioDataCache(numOfChannels, sampleRate);
+        int interval = 10;// ms
 
-        final byte[] pcmData = Utils.readPcmFromFile("test_data/send_audio_16k_1ch.pcm");
+        int bufferSize = numOfChannels * (sampleRate / 1000) * interval * 2;
+        byte[] buffer = new byte[bufferSize];
 
-        audioDataCache.pushData(pcmData);
-        SampleLogger.log("pushData");
+        FileSender pcmSendThread = new FileSender(filePath, interval) {
+            private AudioDataCache audioDataCache = null;
 
-        byte[] sendData = null;
-        while (true) {
-            // If the remaining cache duration is less than 60 ms, push data into the cache
-            if (audioDataCache.getRemainingCacheDurationInMs() < 60) {
-                audioDataCache.pushData(pcmData);
-                SampleLogger.log("pushData");
+            @Override
+            public void sendOneFrame(byte[] data, long timestamp) {
+                if (data == null) {
+                    return;
+                }
+
+                byte[] sendData = null;
+                if (null != audioDataCache) {
+                    sendData = audioDataCache.getData();
+                } else {
+                    sendData = data;
+                }
+
+                if (sendData == null) {
+                    return;
+                }
+
+                int samplesPerChannel;
+                if (null != audioDataCache) {
+                    samplesPerChannel = audioDataCache.getSamplesPerChannel(sendData.length);
+                } else {
+                    samplesPerChannel = sendData.length / 2 / numOfChannels;
+                }
+
+                if (null != audioFrameSender) {
+                    int ret = audioFrameSender.send(sendData, 0,
+                            samplesPerChannel, 2,
+                            numOfChannels,
+                            sampleRate);
+                    SampleLogger.log("send pcm frame data size:" + sendData.length + " sampleRate:" + sampleRate
+                            + " numOfChannels:" + numOfChannels
+                            + " to channelId:"
+                            + channelId + " from userId:" + userId + " ret:" + ret);
+                } else {
+                    release(false);
+                }
             }
-            sendData = audioDataCache.getData();
-            int ret = audioFrameSender.send(sendData, 0,
-                    audioDataCache.getSamplesPerChannel(sendData.length), 2,
-                    numOfChannels,
-                    sampleRate);
-            // SampleLogger.log("send ret:" + ret);
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+
+            @Override
+            public byte[] readOneFrame(FileInputStream fos) {
+                if (fos != null) {
+                    try {
+                        int size = fos.read(buffer, 0, bufferSize);
+                        if (size < 0) {
+                            reset();
+                            return null;
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                if (null == audioDataCache) {
+                    audioDataCache = new AudioDataCache(numOfChannels, sampleRate);
+                }
+                audioDataCache.pushData(buffer);
+                return buffer;
             }
+
+            @Override
+            public void release(boolean withJoin) {
+                super.release(withJoin);
+                if (null != audioDataCache) {
+                    audioDataCache.clear();
+                }
+            }
+        };
+
+        pcmSendThread.start();
+
+        try {
+            pcmSendThread.join();
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
-        // if (null != exitLatch) {
-        // exitLatch.countDown();
-        // }
+        if (null != exitLatch) {
+            exitLatch.countDown();
+        }
     }
 
     private static void releaseConn() {
