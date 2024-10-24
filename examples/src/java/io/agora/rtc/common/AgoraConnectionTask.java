@@ -642,9 +642,10 @@ public class AgoraConnectionTask {
     }
 
     public void sendYuvTask(String filePath, int interval, int height, int width, int fps, int streamType,
-            boolean enableSimulcastStream, boolean waitRelease) {
+            boolean enableSimulcastStream, boolean waitRelease, boolean enableAlpha) {
         SampleLogger.log("sendYuvTask filePath:" + filePath + " interval:" + interval + " height:" + height + " width:"
-                + width + " streamType:" + streamType + " enableSimulcastStream:" + enableSimulcastStream);
+                + width + " streamType:" + streamType + " enableSimulcastStream:" + enableSimulcastStream
+                + " enableAlpha:" + enableAlpha);
 
         if (videoFrameSender == null) {
             videoFrameSender = mediaNodeFactory.createVideoFrameSender();
@@ -655,6 +656,7 @@ public class AgoraConnectionTask {
             config.setCodecType(Constants.VIDEO_CODEC_H264);
             config.setDimensions(new VideoDimensions(width, height));
             config.setFrameRate(fps);
+            config.setEncodeAlpha(enableAlpha ? 1 : 0);
             customVideoTrack.setVideoEncoderConfig(config);
             if (enableSimulcastStream) {
                 VideoDimensions lowDimensions = new VideoDimensions(width / 2, height / 2);
@@ -676,6 +678,7 @@ public class AgoraConnectionTask {
         FileSender yuvSender = new FileSender(filePath, interval) {
             private int frameIndex = 0;
             private ByteBuffer byteBuffer;
+            private ByteBuffer alphaByteBuffer;
 
             @Override
             public void sendOneFrame(byte[] data, long timestamp) {
@@ -703,6 +706,15 @@ public class AgoraConnectionTask {
                 String testMetaData = "testMetaData";
                 externalVideoFrame.setMetadataBuffer(testMetaData.getBytes());
                 externalVideoFrame.setMetadataSize(testMetaData.getBytes().length);
+                if (enableAlpha) {
+                    if (null == alphaByteBuffer) {
+                        alphaByteBuffer = ByteBuffer.allocateDirect(data.length);
+                    }
+                    alphaByteBuffer.put(data);
+                    alphaByteBuffer.flip();
+                    externalVideoFrame.setAlphaBuffer(alphaByteBuffer);
+                }
+
                 int ret = videoFrameSender.send(externalVideoFrame);
                 frameIndex++;
 
@@ -748,6 +760,7 @@ public class AgoraConnectionTask {
             public void release(boolean withJoin) {
                 super.release(withJoin);
                 Utils.cleanDirectBuffer(byteBuffer);
+                Utils.cleanDirectBuffer(alphaByteBuffer);
             }
 
         };
