@@ -40,7 +40,7 @@ if $build_ff; then
         -I$JAVA_HOME/include/linux \
         -I$FFMPEG_INCLUDE_DIR \
         -L$FFMPEG_LIB_DIR \
-        src/cpp/media_decode_jni.c \
+        src/cpp/media_decode_jni.cc \
         src/cpp/decode_media.c \
         -lavformat -lavcodec -lavutil -lswresample -lswscale \
         -Wl,-rpath=$FFMPEG_LIB_DIR

@@ -26,10 +26,10 @@ public class FileWriter {
 
             try {
                 fos = new FileOutputStream(fileName);
-                System.out.printf("Created file %s to save received PCM samples",
+                SampleLogger.log("Created file to save received PCM samples fielName:" +
                         fileName);
             } catch (FileNotFoundException e) {
-                System.out.println("Open file fail");
+                SampleLogger.log("Open file fail");
             }
         }
     }
@@ -57,7 +57,7 @@ public class FileWriter {
                 fileSize_ = 0;
             }
         } catch (IOException e) {
-            System.out.println("file write exception");
+            SampleLogger.log("file write exception");
         }
     }
 
@@ -86,7 +86,7 @@ public class FileWriter {
                 fileSize_ = 0;
             }
         } catch (IOException e) {
-            System.out.println("file write exception");
+            SampleLogger.log("file write exception");
         }
     }
 

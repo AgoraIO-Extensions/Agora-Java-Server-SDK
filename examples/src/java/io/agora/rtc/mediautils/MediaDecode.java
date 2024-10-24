@@ -6,6 +6,7 @@ public class MediaDecode {
     }
 
     private long decoder = 0;
+    private boolean isEndOfFileReached = false;
 
     public static class MediaFrame {
         public int streamIndex;
@@ -21,6 +22,7 @@ public class MediaDecode {
         public int height;
         public int stride;
         public int fps;
+        public boolean isKeyFrame;
 
         // audio fields
         public int samples;
@@ -40,10 +42,36 @@ public class MediaDecode {
                     ", height=" + height +
                     ", stride=" + stride +
                     ", fps=" + fps +
+                    ", isKeyFrame=" + isKeyFrame +
                     ", samples=" + samples +
                     ", channels=" + channels +
                     ", sampleRate=" + sampleRate +
                     ", bytesPerSample=" + bytesPerSample +
+                    '}';
+        }
+    }
+
+    public static class MediaPacket {
+        public byte[] buffer;
+        public int mediaType;
+        public long pts;
+        public int flags;
+
+        public int width;
+        public int height;
+        public int framerateNum;
+        public int framerateDen;
+
+        @Override
+        public String toString() {
+            return "MediaPacket{" +
+                    "mediaType=" + mediaType +
+                    ", pts=" + pts +
+                    ", flags=" + flags +
+                    ", width=" + width +
+                    ", height=" + height +
+                    ", framerateNum=" + framerateNum +
+                    ", framerateDen=" + framerateDen +
                     '}';
         }
     }
@@ -58,7 +86,7 @@ public class MediaDecode {
         public static final int NB = 5;
 
         private AVMediaType() {
-        } // 私有构造函数防止实例化
+        }
     }
 
     public static class AVSampleFormat {
@@ -78,7 +106,7 @@ public class MediaDecode {
         public static final int NB = 10; // Number of sample formats. DO NOT USE if linking dynamically
 
         private AVSampleFormat() {
-        } // 私有构造函数防止实例化
+        }
     }
 
     public static class AVPixelFormat {
@@ -87,11 +115,23 @@ public class MediaDecode {
         public static final int YUYV422 = 1; // packed YUV 4:2:2, 16bpp, Y0 Cb Y1 Cr
 
         private AVPixelFormat() {
-        } // 私有构造函数防止实例化
+        }
+    }
+
+    public static class AVPktFlag {
+        public static final int KEY = 0x0001;
+
+        private AVPktFlag() {
+        }
+    }
+
+    public boolean isEndOfFileReached() {
+        return isEndOfFileReached;
     }
 
     public boolean open(String fileName) {
         decoder = openMediaFile(fileName);
+        isEndOfFileReached = false;
         return decoder != 0;
     }
 
@@ -116,6 +156,34 @@ public class MediaDecode {
         return getMediaDuration(decoder);
     }
 
+    public MediaPacket getPacket() {
+        if (decoder == 0) {
+            return null;
+        }
+        return getPacket(decoder);
+    }
+
+    public int freePacket(MediaPacket packet) {
+        if (decoder == 0) {
+            return -1;
+        }
+        return freePacket(decoder, packet);
+    }
+
+    public MediaPacket convertH264ToAnnexB(MediaPacket packet) {
+        if (decoder == 0) {
+            return null;
+        }
+        return convertH264ToAnnexB(decoder, packet);
+    }
+
+    public MediaFrame decodePacket(MediaPacket packet) {
+        if (decoder == 0) {
+            return null;
+        }
+        return decodePacket(decoder, packet);
+    }
+
     private native long openMediaFile(String fileName);
 
     private native long getMediaDuration(long decoder);
@@ -124,4 +192,11 @@ public class MediaDecode {
 
     private native void closeMediaFile(long decoder);
 
+    private native MediaPacket getPacket(long decoder);
+
+    private native int freePacket(long decoder, MediaPacket packet);
+
+    private native MediaPacket convertH264ToAnnexB(long decoder, MediaPacket packet);
+
+    private native MediaFrame decodePacket(long decoder, MediaPacket packet);
 }

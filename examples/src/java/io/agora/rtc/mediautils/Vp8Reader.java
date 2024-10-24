@@ -1,7 +1,5 @@
 package io.agora.rtc.mediautils;
 
-import io.agora.rtc.Constants;
-
 public class Vp8Reader {
     private String path;
     private long cptr = 0L;

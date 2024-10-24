@@ -8,12 +8,11 @@ Ensure your server meets the following requirements:
 
 #### Operating System
 
-- Ubuntu (14.04 or later)
-- CentOS (6.6 or later)
+- Ubuntu (18.04 or later)
+- CentOS (7.0 or later)
 
 #### CPU Architecture
 
-- arm64
 - x86-64
 
 > Note: For SDK integration on other architectures, please contact <sales@shengwang.cn>
@@ -42,8 +41,6 @@ Please refer to the [official example documentation](https://doc.shengwang.cn/do
 ## Download SDK
 
 [Official Download](https://doc.shengwang.cn/doc/rtc-server-sdk/java/resources)
-
-[Latest Project Version](https://download.agora.io/sdk/release/linux-java-sdk-2.0_04af2fa340.zip)
 
 ## Testing API Examples
 

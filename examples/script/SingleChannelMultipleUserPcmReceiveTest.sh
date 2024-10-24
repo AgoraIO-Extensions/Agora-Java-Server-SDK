@@ -1,1 +1,1 @@
-sh run.zsh io.agora.rtc.test.ai.SingleChannelMultipleUserPcmReceiveTest -channelId pcmTestChannel -userId 11400 -connectionCount 10 -sampleRate 16000 -numOfChannels 1 -audioOutFile test_data_out/received_pcm -testTime 86400
+sh run.zsh io.agora.rtc.test.pcm.SingleChannelMultipleUserPcmReceiveTest -channelId pcmTestChannel -userId 11400 -connectionCount 10 -sampleRate 16000 -numOfChannels 1 -audioOutFile test_data_out/received_pcm -testTime 86400

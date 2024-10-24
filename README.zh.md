@@ -8,12 +8,11 @@
 
 #### 操作系统
 
-- Ubuntu (14.04 或更高版本)
-- CentOS (6.6 或更高版本)
+- Ubuntu (18.04 或更高版本)
+- CentOS (7.0 或更高版本)
 
 #### CPU 架构
 
-- arm64
 - x86-64
 
 > 注：如需在其他架构上集成 SDK，请联系 <sales@shengwang.cn>
@@ -42,8 +41,6 @@
 ## 下载SDK
 
 [官网下载](https://doc.shengwang.cn/doc/rtc-server-sdk/java/resources)
-
-[最新工程版本](https://download.agora.io/sdk/release/linux-java-sdk-2.0_04af2fa340.zip)
 
 ## 测试API Examples
 

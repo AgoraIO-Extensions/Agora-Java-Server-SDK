@@ -1,9 +1,9 @@
 package io.agora.rtc.test;
 
+import io.agora.rtc.common.SampleLogger;
 import io.agora.rtc.common.Utils;
 import java.io.File;
 import java.util.Scanner;
-import io.agora.rtc.SDK;
 import io.agora.rtc.AgoraCameraCapturer;
 import io.agora.rtc.AgoraService;
 import io.agora.rtc.AgoraServiceConfig;
@@ -32,7 +32,7 @@ public class Publisher {
 
         @Override
         public void onConnected(AgoraRtcConn conn, RtcConnInfo rtcConnInfo, int reason) {
-            System.out.println("join success");
+            SampleLogger.log("join success");
             AgoraLocalUser localUser = conn.getLocalUser();
 
             this.localAudioTrack.setEnabled(1);
@@ -47,14 +47,14 @@ public class Publisher {
         AgoraCameraCapturer cameraCapturer = factory.createCameraCapturer();
         AgoraDeviceInfo deviceInfo = cameraCapturer.createDeviceInfo();
         int nDevices = deviceInfo.numberOfDevices();
-        System.out.println("detected " + nDevices + " camera(s)");
+        SampleLogger.log("detected " + nDevices + " camera(s)");
 
         Out<String> deviceName = new Out<String>();
         Out<String> deviceId = new Out<String>();
         Out<String> productUniqueId = new Out<String>();
         deviceInfo.getDeviceName(0, deviceName, deviceId, productUniqueId);
         int nCaps = deviceInfo.numberOfCapabilities(deviceId.get());
-        System.out.println("using camera: " + deviceName.get() + ", device id: " + deviceId.get() + ", caps: " + nCaps);
+        SampleLogger.log("using camera: " + deviceName.get() + ", device id: " + deviceId.get() + ", caps: " + nCaps);
         cameraCapturer.initWithDeviceId(deviceId.get());
 
         VideoFormat captureFormat = new VideoFormat(720, 480, /* fps */ 30);
@@ -79,7 +79,6 @@ public class Publisher {
     }
 
     public static void main(String[] args) throws Exception {
-        SDK.load(); // ensure JNI library load
         AgoraService service = new AgoraService();
         AgoraServiceConfig config = new AgoraServiceConfig();
         config.setEnableAudioProcessor(1);

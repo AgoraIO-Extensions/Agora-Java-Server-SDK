@@ -1,13 +1,14 @@
 package io.agora.rtc.common;
 
 import java.io.FileInputStream;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.util.Arrays;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -101,5 +102,21 @@ public class Utils {
 
     public static boolean isNullOrEmpty(String str) {
         return str == null || str.isEmpty();
+    }
+
+    public static byte[] readPcmFromFile(String filePath) {
+        try {
+            return Files.readAllBytes(Paths.get(filePath));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static void cleanDirectBuffer(ByteBuffer buffer) {
+        if (null != buffer && buffer.isDirect()) {
+            buffer = null;
+            System.gc();
+        }
     }
 }

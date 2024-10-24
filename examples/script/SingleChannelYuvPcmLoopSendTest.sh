@@ -1,1 +1,1 @@
-sh run.zsh io.agora.rtc.test.ai.SingleChannelYuvPcmLoopSendTest -channelId agaSingleTest -userId 11124 -sampleRate 16000 -numOfChannels 1 -audioFile test_data/send_audio_16k_1ch.pcm -videoFile test_data/360p_I420.yuv -height 360 -width 640 -fps 15 -testTime 86400
+sh run.zsh io.agora.rtc.test.pcmyuv.SingleChannelYuvPcmLoopSendTest -channelId agaSingleTest -userId 11124 -sampleRate 16000 -numOfChannels 1 -audioFile test_data/send_audio_16k_1ch.pcm -videoFile test_data/360p_I420.yuv -height 360 -width 640 -fps 15 -testTime 86400
