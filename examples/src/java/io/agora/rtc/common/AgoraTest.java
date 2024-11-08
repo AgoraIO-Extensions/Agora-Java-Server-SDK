@@ -44,7 +44,7 @@ public class AgoraTest {
     protected static volatile AgoraService service;
     protected static volatile AgoraRtcConnPool connPool;
 
-    protected String token = TOKEN;
+    protected String token = "";
     protected String userId = "";
     protected String channelId = "aga";
     protected String remoteUserId = "";
@@ -89,7 +89,7 @@ public class AgoraTest {
         SEND_DATA_STREAM,
         SEND_PCM_YUV,
         RECEIVE_PCM, RECEIVE_YUV,
-        RECEIVE_H264, RECEIVE_MIXED_AUDIO,
+        RECEIVE_H264, RECEIVE_MIXED_AUDIO, RECEIVE_ENCODED_AUDIO,
         SEND_RECEIVE_PCM_YUV
     }
 
@@ -104,6 +104,7 @@ public class AgoraTest {
         String[] keys = Utils.readAppIdAndToken(".keys");
         APPID = keys[0];
         TOKEN = keys[1];
+        token = TOKEN;
         SampleLogger.log("read APPID: " + APPID + " TOKEN: " + TOKEN + " from .keys");
     }
 
@@ -588,6 +589,9 @@ public class AgoraTest {
                 connTask.registerH264ObserverTask(remoteUserId,
                         ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + "_" + userId + ".h264"),
                         streamType, true);
+            } else if (TestTask.RECEIVE_ENCODED_AUDIO == testTask) {
+                connTask.registerEncodedAudioObserverTask("", ("".equals(audioOutFile)) ? "" : audioOutFile, fileType,
+                        true);
             } else if (TestTask.SEND_RECEIVE_PCM_YUV == testTask) {
                 connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, false, enableAudioCache == 1);
                 connTask.sendYuvTask(videoFile, 1000 / fps, height, width, fps, Constants.VIDEO_STREAM_HIGH,

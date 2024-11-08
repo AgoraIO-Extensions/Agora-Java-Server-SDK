@@ -2,31 +2,27 @@
 
 ## 目录
 
-1. [环境配置](#环境配置)
-2. [项目设置](#项目设置)
-3. [编译步骤](#编译步骤)
-4. [运行测试](#运行测试)
-5. [注意事项](#注意事项)
+1. [环境准备](#环境准备)
+2. [项目配置](#项目配置)
+3. [编译过程](#编译过程)
+4. [运行示例](#运行示例)
+5. [常见问题](#常见问题)
 
-## 环境配置
+## 环境准备
 
-### FFmpeg 开发库安装（可选）
+### 安装 FFmpeg（可选，用于 MP4 相关测试）
 
-> **注意**：如需测试 MP4 相关用例，此步骤为必须。
-
-1. 更新系统软件包：
+1. 更新系统包：
 
    ```bash
    sudo apt update
    ```
 
-2. 安装 FFmpeg（需要 7.0 及以上版本）：
+2. 安装 FFmpeg（需要 7.0+）：
 
    ```bash
    sudo apt install ffmpeg
    ```
-
-   *如果系统不支持 apt 直接安装，需要源码安装。*
 
 3. 安装 FFmpeg 开发库：
 
@@ -34,24 +30,21 @@
    sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
    ```
 
-4. 查看库依赖路径：
+4. 获取库依赖路径：
 
    ```bash
    pkg-config --cflags --libs libavformat libavcodec libavutil libswresample libswscale
    ```
 
-5. 根据第 4 步的输出更新 `build.sh` 中的 `FFMPEG_INCLUDE_DIR` 和 `FFMPEG_LIB_DIR` 路径。
+5. 更新 `build.sh` 中的 `FFMPEG_INCLUDE_DIR` 和 `FFMPEG_LIB_DIR`。
 
-## 项目设置
+## 项目配置
 
-### 配置 APP_ID 和 TOKEN
-
-1. 在 `examples` 目录下创建 `.keys` 文件。
-2. 添加以下内容（替换 XXX 为实际值）：
+1. 创建 `examples/.keys` 文件，添加：
 
    ```
-   APP_ID=XXX
-   TOKEN=XXX
+   APP_ID=your_app_id
+   TOKEN=your_token
    ```
 
    *如果未开启证书，TOKEN 值可为空，例如：*
@@ -61,21 +54,18 @@
    TOKEN=
    ```
 
-## 编译步骤
+2. 准备 SDK 文件：
+   - 重命名 JAR 为 `agora-sdk.jar`
+   - 放入 `libs/` 目录
 
-1. **添加 SDK JAR**
-   - 将 `agora-sdk.jar` 放入 `libs` 目录。
+3. 提取 SO 文件：
 
-2. **提取 SO 文件**
-   - 解压 `agora-sdk.jar`：
+   ```bash
+   jar xvf agora-sdk.jar
+   mv native/linux/x86_64/*.so libs/
+   ```
 
-     ```bash
-     jar xvf agora-sdk.jar
-     ```
-
-   - 将 `native/linux/x86_64/` 中的 `.so` 文件移至 `libs` 目录。
-
-   目录结构应如下：
+   确保目录结构如下：
 
    ```
    libs/
@@ -83,21 +73,17 @@
    └── lib***.so
    ```
 
-3. **编译项目**
+## 编译过程
 
-   ```bash
-   ./build.sh [选项]
-   ```
+执行编译脚本：
 
-   选项：
-   - `-ff`：编译 FFmpeg 相关库（MP4 测试必需）
-   - `-vad`：测试 VAD 库用例（必需）
+```bash
+./build.sh [-ff]
+```
 
-   示例：
-   - 测试 MP4 文件：`./build.sh -ff`
-   - 测试 Vad：`./build.sh -vad`
+- 使用 `-ff` 选项编译 FFmpeg 相关库（MP4 测试必需）
 
-## 运行测试
+## 运行示例
 
 1. 进入示例目录：
 
@@ -105,17 +91,17 @@
    cd examples
    ```
 
-2. 执行测试脚本：
+2. 运行测试脚本：
 
    ```bash
    ./script/TestCaseName.sh
    ```
 
-3. 修改测试参数：直接编辑对应的 `.sh` 文件。
+3. 修改测试参数：直接编辑对应的 `.sh` 文件
 
-## 注意事项
+## 常见问题
 
-- 确保已安装 Java 环境并正确配置环境变量。
-- 验证 `agora-sdk.jar` 版本与项目兼容。
-- 运行测试前，确认 `APP_ID` 和 `TOKEN` 配置正确。
-- 按顺序执行步骤，以避免依赖问题。
+- 确保 Java 环境正确安装和配置
+- 验证 `agora-sdk.jar` 版本兼容性
+- 运行前检查 `APP_ID` 和 `TOKEN` 配置
+- 按顺序执行步骤，避免依赖问题

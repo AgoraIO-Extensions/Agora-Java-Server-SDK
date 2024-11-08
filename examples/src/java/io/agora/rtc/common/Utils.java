@@ -1,6 +1,8 @@
 package io.agora.rtc.common;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilenameFilter;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -117,6 +119,33 @@ public class Utils {
         if (null != buffer && buffer.isDirect()) {
             buffer = null;
             System.gc();
+        }
+    }
+
+    public static String bytesToHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02X", b));
+        }
+        return sb.toString();
+    }
+
+    public static void deleteAllFile(String filePath) {
+        File directory = new File(filePath).getParentFile();
+
+        if (directory != null && directory.isDirectory()) {
+            File[] filesToDelete = directory.listFiles(new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String name) {
+                    return name.startsWith(new File(filePath).getName());
+                }
+            });
+
+            if (filesToDelete != null) {
+                for (File file : filesToDelete) {
+                    file.delete();
+                }
+            }
         }
     }
 }

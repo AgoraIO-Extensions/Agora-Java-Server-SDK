@@ -20,14 +20,14 @@ public class FileWriter {
 
     private void checkState() {
         if (fos == null) {
-            String fileName = (++fileCount > 1)
-                    ? (filePath + fileCount)
-                    : filePath;
+            // String fileName = (++fileCount > 1)
+            // ? (filePath + fileCount)
+            // : filePath;
 
             try {
-                fos = new FileOutputStream(fileName);
-                SampleLogger.log("Created file to save received PCM samples fielName:" +
-                        fileName);
+                fos = new FileOutputStream(filePath, true);
+                // SampleLogger.log("Created file to save samples fielName:" +
+                // filePath);
             } catch (FileNotFoundException e) {
                 SampleLogger.log("Open file fail");
             }
@@ -85,6 +85,17 @@ public class FileWriter {
                 fos = null;
                 fileSize_ = 0;
             }
+        } catch (IOException e) {
+            SampleLogger.log("file write exception");
+        }
+    }
+
+    public void writeData(byte[] buffer, int writeBytes, String path) {
+        filePath = path;
+        checkState();
+        try {
+            fos.write(buffer);
+            release();
         } catch (IOException e) {
             SampleLogger.log("file write exception");
         }
