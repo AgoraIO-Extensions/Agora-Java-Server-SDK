@@ -3,6 +3,7 @@ package io.agora.rtc.test.common;
 import io.agora.rtc.AgoraService;
 import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
+import io.agora.rtc.AgoraParameter;
 import io.agora.rtc.AgoraRtcConn;
 import io.agora.rtc.common.AgoraRtcConnPool;
 import io.agora.rtc.common.SampleCommon;
@@ -78,6 +79,7 @@ public class AgoraTest {
     protected int enableSaveFile = 1;
     protected int enableAudioCache = 1;
     protected int enableAlpha = 0;
+    protected int enableVad = 0;
 
     protected int useStringUid = 0;
     protected AtomicInteger testTaskCount = new AtomicInteger(0);
@@ -174,6 +176,8 @@ public class AgoraTest {
                 "enableAudioCache");
         Option optEnableAlpha = new Option("enableAlpha", true,
                 "enableAlpha");
+        Option optEnableVad = new Option("enableVad", true,
+                "enableVad");
 
         options.addOption(optToken);
         options.addOption(optChannelId);
@@ -208,6 +212,7 @@ public class AgoraTest {
         options.addOption(optEnableSaveFile);
         options.addOption(optEnableAudioCache);
         options.addOption(optEnableAlpha);
+        options.addOption(optEnableVad);
 
         CommandLine commandLine = null;
         CommandLineParser parser = new DefaultParser();
@@ -469,6 +474,14 @@ public class AgoraTest {
                 e.printStackTrace();
             }
         }
+
+        if (commandLine.hasOption(optEnableVad)) {
+            try {
+                enableVad = Integer.parseInt(commandLine.getOptionValue("enableVad"));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public void setup() {
@@ -574,7 +587,7 @@ public class AgoraTest {
                 connTask.registerPcmObserverTask(remoteUserId,
                         ("".equals(audioOutFile)) ? "" : (audioOutFile + "_" + channelId + "_" + userId + ".pcm"),
                         numOfChannels,
-                        sampleRate, true, enableSaveFile == 1);
+                        sampleRate, true, enableSaveFile == 1, enableVad == 1);
             } else if (TestTask.RECEIVE_MIXED_AUDIO == testTask) {
                 connTask.registerMixedAudioObserverTask(remoteUserId,
                         ("".equals(audioOutFile)) ? "" : (audioOutFile + "_" + channelId + "_" + userId + ".pcm"),
@@ -600,7 +613,7 @@ public class AgoraTest {
                         ("".equals(audioOutFile)) ? ""
                                 : (audioOutFile + "_" + channelId + "_" + userId + "_" + userId + ".pcm"),
                         numOfChannels,
-                        sampleRate, false, enableSaveFile == 1);
+                        sampleRate, false, enableSaveFile == 1, enableVad == 1);
                 connTask.registerYuvObserverTask(remoteUserId,
                         ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + "_" + userId + ".yuv"),
                         streamType, true,
