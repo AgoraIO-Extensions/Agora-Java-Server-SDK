@@ -151,7 +151,7 @@ public class Main {
 - Fixed crash issues related to LocalAudioDetailedStats callbacks
 - Modified parameter types for the onAudioVolumeIndication callback
 
-### Previous Version: v4.4.30 (2024-10-24)
+### v4.4.30 (2024-10-24)
 
 - For detailed update information, please refer to the [Release Notes](https://doc.shengwang.cn/doc/rtc-server-sdk/java/overview/release-notes)
 

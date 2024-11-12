@@ -152,7 +152,7 @@ public class Main {
 - 修复 LocalAudioDetailedStats 相关回调崩溃问题
 - 修改 onAudioVolumeIndication 回调参数类型
 
-### 最新版本：v4.4.30（2024-10-24）
+### v4.4.30（2024-10-24）
 
 - 详细更新日志请参考 [发版说明](https://doc.shengwang.cn/doc/rtc-server-sdk/java/overview/release-notes)
 
