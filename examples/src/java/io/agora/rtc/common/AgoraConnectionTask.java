@@ -1,5 +1,8 @@
 package io.agora.rtc.common;
 
+import io.agora.rtc.AgoraAudioVadConfigV2;
+import io.agora.rtc.EncodedAudioFrameReceiverInfo;
+import io.agora.rtc.VadProcessResult;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -15,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.agora.rtc.AgoraAudioEncodedFrameSender;
 import io.agora.rtc.AgoraAudioPcmDataSender;
+import io.agora.rtc.AgoraAudioVadV2;
 import io.agora.rtc.AgoraLocalAudioTrack;
 import io.agora.rtc.AgoraLocalUser;
 import io.agora.rtc.AgoraLocalVideoTrack;
@@ -27,6 +31,7 @@ import io.agora.rtc.AgoraVideoEncodedImageSender;
 import io.agora.rtc.AgoraVideoFrameObserver2;
 import io.agora.rtc.AgoraVideoFrameSender;
 import io.agora.rtc.AudioFrame;
+import io.agora.rtc.AudioVolumeInfo;
 import io.agora.rtc.Constants;
 import io.agora.rtc.DefaultLocalUserObserver;
 import io.agora.rtc.DefaultRtcConnObserver;
@@ -84,6 +89,7 @@ public class AgoraConnectionTask {
     private final ExecutorService singleExecutorService;
     private final ThreadPoolExecutor testTaskExecutorService;
     private CountDownLatch userLeftLatch;
+    private AgoraAudioVadV2 audioVadV2;
 
     public interface TaskCallback {
         default void onConnected() {
@@ -132,7 +138,8 @@ public class AgoraConnectionTask {
     public void createConnectionAndTest(RtcConnConfig ccfg, String token, String channelId, String userId,
             int enableEncryptionMode, int encryptionMode, String encryptionKey, boolean enableCloudProxy) {
         SampleLogger
-                .log("createConnectionAndTest channelId:" + channelId + " userId:" + userId + " enableEncryptionMode:"
+                .log("createConnectionAndTest token:" + token + " channelId:" + channelId + " userId:" + userId
+                        + " enableEncryptionMode:"
                         + enableEncryptionMode + " encryptionMode:" + encryptionMode + " encryptionKey:"
                         + encryptionKey + " enableCloudProxy:" + enableCloudProxy);
         if (null == service) {
@@ -213,6 +220,7 @@ public class AgoraConnectionTask {
             ret = agoraParameter.setBool("rtc.enable_proxy", true);
             SampleLogger.log("setBool rtc.enable_proxy ret:" + ret);
         }
+        // conn.getLocalUser().setAudioVolumeIndicationParameters(50, 3, true);
 
         ret = conn.connect(token, channelId, userId);
         SampleLogger.log("Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
@@ -243,6 +251,15 @@ public class AgoraConnectionTask {
                         .log("onVideoPublishStateChanged channel:" + channel + " old_state:" + old_state + " new_state:"
                                 + new_state + " userRole:" + agora_local_user.getUserRole());
             }
+
+            @Override
+            public void onAudioVolumeIndication(AgoraLocalUser agora_local_user, AudioVolumeInfo[] speakers,
+                    int total_volume) {
+                super.onAudioVolumeIndication(agora_local_user, speakers, total_volume);
+                SampleLogger.log("onAudioVolumeIndication speakers:" + Arrays.toString(speakers) + " total_volume:"
+                        + total_volume);
+
+            }
         });
         conn.getLocalUser().setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
 
@@ -253,6 +270,11 @@ public class AgoraConnectionTask {
         SampleLogger.log("releaseConn for channelId:" + channelId + " userId:" + userId);
         if (conn == null) {
             return;
+        }
+
+        if (null != audioVadV2) {
+            audioVadV2.destroy();
+            audioVadV2 = null;
         }
 
         if (null != mediaNodeFactory) {
@@ -457,7 +479,8 @@ public class AgoraConnectionTask {
                         + " sampleRate:" + sampleRate);
         // Create audio track
         audioEncodedFrameSender = mediaNodeFactory.createAudioEncodedFrameSender();
-        customEncodedAudioTrack = service.createCustomAudioTrackEncoded(audioEncodedFrameSender, 0);
+        customEncodedAudioTrack = service.createCustomAudioTrackEncoded(audioEncodedFrameSender,
+                Constants.TMixMode.MIX_DISABLED.value);
         conn.getLocalUser().publishAudio(customEncodedAudioTrack);
 
         AacReader aacReader = new AacReader(filePath);
@@ -475,7 +498,7 @@ public class AgoraConnectionTask {
 
                 int ret = audioEncodedFrameSender.send(data, data.length, encodedInfo);
                 SampleLogger.log("send aac frame data size:" + data.length + " timestamp:"
-                        + timestamp + " sampleRate:" + sampleRate + " numOfChannels:" + numOfChannels
+                        + timestamp + " encodedInfo:" + encodedInfo
                         + " to channelId:"
                         + channelId + " from userId:" + userId + " ret:" + ret + " testStartTime:"
                         + Utils.formatTimestamp(testStartTime)
@@ -551,7 +574,8 @@ public class AgoraConnectionTask {
                 .log("sendOpusTask filePath:" + filePath + " interval:" + interval);
         // Create audio track
         audioEncodedFrameSender = mediaNodeFactory.createAudioEncodedFrameSender();
-        customEncodedAudioTrack = service.createCustomAudioTrackEncoded(audioEncodedFrameSender, 0);
+        customEncodedAudioTrack = service.createCustomAudioTrackEncoded(audioEncodedFrameSender,
+                Constants.TMixMode.MIX_DISABLED.value);
         conn.getLocalUser().publishAudio(customEncodedAudioTrack);
 
         OpusReader opusReader = new OpusReader(filePath);
@@ -569,8 +593,7 @@ public class AgoraConnectionTask {
 
                 int ret = audioEncodedFrameSender.send(data, data.length, encodedInfo);
                 SampleLogger.log("send opus frame data size:" + data.length + " timestamp:"
-                        + timestamp + " sampleRate:" + encodedInfo.getSampleRateHz() + " numOfChannels:"
-                        + encodedInfo.getNumberOfChannels()
+                        + timestamp + " encodedInfo:" + encodedInfo
                         + " to channelId:"
                         + channelId + " from userId:" + userId + " ret:" + ret + " testStartTime:"
                         + Utils.formatTimestamp(testStartTime)
@@ -1324,10 +1347,11 @@ public class AgoraConnectionTask {
     }
 
     public void registerPcmObserverTask(String remoteUserId, String audioOutFile, int numOfChannels, int sampleRate,
-            boolean waitRelease, boolean enableSaveFile) {
+            boolean waitRelease, boolean enableSaveFile, boolean enableVad) {
         SampleLogger.log("registerPcmObserverTask remoteUserId:" + remoteUserId + " audioOutFile:" + audioOutFile
                 + " numOfChannels:"
-                + numOfChannels + " sampleRate:" + sampleRate + " enableSaveFile:" + enableSaveFile);
+                + numOfChannels + " sampleRate:" + sampleRate + " enableSaveFile:" + enableSaveFile + " enableVad:"
+                + enableVad);
         if (waitRelease) {
             userLeftLatch = new CountDownLatch(1);
         }
@@ -1348,6 +1372,10 @@ public class AgoraConnectionTask {
             return;
         }
 
+        if (enableVad) {
+            audioVadV2 = new AgoraAudioVadV2(new AgoraAudioVadConfigV2());
+        }
+
         localUserObserver.setAudioFrameObserver(new SampleAudioFrameObserver(audioOutFile) {
             @Override
             public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agora_local_user, String channel_id, String uid,
@@ -1365,6 +1393,11 @@ public class AgoraConnectionTask {
                         + "  userId:" + userId);
                 if (enableSaveFile) {
                     writeAudioFrameToFile(frame.getBuffer(), writeBytes);
+                }
+                if (enableVad) {
+                    VadProcessResult vadResult = audioVadV2.processFrame(frame);
+                    SampleLogger.log("onPlaybackAudioFrameBeforeMixing vadResult:" + vadResult);
+                    writeVadAudioToFile(vadResult.getOutFrame(), audioOutFile + "_vad.pcm");
                 }
                 if (testTime > 0 && System.currentTimeMillis() - testStartTime >= testTime * 1000
                         && null != userLeftLatch) {
@@ -1571,6 +1604,56 @@ public class AgoraConnectionTask {
                                 return 1;
                             }
                         }));
+
+        if (waitRelease) {
+            try {
+                userLeftLatch.await();
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            releaseConn();
+            if (null != callback) {
+                callback.onTestFinished();
+            }
+        }
+    }
+
+    public void registerEncodedAudioObserverTask(String remoteUserId, String audioOutFile, String fileType,
+            boolean waitRelease) {
+        SampleLogger
+                .log("registerEncodedAudioObserverTask remoteUserId:" + remoteUserId + " audioOutFile:" + audioOutFile +
+                        " fileType:" + fileType);
+        if (waitRelease) {
+            userLeftLatch = new CountDownLatch(1);
+        }
+
+        conn.getLocalUser().subscribeAllAudio();
+        // Register local user observer
+        if (null == localUserObserver) {
+            localUserObserver = new SampleLocalUserObserver(conn.getLocalUser());
+        }
+        conn.getLocalUser().registerObserver(localUserObserver);
+
+        localUserObserver.setAudioEncodedFrameObserver(new SampleAudioEncodedFrameObserver(audioOutFile) {
+            @Override
+            public int onEncodedAudioFrameReceived(String remoteUserId,
+                    byte[] packet, EncodedAudioFrameReceiverInfo info) {
+                if (packet == null || packet.length == 0) {
+                    return 0;
+                }
+                SampleLogger.log("onEncodedAudioFrameReceived packet size:" + packet.length +
+                        " info:" + info + " remoteUserId:" + remoteUserId +
+                        " with current channelId:" + channelId);
+                writeAudioFrameToFile(packet, audioOutFile + "-" + remoteUserId + "." + fileType);
+                if (testTime > 0 && System.currentTimeMillis() - testStartTime >= testTime * 1000
+                        && null != userLeftLatch) {
+                    userLeftLatch.countDown();
+                }
+                return 1;
+            }
+        });
 
         if (waitRelease) {
             try {

@@ -1,5 +1,6 @@
 package io.agora.rtc.common;
 
+import io.agora.rtc.IAudioEncodedFrameObserver;
 import java.util.Arrays;
 
 import io.agora.rtc.AgoraVideoEncodedFrameObserver;
@@ -29,9 +30,13 @@ public class SampleLocalUserObserver extends DefaultLocalUserObserver {
     private AgoraRemoteAudioTrack remoteAudioTrack;
     private AgoraRemoteVideoTrack remoteVideoTrack;
 
-    private IVideoEncodedFrameObserver videoEncodedReceiver;
     private IAudioFrameObserver audioFrameObserver;
-    private IVideoFrameObserver2 videoFrameObserver;
+    private IAudioEncodedFrameObserver audioEncodedFrameObserver;
+    private AgoraVideoFrameObserver2 videoFrameObserver2;
+    private AgoraVideoEncodedFrameObserver videoEncodedFrameObserver;
+
+    private boolean isAudioRegistered = false;
+    private boolean isVideoRegistered = false;
 
     public SampleLocalUserObserver(AgoraLocalUser localUser) {
         this.localUser = localUser;
@@ -60,28 +65,49 @@ public class SampleLocalUserObserver extends DefaultLocalUserObserver {
     // }
     // }
 
-    public void setVideoEncodedFrameObserver(IVideoEncodedFrameObserver observer) {
-        videoEncodedReceiver = observer;
-    }
-
     public void setAudioFrameObserver(IAudioFrameObserver observer) {
         audioFrameObserver = observer;
+    }
+
+    public void setAudioEncodedFrameObserver(IAudioEncodedFrameObserver observer) {
+        audioEncodedFrameObserver = observer;
     }
 
     public void unsetAudioFrameObserver() {
         if (audioFrameObserver != null) {
             localUser.unregisterAudioFrameObserver();
         }
+
+        if (remoteAudioTrack != null && audioEncodedFrameObserver != null) {
+            localUser.unregisterAudioEncodedFrameObserver(audioEncodedFrameObserver);
+            audioEncodedFrameObserver = null;
+        }
+
+        isAudioRegistered = false;
     }
 
     public void setVideoFrameObserver(IVideoFrameObserver2 observer) {
-        videoFrameObserver = observer;
+        videoFrameObserver2 = new AgoraVideoFrameObserver2(observer);
+    }
+
+    public void setVideoEncodedFrameObserver(IVideoEncodedFrameObserver observer) {
+        videoEncodedFrameObserver = new AgoraVideoEncodedFrameObserver(observer);
     }
 
     public void unsetVideoFrameObserver() {
-        if (remoteVideoTrack != null && videoFrameObserver != null) {
-            localUser.unregisterVideoFrameObserver(new AgoraVideoFrameObserver2(videoFrameObserver));
+        if (remoteVideoTrack != null && videoFrameObserver2 != null) {
+            localUser.unregisterVideoFrameObserver(videoFrameObserver2);
+            videoFrameObserver2.destroy();
+            videoFrameObserver2 = null;
         }
+
+        if (remoteVideoTrack != null && videoEncodedFrameObserver != null) {
+            localUser.unregisterVideoEncodedFrameObserver(videoEncodedFrameObserver);
+            videoEncodedFrameObserver.destroy();
+            videoEncodedFrameObserver = null;
+        }
+
+        isVideoRegistered = false;
     }
 
     public void onUserAudioTrackStateChanged(AgoraLocalUser agora_local_user, String user_id,
@@ -94,12 +120,21 @@ public class SampleLocalUserObserver extends DefaultLocalUserObserver {
     public synchronized void onUserAudioTrackSubscribed(AgoraLocalUser agora_local_user, String user_id,
             AgoraRemoteAudioTrack agora_remote_audio_track) {
         // lock
-        SampleLogger.log("onUserAudioTrackSubscribed success " + user_id);
+        SampleLogger.log("onUserAudioTrackSubscribed success " + user_id + " " + agora_remote_audio_track);
         remoteAudioTrack = agora_remote_audio_track;
-        if (remoteAudioTrack != null && audioFrameObserver != null) {
-            int res = localUser.registerAudioFrameObserver(audioFrameObserver);
-            SampleLogger.log("registerAudioFrameObserver success" + res);
+        if (!isAudioRegistered) {
+            isAudioRegistered = true;
+            if (remoteAudioTrack != null && audioFrameObserver != null) {
+                int res = localUser.registerAudioFrameObserver(audioFrameObserver);
+                SampleLogger.log("registerAudioFrameObserver success" + res);
+            }
+
+            if (remoteAudioTrack != null && audioEncodedFrameObserver != null) {
+                int res = localUser.registerAudioEncodedFrameObserver(audioEncodedFrameObserver);
+                SampleLogger.log("registerAudioEncodedFrameObserver success:" + res);
+            }
         }
+
     }
 
     public void onAudioSubscribeStateChanged(AgoraLocalUser agora_local_user, String channel, String user_id,
@@ -112,18 +147,19 @@ public class SampleLocalUserObserver extends DefaultLocalUserObserver {
     public synchronized void onUserVideoTrackSubscribed(AgoraLocalUser agora_local_user, String user_id,
             VideoTrackInfo info, AgoraRemoteVideoTrack agora_remote_video_track) {
         // lock
-        SampleLogger.log("onUserVideoTrackSubscribed success");
+        SampleLogger.log("onUserVideoTrackSubscribed success agora_remote_video_track:" + agora_remote_video_track);
         remoteVideoTrack = agora_remote_video_track;
-        if (remoteVideoTrack != null && videoEncodedReceiver != null) {
-            int res = localUser
-                    .registerVideoEncodedFrameObserver(new AgoraVideoEncodedFrameObserver(videoEncodedReceiver));
-            SampleLogger.log("registerVideoEncodedImageReceiver success ... " + res);
-        }
-        // if (remoteVideoTrack != null && mediaPacketReceiver != null) {
-        // remoteVideoTrack.registerMediaPacketReceiver(mediaPacketReceiver);
-        // }
-        if (remoteVideoTrack != null && videoFrameObserver != null) {
-            localUser.registerVideoFrameObserver(new AgoraVideoFrameObserver2(videoFrameObserver));
+        if (!isVideoRegistered) {
+            isVideoRegistered = true;
+            if (remoteVideoTrack != null && videoEncodedFrameObserver != null) {
+                int res = localUser
+                        .registerVideoEncodedFrameObserver(videoEncodedFrameObserver);
+                SampleLogger.log("registerVideoEncodedImageReceiver success ... " + res);
+            }
+
+            if (remoteVideoTrack != null && videoFrameObserver2 != null) {
+                localUser.registerVideoFrameObserver(videoFrameObserver2);
+            }
         }
         SampleLogger.log("onUserVideoTrackSubscribed end");
     }
