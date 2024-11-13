@@ -56,7 +56,7 @@
 
 #### 类和方法
 
-##### AgoraAudioVadV2
+##### AgoraAudioVadV2类
 
 ###### 构造方法
 
@@ -66,6 +66,30 @@ public AgoraAudioVadV2(AgoraAudioVadConfigV2 config)
 
 - **参数**
   - `config`：`AgoraAudioVadConfigV2` 类型，VAD 配置。
+
+###### AgoraAudioVadConfigV2 属性
+
+| 属性名                 | 类型  | 描述                               | 默认值 | 取值范围            |
+|------------------------|-------|------------------------------------|--------|---------------------|
+| preStartRecognizeCount | int   | 开始说话状态前保存的音频帧数       | 16     | [0, Integer.MAX_VALUE] |
+| startRecognizeCount    | int   | 说话状态的音频帧数                 | 30     | [1, Integer.MAX_VALUE] |
+| stopRecognizeCount     | int   | 停止说话状态的音频帧数             | 20     | [1, Integer.MAX_VALUE] |
+| activePercent          | float | 在 startRecognizeCount 帧中活跃帧的百分比 | 0.7    | [0.0, 1.0]           |
+| inactivePercent        | float | 在 stopRecognizeCount 帧中非活跃帧的百分比 | 0.5    | [0.0, 1.0]           |
+| startVoiceProb         | int   | 开始语音检测的概率阈值             | 70     | [0, 100]             |
+| stopVoiceProb          | int   | 停止语音检测的概率阈值             | 70     | [0, 100]             |
+| startRmsThreshold      | int   | 开始语音检测的 RMS 阈值            | -50    | [-100, 0]            |
+| stopRmsThreshold       | int   | 停止语音检测的 RMS 阈值            | -50    | [-100, 0]            |
+
+###### 注意事项
+
+- `startVoiceProb`: 值越低，帧被判断为活跃的概率越高，开始阶段会更早开始。在需要更敏感的语音检测时可以适当降低。
+- `stopVoiceProb`: 值越高，帧被判断为非活跃的概率越高，结束阶段会更早开始。在需要更快结束语音检测时可以适当提高。
+- `startRmsThreshold` 和 `stopRmsThreshold`:
+  - 值越高，对语音活动越敏感。
+  - 在安静环境中推荐使用默认值 -50。
+  - 在嘈杂环境中可以调高到 -40 到 -30 之间，以减少误检。
+  - 根据实际使用场景和音频特征进行微调可获得最佳效果。
 
 ###### 方法
 
@@ -122,7 +146,6 @@ public class Main {
         config.setStopVoiceProb(70);
         config.setStartRmsThreshold(-50);
         config.setStopRmsThreshold(-50);
-
 
         // 创建 VAD 实例
         AgoraAudioVadV2 vad = new AgoraAudioVadV2(config);

@@ -48,7 +48,7 @@ For detailed examples, please refer to [examples/README.md](examples/README.md)
 
 For complete API documentation, please visit [Agora Java Server SDK API Reference](https://doc.shengwang.cn/api-ref/rtc-server-sdk/java/overview)
 
-### AgoraAudioVadV2
+### AgoraAudioVadV2 Class
 
 #### Overview
 
@@ -66,6 +66,30 @@ public AgoraAudioVadV2(AgoraAudioVadConfigV2 config)
 
 - **Parameters**
   - `config`: `AgoraAudioVadConfigV2` type, VAD configuration.
+
+  ###### AgoraAudioVadConfigV2 Properties
+
+| Property Name | Type | Description | Default Value | Range |
+|---------------|------|-------------|---------------|-------|
+| preStartRecognizeCount | int | Number of audio frames saved before starting speech state | 16 | [0, Integer.MAX_VALUE] |
+| startRecognizeCount | int | Number of audio frames in speech state | 30 | [1, Integer.MAX_VALUE] |
+| stopRecognizeCount | int | Number of audio frames in stop speech state | 20 | [1, Integer.MAX_VALUE] |
+| activePercent | float | Percentage of active frames in startRecognizeCount frames | 0.7 | [0.0, 1.0] |
+| inactivePercent | float | Percentage of inactive frames in stopRecognizeCount frames | 0.5 | [0.0, 1.0] |
+| startVoiceProb | int | Probability threshold for starting voice detection | 70 | [0, 100] |
+| stopVoiceProb | int | Probability threshold for stopping voice detection | 70 | [0, 100] |
+| startRmsThreshold | int | RMS threshold for starting voice detection | -50 | [-100, 0] |
+| stopRmsThreshold | int | RMS threshold for stopping voice detection | -50 | [-100, 0] |
+
+###### Notes
+
+- `startVoiceProb`: The lower the value, the higher the probability that the frame is judged as active, and the earlier the start phase begins. Lower it for more sensitive voice detection.
+- `stopVoiceProb`: The higher the value, the higher the probability that the frame is judged as inactive, and the earlier the stop phase begins. Increase it for quicker end of voice detection.
+- `startRmsThreshold` and `stopRmsThreshold`:
+  - The higher the value, the more sensitive to voice activity.
+  - In quiet environments, the default value of -50 is recommended.
+  - In noisy environments, it can be adjusted to between -40 and -30 to reduce false positives.
+  - Fine-tune according to the actual usage scenario and audio characteristics for optimal results.
 
 ###### Methods
 
