@@ -19,20 +19,22 @@ public class SampleAudioEncodedFrameObserver extends FileWriter implements IAudi
     }
 
     @Override
-    public int onEncodedAudioFrameReceived(String remoteUserId, byte[] packet, EncodedAudioFrameReceiverInfo info) {
+    public int onEncodedAudioFrameReceived(String remoteUserId, ByteBuffer buffer, EncodedAudioFrameReceiverInfo info) {
         return 0;
     }
 
-    public void writeAudioFrameToFile(byte[] packet, String filePath) {
-        if ("".equals(filePath.trim())) {
+    public void writeAudioFrameToFile(ByteBuffer buffer, String filePath) {
+        if ("".equals(filePath.trim()) || buffer == null || buffer.remaining() == 0) {
             return;
         }
-        if (packet == null) {
-            return;
-        }
+
+        byte[] byteArray = new byte[buffer.remaining()];
+        buffer.get(byteArray);
+        buffer.rewind();
+
         writeFileExecutorService.execute(() -> {
             try {
-                writeData(packet, packet.length, filePath);
+                writeData(byteArray, byteArray.length, filePath);
             } catch (Exception e) {
                 e.printStackTrace();
             }

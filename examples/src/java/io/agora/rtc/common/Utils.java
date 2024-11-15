@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -147,5 +148,16 @@ public class Utils {
                 }
             }
         }
+    }
+
+    public static String byteBufferToString(ByteBuffer buffer) {
+        byte[] bytes;
+        if (buffer.hasArray()) {
+            bytes = buffer.array();
+        } else {
+            bytes = new byte[buffer.remaining()];
+            buffer.get(bytes);
+        }
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 }
