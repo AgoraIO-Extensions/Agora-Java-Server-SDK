@@ -52,7 +52,7 @@ public class SampleAudioFrameObserver extends FileWriter implements IAudioFrameO
         return 15;
     }
 
-    public void writeAudioFrameToFile(ByteBuffer buffer, int writeBytes) {
+    public void writeAudioFrameToFile(ByteBuffer buffer) {
         if ("".equals(outputFilePath.trim())) {
             return;
         }
@@ -62,7 +62,7 @@ public class SampleAudioFrameObserver extends FileWriter implements IAudioFrameO
 
         writeFileExecutorService.execute(() -> {
             try {
-                writeData(byteArray, writeBytes);
+                writeData(byteArray, byteArray.length);
             } catch (Exception e) {
                 e.printStackTrace();
             }

@@ -168,16 +168,28 @@ public class Main {
 
 ## Changelog
 
-### Latest Version: v4.4.30.1 (2024-11-12)
+### v4.4.30.2 (2024-11-20)
 
-- Added AgoraAudioVad2 related Vad2 interfaces, removed AgoraAudioVad related Vad interfaces
-- Introduced new callback interface IAudioEncodedFrameObserver for receiving encoded audio
-- Fixed crash issues related to LocalAudioDetailedStats callbacks
-- Modified parameter types for the onAudioVolumeIndication callback
+- Enhanced the `processFrame` handling in `AgoraAudioVadV2` with new `START_SPEAKING` and `STOP_SPEAKING` state callbacks.
+- Improved parameter types for encoded frame callbacks. `onEncodedAudioFrameReceived`, `onEncodedVideoImageReceived`, and `onEncodedVideoFrame` now use `ByteBuffer` instead of `Byte` arrays, enhancing performance and flexibility.
+- Optimized VAD plugin startup; `enableExtension` is now implemented within the SDK, so applications no longer need to call this method manually.
+- Fixed issues with the handling of `alphaBuffer` and `metadataBuffer` in `VideoFrame`.
+
+#### Developer Notes
+
+- Please update the code using encoded frame callbacks to accommodate the new `ByteBuffer` parameter type.
+- If you previously called the `enableExtension` method for the VAD plugin manually, you can now remove that call.
+
+### v4.4.30.1 (2024-11-12)
+
+- Added `Vad2` interfaces related to `AgoraAudioVad2` and removed `Vad` interfaces related to `AgoraAudioVad`.
+- Added a new callback interface for receiving encoded audio frames: `IAudioEncodedFrameObserver`.
+- Fixed crashes related to `LocalAudioDetailedStats` callbacks.
+- Modified the parameter types for the `onAudioVolumeIndication` callback.
 
 ### v4.4.30 (2024-10-24)
 
-- For detailed update information, please refer to the [Release Notes](https://doc.shengwang.cn/doc/rtc-server-sdk/java/overview/release-notes)
+- For detailed release notes, please refer to the [Release Notes](https://doc.shengwang.cn/doc/rtc-server-sdk/java/overview/release-notes).
 
 ## FAQ
 

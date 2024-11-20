@@ -144,6 +144,13 @@ public class SampleLocalUserObserver extends DefaultLocalUserObserver {
                 + elapse_since_last_state);
     }
 
+    @Override
+    public void onUserVideoTrackStateChanged(AgoraLocalUser agora_local_user, String user_id,
+            AgoraRemoteVideoTrack agora_remote_video_track, int state, int reason, int elapsed) {
+        SampleLogger
+                .log("onUserVideoTrackStateChanged success " + user_id + " " + state + " " + reason + " " + elapsed);
+    }
+
     public synchronized void onUserVideoTrackSubscribed(AgoraLocalUser agora_local_user, String user_id,
             VideoTrackInfo info, AgoraRemoteVideoTrack agora_remote_video_track) {
         // lock

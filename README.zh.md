@@ -168,16 +168,28 @@ public class Main {
 
 ## 更新日志
 
-### 最新版本：v4.4.30.1（2024-11-12）
+### v4.4.30.2（2024-11-20)
 
-- 增加 AgoraAudioVad2 相关 Vad2 接口，移除 AgoraAudioVad 相关 Vad 接口
-- 新增接收编码音频回调接口 IAudioEncodedFrameObserver
-- 修复 LocalAudioDetailedStats 相关回调崩溃问题
-- 修改 onAudioVolumeIndication 回调参数类型
+- 增强了 AgoraAudioVadV2 的 `processFrame` 处理，新增 `START_SPEAKING` 和 `STOP_SPEAKING` 状态回调。
+- 改进了编码帧回调的参数类型，`onEncodedAudioFrameReceived`、`onEncodedVideoImageReceived`、`onEncodedVideoFrame` 现在使用 `ByteBuffer` 替代 `Byte` 数组，提高性能和灵活性。
+- VAD 插件启动优化，`enableExtension` 现在在 SDK 内部实现，应用程序不再需要手动调用此方法。
+- 修复了 `VideoFrame` 中 `alphaBuffer` 和 `metadataBuffer` 的处理问题。
+
+#### 开发者注意事项
+
+- 请更新使用编码帧回调的代码，以适应新的 `ByteBuffer` 参数类型。
+- 如之前手动调用了 VAD 插件的 `enableExtension`，现在可以移除该调用。
+
+### v4.4.30.1（2024-11-12）
+
+- 增加 AgoraAudioVad2 相关 `Vad2` 接口，移除 AgoraAudioVad 相关 `Vad` 接口。
+- 新增接收编码音频回调接口 `IAudioEncodedFrameObserver`。
+- 修复 `LocalAudioDetailedStats` 相关回调崩溃问题。
+- 修改 `onAudioVolumeIndication` 回调参数类型。
 
 ### v4.4.30（2024-10-24）
 
-- 详细更新日志请参考 [发版说明](https://doc.shengwang.cn/doc/rtc-server-sdk/java/overview/release-notes)
+- 详细更新日志请参考 [发版说明](https://doc.shengwang.cn/doc/rtc-server-sdk/java/overview/release-notes)。
 
 ## 常见问题
 

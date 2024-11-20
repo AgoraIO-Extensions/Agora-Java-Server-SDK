@@ -4,6 +4,7 @@ import io.agora.rtc.AgoraVideoEncodedFrameObserver;
 import io.agora.rtc.EncodedVideoFrameInfo;
 import io.agora.rtc.IVideoEncodedFrameObserver;
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -13,25 +14,27 @@ public class SampleVideoEncodedFrameObserver extends FileWriter implements IVide
 
     public SampleVideoEncodedFrameObserver(String outputFilePath) {
         super(outputFilePath);
-        if (new File(outputFilePath).exists()) {
-            new File(outputFilePath).delete();
-        }
+        Utils.deleteAllFile(outputFilePath);
         this.outputFilePath = outputFilePath;
     }
 
     @Override
-    public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver agora_video_encoded_frame_observer, int uid,
-            byte[] image_buffer, long length, EncodedVideoFrameInfo video_encoded_frame_info) {
+    public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int uid,
+            ByteBuffer buffer, EncodedVideoFrameInfo info) {
         return 1;
     }
 
-    public void writeVideoDataToFile(byte[] data, int length) {
-        if ("".equals(outputFilePath.trim())) {
+    public void writeVideoDataToFile(ByteBuffer buffer) {
+        if ("".equals(outputFilePath.trim()) || buffer == null || buffer.remaining() == 0) {
             return;
         }
+        byte[] byteArray = new byte[buffer.remaining()];
+        buffer.get(byteArray);
+        buffer.rewind();
+
         writeFileExecutorService.execute(() -> {
             try {
-                writeData(data, length);
+                writeData(byteArray, byteArray.length);
             } catch (Exception e) {
                 e.printStackTrace();
             }

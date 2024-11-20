@@ -504,10 +504,6 @@ public class AgoraTest {
 
         service = SampleCommon.createAndInitAgoraService(0, 1, 1, useStringUid, APPID);
 
-        if (enableAudioLabel == 1) {
-            service.enableExtension("agora.builtin", "agora_audio_label_generator", "", true);
-        }
-
         // connPool = new AgoraRtcConnPool((int) Math.ceil(connectionCount * 1.5));
 
     }
@@ -652,9 +648,6 @@ public class AgoraTest {
     }
 
     protected void onStreamMessageReceive(String userId, int streamId, String data, long length) {
-        SampleLogger
-                .log("onStreamMessageReceive userId:" + userId + " streamId:" + streamId + " data:" + data + " length:"
-                        + length);
     }
 
     public void cleanup() {
