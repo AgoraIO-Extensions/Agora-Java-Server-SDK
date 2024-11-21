@@ -1,5 +1,6 @@
 #include "decode_media.h"
 #include <libavcodec/avcodec.h>
+#include <libavcodec/bsf.h>
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
 #include <libavutil/channel_layout.h>
@@ -9,11 +10,12 @@
 #include <libavutil/samplefmt.h>
 #include <libswresample/swresample.h>
 #include <libswscale/swscale.h>
-#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 
 #define MAX_AUDIO_CHANNELS 10
+#define AVSYNC_MAX_AUDIO_SIZE 5000
+#define AVSYNC_MAX_VIDEO_SIZE 5000
 
 typedef struct _DecodeContext {
     int stream_index;
@@ -50,7 +52,15 @@ typedef struct _MediaDecoder {
     DecodeContext video_ctx;
     DecodeContext audio_ctx;
     AVPacket *pkt;
-    int64_t duration; // 新增字段，用于存储时长（以毫秒为单位）
+    int64_t duration;
+    // for avsync
+    MediaPacket head_pkt;
+    MediaPacket *video_tail_pkt;
+    MediaPacket *audio_tail_pkt;
+    int read_error;
+
+    // for bitstream filter
+    AVBSFContext *bsf;
 } MediaDecoder;
 
 int init_swr(DecodeContext *decode_ctx) {
@@ -307,7 +317,9 @@ int init_decoder(MediaDecoder *decoder, int media_type) {
 void *open_media_file(const char *file_name) {
     MediaDecoder *decoder = (MediaDecoder *)malloc(sizeof(MediaDecoder));
     memset(decoder, 0, sizeof(MediaDecoder));
-    decoder->duration = -1; // 初始化为 -1，表示尚未计算
+    decoder->duration = -1;
+    decoder->video_tail_pkt = &decoder->head_pkt;
+    decoder->audio_tail_pkt = &decoder->head_pkt;
 
     int result = 0;
     // av_log_set_level(AV_LOG_DEBUG);
@@ -341,23 +353,19 @@ void *open_media_file(const char *file_name) {
     return decoder;
 }
 
-// 新增函数：获取媒体文件时长
 int64_t get_media_duration(void *decoder) {
     MediaDecoder *d = (MediaDecoder *)decoder;
     if (!d || !d->fmt_ctx) {
-        return -1; // 无效的解码器或格式上下文
+        return -1;
     }
 
-    // 如果时长已经计算过，直接返回
     if (d->duration > 0) {
         return d->duration;
     }
 
-    // 计算时长（将以微秒为单位的时长转换为毫秒）
     if (d->fmt_ctx->duration != AV_NOPTS_VALUE) {
         d->duration = d->fmt_ctx->duration / 1000;
     } else {
-        // 如果无法直接获取时长，可以尝试其他方法，比如遍历所有流
         d->duration = -1;
         for (int i = 0; i < d->fmt_ctx->nb_streams; i++) {
             AVStream *stream = d->fmt_ctx->streams[i];
@@ -372,6 +380,289 @@ int64_t get_media_duration(void *decoder) {
     }
 
     return d->duration;
+}
+
+void push_packet(MediaDecoder *d, MediaPacket *pkt) {
+    MediaPacket **tail = NULL;
+    if (pkt->media_type == AVMEDIA_TYPE_VIDEO) {
+        tail = &(d->video_tail_pkt);
+    } else if (pkt->media_type == AVMEDIA_TYPE_AUDIO) {
+        tail = &(d->audio_tail_pkt);
+    } else {
+        return;
+    }
+    MediaPacket *last_pkt = *tail;
+    MediaPacket *cur_pkt = last_pkt->next;
+    while (cur_pkt) {
+        if (cur_pkt->pts > pkt->pts) {
+            break;
+        }
+        last_pkt = cur_pkt;
+        cur_pkt = last_pkt->next;
+    }
+    last_pkt->next = pkt;
+    *tail = pkt;
+}
+
+MediaPacket *pop_packet(MediaDecoder *d) {
+    if (d->read_error == 0) {
+        int64_t video_size = 0, audio_size = 0;
+        int video_exist = 0, audio_exist = 0;
+        if (d->video_tail_pkt != &d->head_pkt) {
+            video_exist = 1;
+            video_size = d->video_tail_pkt->pts - d->head_pkt.next->pts;
+        }
+        if (d->audio_tail_pkt != &d->head_pkt) {
+            audio_exist = 1;
+            audio_size = d->audio_tail_pkt->pts - d->head_pkt.next->pts;
+        }
+        if ((!video_exist && audio_size < AVSYNC_MAX_AUDIO_SIZE) ||
+            (!audio_exist && video_size < AVSYNC_MAX_VIDEO_SIZE)) {
+            return NULL;
+        }
+    }
+    MediaPacket *pkt_node = d->head_pkt.next;
+    d->head_pkt.next = pkt_node->next;
+    if (d->video_tail_pkt == pkt_node) {
+        d->video_tail_pkt = &d->head_pkt;
+    }
+    if (d->audio_tail_pkt == pkt_node) {
+        d->audio_tail_pkt = &d->head_pkt;
+    }
+    return pkt_node;
+}
+
+int get_packet(void *decoder, MediaPacket **packet) {
+    MediaDecoder *d = (MediaDecoder *)decoder;
+    AVFormatContext *fmt_ctx = d->fmt_ctx;
+    AVPacket *pkt = NULL;
+
+    *packet = NULL;
+    if (d->read_error == 0) {
+        // packet->pkt = pkt;
+        // packet->media_type = AVMEDIA_TYPE_UNKNOWN;
+        pkt = av_packet_alloc();
+        if (!pkt) {
+            av_log(NULL, AV_LOG_ERROR, "Cannot allocate packet\n");
+            return AVERROR(ENOMEM);
+        }
+
+        int result = av_read_frame(fmt_ctx, pkt);
+        av_log(NULL, AV_LOG_DEBUG, "read frame result %d, pkg stream index %d\n", result,
+               pkt->stream_index);
+        if (result >= 0) {
+            if (pkt->stream_index == d->video_ctx.stream_index) {
+                AVStream *s = fmt_ctx->streams[pkt->stream_index];
+                MediaPacket *mpkt = (MediaPacket *)malloc(sizeof(MediaPacket));
+                memset(mpkt, 0, sizeof(MediaPacket));
+                pkt->time_base = s->time_base;
+                mpkt->pkt = pkt;
+                mpkt->media_type = AVMEDIA_TYPE_VIDEO;
+                mpkt->pts = pkt->pts * 1000 * av_q2d(s->time_base);
+                mpkt->width = s->codecpar->width;
+                mpkt->height = s->codecpar->height;
+                mpkt->framerate_num = s->r_frame_rate.num;
+                mpkt->framerate_den = s->r_frame_rate.den;
+                push_packet(d, mpkt);
+            } else if (pkt->stream_index == d->audio_ctx.stream_index) {
+                AVStream *s = fmt_ctx->streams[pkt->stream_index];
+                MediaPacket *mpkt = (MediaPacket *)malloc(sizeof(MediaPacket));
+                memset(mpkt, 0, sizeof(MediaPacket));
+                pkt->time_base = s->time_base;
+                mpkt->pkt = pkt;
+                mpkt->media_type = AVMEDIA_TYPE_AUDIO;
+                mpkt->pts = pkt->pts * 1000 * av_q2d(s->time_base);
+                push_packet(d, mpkt);
+            } else {
+                av_packet_free(&pkt);
+            }
+        } else {
+            av_packet_free(&pkt);
+            if (result != AVERROR(EAGAIN)) {
+                d->read_error = result;
+            }
+        }
+    }
+    if (d->head_pkt.next == NULL) {
+        return d->read_error;
+    }
+
+    *packet = pop_packet(d);
+    return 0;
+}
+
+int h264_to_annexb(void *decoder, MediaPacket **packet) {
+    MediaDecoder *d = (MediaDecoder *)decoder;
+    AVFormatContext *fmt_ctx = d->fmt_ctx;
+    AVPacket *pkt = NULL;
+
+    if (*packet) {
+        pkt = (*packet)->pkt;
+    }
+
+    if (!d->bsf && !pkt) {
+        av_log(NULL, AV_LOG_ERROR, "bsf not initilized when flushing\n");
+        return -1;
+    }
+
+    if (!d->bsf /* && pkt*/) {
+        const AVBitStreamFilter *bsf = av_bsf_get_by_name("h264_mp4toannexb");
+        if (!bsf) {
+            av_log(NULL, AV_LOG_ERROR, "Can't find bitstream filter\n");
+            return -1;
+        }
+        int result = av_bsf_alloc(bsf, &d->bsf);
+        if (result < 0) {
+            av_log(NULL, AV_LOG_ERROR, "Can't allocate bitstream filter\n");
+            return result;
+        }
+        result =
+            avcodec_parameters_copy(d->bsf->par_in, fmt_ctx->streams[pkt->stream_index]->codecpar);
+        if (result < 0) {
+            av_log(NULL, AV_LOG_ERROR, "Can't copy codec parameters\n");
+            return result;
+        }
+        d->bsf->time_base_in = fmt_ctx->streams[pkt->stream_index]->time_base;
+        result = av_bsf_init(d->bsf);
+        if (result < 0) {
+            av_log(NULL, AV_LOG_ERROR, "Can't init bitstream filter\n");
+            return result;
+        }
+    }
+
+    if (pkt)
+        av_packet_rescale_ts(pkt, pkt->time_base, d->bsf->time_base_in);
+
+    int ret = av_bsf_send_packet(d->bsf, pkt);
+    if (ret < 0) {
+        free_packet(packet);
+        av_log(NULL, AV_LOG_ERROR, "Error submitting a packet for filtering: %s\n",
+               av_err2str(ret));
+        return ret;
+    }
+
+    AVPacket *pkt_bsf = av_packet_alloc();
+    ret = av_bsf_receive_packet(d->bsf, pkt_bsf);
+    if (ret == AVERROR(EAGAIN)) {
+        av_packet_free(&pkt_bsf);
+        free_packet(packet);
+        return 0;
+    } else if (ret < 0) {
+        if (ret != AVERROR_EOF)
+            av_log(NULL, AV_LOG_ERROR, "Error applying bitstream filters to a packet: %s\n",
+                   av_err2str(ret));
+        av_packet_free(&pkt_bsf);
+        free_packet(packet);
+        return ret;
+    }
+
+    pkt_bsf->time_base = d->bsf->time_base_out;
+
+    // set output packet
+    if (!(*packet)) {
+        *packet = (MediaPacket *)malloc(sizeof(MediaPacket));
+        memset(*packet, 0, sizeof(MediaPacket));
+    }
+    if (pkt) {
+        av_packet_free(&pkt);
+    }
+    (*packet)->pkt = pkt_bsf;
+    (*packet)->pts = pkt_bsf->pts * 1000 * av_q2d(pkt_bsf->time_base);
+    return 0;
+}
+
+int free_packet(MediaPacket **packet) {
+    if (!(*packet)) {
+        return 0;
+    }
+    if ((*packet)->pkt) {
+        av_packet_free(&(*packet)->pkt);
+    }
+    free(*packet);
+    *packet = NULL;
+    return 0;
+}
+
+int decode_packet(void *decoder, MediaPacket *packet, MediaFrame *frame) {
+    MediaDecoder *d = (MediaDecoder *)decoder;
+    AVFormatContext *fmt_ctx = d->fmt_ctx;
+    AVPacket *pkt = packet->pkt;
+    int media_type = packet->media_type;
+
+    DecodeContext *decode_ctx = NULL;
+    if (media_type == AVMEDIA_TYPE_VIDEO) {
+        decode_ctx = &d->video_ctx;
+    } else if (media_type == AVMEDIA_TYPE_AUDIO) {
+        decode_ctx = &d->audio_ctx;
+    } else {
+        // this branch should not be reached
+        av_packet_unref(pkt);
+        return -1;
+    }
+
+    AVCodecContext *ctx = decode_ctx->codec_ctx;
+    AVFrame *fr = decode_ctx->frame;
+
+    // pkt will be empty on read error/EOF
+    int result = avcodec_send_packet(ctx, pkt);
+
+    av_packet_unref(pkt);
+
+    if (result < 0) {
+        av_log(NULL, AV_LOG_ERROR, "Error submitting a packet for decoding\n");
+        return result;
+    }
+
+    while (result >= 0) {
+        result = avcodec_receive_frame(ctx, fr);
+        if (result == AVERROR_EOF) {
+            av_log(NULL, AV_LOG_INFO, "decode media %d EOF\n", media_type);
+            decode_ctx->is_eof = 1;
+            break;
+        } else if (result == AVERROR(EAGAIN)) {
+            break;
+        } else if (result < 0) {
+            av_log(NULL, AV_LOG_ERROR, "Error decoding frame\n");
+            return result;
+        }
+
+        if (media_type == AVMEDIA_TYPE_VIDEO) {
+            int ret = resize_video(decode_ctx, fr);
+            if (ret < 0) {
+                av_log(NULL, AV_LOG_ERROR, "Error resize video, code %d\n", ret);
+                return ret;
+            }
+            frame->frame_type = AVMEDIA_TYPE_VIDEO;
+            frame->stream_index = decode_ctx->stream_index;
+            frame->pts =
+                fr->pts * 1000 * av_q2d(fmt_ctx->streams[decode_ctx->stream_index]->time_base);
+            frame->buffer = decode_ctx->buffer;
+            frame->buffer_size = decode_ctx->buffer_size;
+            frame->format = decode_ctx->dst_pix_fmt;
+            frame->width = decode_ctx->dst_width;
+            frame->height = decode_ctx->dst_height;
+            frame->stride = decode_ctx->dst_width;
+        } else if (media_type == AVMEDIA_TYPE_AUDIO) {
+            int ret = resample_audio(decode_ctx, fr);
+            if (ret < 0) {
+                av_log(NULL, AV_LOG_ERROR, "Error resample audio, code %d\n", ret);
+                return ret;
+            }
+            frame->frame_type = AVMEDIA_TYPE_AUDIO;
+            frame->stream_index = decode_ctx->stream_index;
+            frame->pts =
+                fr->pts * 1000 * av_q2d(fmt_ctx->streams[decode_ctx->stream_index]->time_base);
+            frame->buffer = decode_ctx->buffer;
+            frame->buffer_size = decode_ctx->actual_buffer_size;
+            frame->format = decode_ctx->dst_sample_fmt;
+            frame->samples = decode_ctx->dst_nb_samples;
+            frame->channels = decode_ctx->dst_ch_layout.nb_channels;
+            frame->sample_rate = decode_ctx->dst_sample_rate;
+            frame->bytes_per_sample = av_get_bytes_per_sample(decode_ctx->dst_sample_fmt);
+        }
+        return 0;
+    }
+    return result;
 }
 
 int get_frame(void *decoder, MediaFrame *frame) {
@@ -470,19 +761,17 @@ int get_frame(void *decoder, MediaFrame *frame) {
                 frame->height = decode_ctx->dst_height;
                 frame->stride = decode_ctx->dst_width;
 
-                // 计算并设置 fps
                 AVRational avg_frame_rate =
                     fmt_ctx->streams[decode_ctx->stream_index]->avg_frame_rate;
                 if (avg_frame_rate.num && avg_frame_rate.den) {
                     frame->fps = (int)avg_frame_rate.num / avg_frame_rate.den;
                 } else {
-                    // 如果无法获取平均帧率，尝试使用 r_frame_rate（实际帧率）
                     AVRational r_frame_rate =
                         fmt_ctx->streams[decode_ctx->stream_index]->r_frame_rate;
                     if (r_frame_rate.num && r_frame_rate.den) {
                         frame->fps = (int)r_frame_rate.num / r_frame_rate.den;
                     } else {
-                        frame->fps = 0; // 如果无法获取帧率，设置为 0
+                        frame->fps = 0;
                     }
                 }
             } else if (media_type == AVMEDIA_TYPE_AUDIO) {
@@ -513,6 +802,17 @@ void close_media_file(void *decoder) {
     MediaDecoder *d = (MediaDecoder *)decoder;
     deinit_decoder(&d->video_ctx);
     deinit_decoder(&d->audio_ctx);
+    // free avsync
+    while (d->head_pkt.next) {
+        MediaPacket *pkt = d->head_pkt.next;
+        d->head_pkt.next = pkt->next;
+        av_packet_free(&pkt->pkt);
+        free(pkt);
+    }
+    // free bitstream filter
+    if (d->bsf) {
+        av_bsf_free(&d->bsf);
+    }
     avformat_close_input(&d->fmt_ctx);
     av_packet_free(&d->pkt);
     free(d);

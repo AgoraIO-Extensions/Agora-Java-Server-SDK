@@ -86,7 +86,6 @@ public class SampleLocalUserObserver extends DefaultLocalUserObserver {
 
     public void onUserAudioTrackStateChanged(AgoraLocalUser agora_local_user, String user_id,
             AgoraRemoteAudioTrack agora_remote_audio_track, int state, int reason, int elapsed) {
-
         SampleLogger.log("onUserAudioTrackStateChanged success: user_id = " + user_id + ", state = " + state
                 + ", reason = " + reason + ", elapsed = " + elapsed);
     }
@@ -107,6 +106,13 @@ public class SampleLocalUserObserver extends DefaultLocalUserObserver {
         SampleLogger.log("onAudioSubscribeStateChanged success: channel = " + channel + ", user_id = " + user_id
                 + ", old_state = " + old_state + ", new_state = " + new_state + ", elapse_since_last_state = "
                 + elapse_since_last_state);
+    }
+
+    @Override
+    public void onUserVideoTrackStateChanged(AgoraLocalUser agora_local_user, String user_id,
+            AgoraRemoteVideoTrack agora_remote_video_track, int state, int reason, int elapsed) {
+        SampleLogger.log("onUserVideoTrackStateChanged success " + user_id + "   " + state + "   " + reason + "   "
+                + elapsed);
     }
 
     public synchronized void onUserVideoTrackSubscribed(AgoraLocalUser agora_local_user, String user_id,

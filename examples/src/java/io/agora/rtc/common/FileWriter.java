@@ -26,8 +26,7 @@ public class FileWriter {
 
             try {
                 fos = new FileOutputStream(fileName);
-                System.out.printf("Created file %s to save received PCM samples",
-                        fileName);
+                SampleLogger.log("Created file " + fileName + " to save received PCM samples");
             } catch (FileNotFoundException e) {
                 System.out.println("Open file fail");
             }

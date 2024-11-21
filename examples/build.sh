@@ -4,17 +4,12 @@ set -e
 
 # 初始化标志
 build_ff=false
-build_vad=false
 
 # 解析命令行参数
 while [[ $# -gt 0 ]]; do
     case "$1" in
     -ff)
         build_ff=true
-        shift
-        ;;
-    -vad)
-        build_vad=true
         shift
         ;;
     *)
@@ -26,9 +21,9 @@ done
 
 rm -fr build
 mkdir -p build
+
 rm -fr libs/libmedia_decode.so
 
-# 如果有 -ff 参数，则编译 libmedia_decode.so
 if $build_ff; then
     echo "Building libmedia_decode.so..."
 
@@ -40,7 +35,7 @@ if $build_ff; then
         -I$JAVA_HOME/include/linux \
         -I$FFMPEG_INCLUDE_DIR \
         -L$FFMPEG_LIB_DIR \
-        src/cpp/media_decode_jni.c \
+        src/cpp/media_decode_jni.cc \
         src/cpp/decode_media.c \
         -lavformat -lavcodec -lavutil -lswresample -lswscale \
         -Wl,-rpath=$FFMPEG_LIB_DIR
@@ -48,13 +43,7 @@ fi
 
 cp -f "third_party/libmediautils.so" "libs/libmediautils.so"
 
-# 准备 Java 源文件列表
-if $build_vad; then
-    echo "Including AgoraAudioVadTest.java for compilation..."
-    find src -name "*.java" >build/test_source.txt
-else
-    find src -name "*.java" | grep -v "AgoraAudioVadTest.java" >build/test_source.txt
-fi
+find src -name "*.java" >build/test_source.txt
 
 # 编译 Java 文件
 javac -g -cp .:third_party/commons-cli-1.5.0.jar:third_party/junit-4.13.2.jar:libs/agora-sdk.jar -encoding utf-8 @build/test_source.txt -d build -XDignore.symbol.file

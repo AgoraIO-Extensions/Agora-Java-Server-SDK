@@ -1,13 +1,17 @@
 package io.agora.rtc.common;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilenameFilter;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.util.Arrays;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -101,5 +105,59 @@ public class Utils {
 
     public static boolean isNullOrEmpty(String str) {
         return str == null || str.isEmpty();
+    }
+
+    public static byte[] readPcmFromFile(String filePath) {
+        try {
+            return Files.readAllBytes(Paths.get(filePath));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static void cleanDirectBuffer(ByteBuffer buffer) {
+        if (null != buffer && buffer.isDirect()) {
+            buffer = null;
+            System.gc();
+        }
+    }
+
+    public static String bytesToHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02X", b));
+        }
+        return sb.toString();
+    }
+
+    public static void deleteAllFile(String filePath) {
+        File directory = new File(filePath).getParentFile();
+
+        if (directory != null && directory.isDirectory()) {
+            File[] filesToDelete = directory.listFiles(new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String name) {
+                    return name.startsWith(new File(filePath).getName());
+                }
+            });
+
+            if (filesToDelete != null) {
+                for (File file : filesToDelete) {
+                    file.delete();
+                }
+            }
+        }
+    }
+
+    public static String byteBufferToString(ByteBuffer buffer) {
+        byte[] bytes;
+        if (buffer.hasArray()) {
+            bytes = buffer.array();
+        } else {
+            bytes = new byte[buffer.remaining()];
+            buffer.get(bytes);
+        }
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 }

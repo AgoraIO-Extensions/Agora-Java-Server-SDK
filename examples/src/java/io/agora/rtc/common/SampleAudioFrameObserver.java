@@ -4,19 +4,20 @@ import io.agora.rtc.AgoraLocalUser;
 import io.agora.rtc.AudioFrame;
 import io.agora.rtc.IAudioFrameObserver;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class SampleAudioFrameObserver extends FileWriter implements IAudioFrameObserver {
     protected final ExecutorService writeFileExecutorService = Executors.newSingleThreadExecutor();
+    protected final ExecutorService writeVadFileExecutorService = Executors.newSingleThreadExecutor();
+
     private String outputFilePath = "";
 
     public SampleAudioFrameObserver(String outputFilePath) {
         super(outputFilePath);
-        if (new File(outputFilePath).exists()) {
-            new File(outputFilePath).delete();
-        }
+        Utils.deleteAllFile(outputFilePath);
         this.outputFilePath = outputFilePath;
     }
 
@@ -51,17 +52,34 @@ public class SampleAudioFrameObserver extends FileWriter implements IAudioFrameO
         return 15;
     }
 
-    public void writeAudioFrameToFile(ByteBuffer buffer, int writeBytes) {
+    public void writeAudioFrameToFile(ByteBuffer buffer) {
         if ("".equals(outputFilePath.trim())) {
             return;
         }
         byte[] byteArray = new byte[buffer.remaining()];
         buffer.get(byteArray);
+        buffer.rewind();
+
         writeFileExecutorService.execute(() -> {
             try {
-                writeData(byteArray, writeBytes);
+                writeData(byteArray, byteArray.length);
             } catch (Exception e) {
                 e.printStackTrace();
+            }
+        });
+    }
+
+    public void writeVadAudioToFile(byte[] byteArray, String file) {
+        if (byteArray == null || byteArray.length == 0) {
+            return;
+        }
+
+        writeVadFileExecutorService.execute(() -> {
+            try (FileOutputStream fos = new FileOutputStream(file, true)) {
+                fos.write(byteArray);
+                fos.flush();
+            } catch (Exception e) {
+                SampleLogger.log("Open file fail");
             }
         });
     }

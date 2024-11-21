@@ -783,10 +783,11 @@ public class AgoraConnectionTask {
     }
 
     public void registerPcmObserverTask(String remoteUserId, String audioOutFile, int numOfChannels, int sampleRate,
-            boolean waitRelease) {
+            boolean waitRelease, boolean enableSaveFile) {
         SampleLogger.log("registerPcmObserverTask remoteUserId:" + remoteUserId + " audioOutFile:" + audioOutFile
                 + " numOfChannels:"
-                + numOfChannels + " sampleRate:" + sampleRate);
+                + numOfChannels + " sampleRate:" + sampleRate + " waitRelease:" + waitRelease + " enableSaveFile:"
+                + enableSaveFile);
         if (waitRelease) {
             userLeftLatch = new CountDownLatch(1);
         }
@@ -820,7 +821,9 @@ public class AgoraConnectionTask {
                         + channel_id + " uid:" + uid + " writeBytes:" + writeBytes + " with current channelId:"
                         + channelId
                         + "  userId:" + userId);
-                writeAudioFrameToFile(frame.getBuffer(), writeBytes);
+                if (enableSaveFile) {
+                    writeAudioFrameToFile(frame.getBuffer());
+                }
                 if (testDuration > 0 && System.currentTimeMillis() - testStartTime >= testDuration * 1000
                         && null != userLeftLatch) {
                     userLeftLatch.countDown();
@@ -913,8 +916,9 @@ public class AgoraConnectionTask {
     }
 
     public void registerH264ObserverTask(String remoteUserId, String videoOutFile, String streamType,
-            boolean waitRelease) {
-        SampleLogger.log("registerH264ObserverTask remoteUserId:" + remoteUserId + " videoOutFile:" + videoOutFile);
+            boolean waitRelease, boolean enableSaveFile) {
+        SampleLogger.log("registerH264ObserverTask remoteUserId:" + remoteUserId + " videoOutFile:" + videoOutFile
+                + " streamType:" + streamType + " waitRelease:" + waitRelease + " enableSaveFile:" + enableSaveFile);
         if (waitRelease) {
             userLeftLatch = new CountDownLatch(1);
         }
@@ -939,15 +943,15 @@ public class AgoraConnectionTask {
                 .registerVideoEncodedFrameObserver(
                         new AgoraVideoEncodedFrameObserver(new SampleVideoEncodedFrameObserver(videoOutFile) {
                             @Override
-                            public int onEncodedVideoFrame(
-                                    AgoraVideoEncodedFrameObserver agora_video_encoded_frame_observer,
-                                    int uid, byte[] image_buffer, long length,
-                                    EncodedVideoFrameInfo video_encoded_frame_info) {
-                                SampleLogger.log("onEncodedVideoFrame uid:" + uid + " length " + length
+                            public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int uid,
+                                    ByteBuffer buffer, EncodedVideoFrameInfo info) {
+                                SampleLogger.log("onEncodedVideoFrame uid:" + uid
                                         + " with current channelId:"
                                         + channelId
                                         + "  userId:" + userId);
-                                writeVideoDataToFile(image_buffer, (int) length);
+                                if (enableSaveFile) {
+                                    writeVideoDataToFile(buffer);
+                                }
 
                                 if (testDuration > 0
                                         && System.currentTimeMillis() - testStartTime >= testDuration * 1000

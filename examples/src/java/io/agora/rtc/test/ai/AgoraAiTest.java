@@ -1,10 +1,12 @@
 package io.agora.rtc.test.ai;
 
+import io.agora.rtc.AgoraService;
 import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.AgoraRtcConn;
 import io.agora.rtc.common.SampleCommon;
 import io.agora.rtc.common.SampleLogger;
+import io.agora.rtc.common.Utils;
 import io.agora.rtc.test.AgoraTest;
 import java.io.File;
 import java.util.Arrays;
@@ -21,11 +23,18 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 
-public class AgoraAiTest extends AgoraTest {
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
+
+public class AgoraAiTest {
     protected final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
     protected final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
 
-    protected String token = TOKEN;
+    protected static String APPID;
+    protected static String TOKEN;
+    protected static volatile AgoraService service;
+
+    protected String token = "";
     protected String userId = "";
     protected String channelId = "aga";
     protected String remoteUserId = "";
@@ -51,19 +60,51 @@ public class AgoraAiTest extends AgoraTest {
     protected int enableEncryptionMode = 0;
     protected int encryptionMode = Constants.ENCRYPTION_MODE_SM4_128_ECB;
     protected String encryptionKey = "";
+    protected int enableSaveFile = 1;
 
     protected int useStringUid = 0;
     private AtomicInteger testTaskCount = new AtomicInteger(0);
 
     public enum TestTask {
         NONE, SEND_PCM, SEND_YUV, SEND_H264, SEND_AAC, SEND_MP4, SEND_DATA_STREAM, RECEIVE_PCM, RECEIVE_YUV,
-        RECEIVE_H264,
+        RECEIVE_H264, RECEIVE_PCM_H264,
         SEND_RECEIVE_PCM_YUV
+    }
+
+    class SignalFunc implements SignalHandler {
+        public void handle(Signal arg0) {
+            SampleLogger.log("catch signal " + arg0);
+            testTaskCount.set(0);
+        }
+    }
+
+    public AgoraAiTest() {
+        String[] keys = Utils.readAppIdAndToken(".keys");
+        APPID = keys[0];
+        TOKEN = keys[1];
+        token = TOKEN;
+        SampleLogger.log("read APPID: " + APPID + " TOKEN: " + TOKEN + " from .keys");
     }
 
     protected static void startTest(String[] args, AgoraAiTest test) {
         test.handleOptions(args);
         test.sdkTest();
+    }
+
+    public void sdkTest() {
+        SignalFunc handler = new SignalFunc();
+        Signal.handle(new Signal("ABRT"), handler);
+        Signal.handle(new Signal("INT"), handler);
+        setup();
+        while (testTaskCount.get() != 0) {
+            try {
+                Thread.sleep(300);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        cleanup();
+        System.exit(0);
     }
 
     public void handleOptions(String[] args) {
@@ -97,6 +138,8 @@ public class AgoraAiTest extends AgoraTest {
                 "encryptionMode");
         Option optEncryptionKey = new Option("encryptionKey", true,
                 "encryptionKey");
+        Option ptEnableSaveFile = new Option("enableSaveFile", true,
+                "enableSaveFile");
 
         options.addOption(optToken);
         options.addOption(optChannelId);
@@ -123,6 +166,7 @@ public class AgoraAiTest extends AgoraTest {
         options.addOption(optEnableEncryptionMode);
         options.addOption(optEncryptionMode);
         options.addOption(optEncryptionKey);
+        options.addOption(ptEnableSaveFile);
 
         CommandLine commandLine = null;
         CommandLineParser parser = new DefaultParser();
@@ -322,9 +366,16 @@ public class AgoraAiTest extends AgoraTest {
                 e.printStackTrace();
             }
         }
+
+        if (commandLine.hasOption(ptEnableSaveFile)) {
+            try {
+                enableSaveFile = Integer.parseInt(commandLine.getOptionValue("enableSaveFile"));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
-    @Override
     public void setup() {
         File testDataOutFile = new File("test_data_out/");
         if (!testDataOutFile.exists()) {
@@ -351,6 +402,7 @@ public class AgoraAiTest extends AgoraTest {
             long testDuration) {
         SampleLogger.log("createConnectionAndTest start ccfg:" + ccfg + " channelId:" + channelId + " userId:" + userId
                 + " testTask:" + testTask + " testDuration:" + testDuration);
+        testTaskCount.incrementAndGet();
         testTaskExecutorService.execute(() -> {
             final CountDownLatch testFinishLatch = new CountDownLatch(1);
             final CountDownLatch connectedLatch = new CountDownLatch(1);
@@ -374,7 +426,6 @@ public class AgoraAiTest extends AgoraTest {
                     onStreamMessageReceive(userId, streamId, data, length);
                 }
             });
-            testTaskCount.incrementAndGet();
             connTask.createConnectionAndTest(ccfg, token, channelId, userId, enableEncryptionMode, encryptionMode,
                     encryptionKey);
 
@@ -392,26 +443,34 @@ public class AgoraAiTest extends AgoraTest {
                 connTask.sendYuvTask(videoFile, 1000 / fps, height, width, fps, true);
             } else if (TestTask.SEND_AAC == testTask) {
                 connTask.sendAacTask(audioFile, 20, numOfChannels, sampleRate, true);
-            }  else if (TestTask.SEND_MP4 == testTask) {
+            } else if (TestTask.SEND_MP4 == testTask) {
                 connTask.sendAvMediaTask(audioFile, 50);
-            }else if (TestTask.SEND_DATA_STREAM == testTask) {
+            } else if (TestTask.SEND_DATA_STREAM == testTask) {
                 connTask.sendDataStreamTask(1, 50, true);
             } else if (TestTask.RECEIVE_PCM == testTask) {
                 connTask.registerPcmObserverTask(remoteUserId,
                         ("".equals(audioOutFile)) ? "" : (audioOutFile + "_" + channelId + ".pcm"), numOfChannels,
-                        sampleRate, true);
+                        sampleRate, true, enableSaveFile == 1);
+            } else if (TestTask.RECEIVE_PCM_H264 == testTask) {
+                connTask.registerPcmObserverTask(remoteUserId,
+                        ("".equals(audioOutFile)) ? "" : (audioOutFile + "_" + channelId + ".pcm"), numOfChannels,
+                        sampleRate, false, enableSaveFile == 1);
+                connTask.registerH264ObserverTask(remoteUserId,
+                        ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + ".h264"), streamType, true,
+                        enableSaveFile == 1);
             } else if (TestTask.RECEIVE_YUV == testTask) {
                 connTask.registerYuvObserverTask(remoteUserId,
                         ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + ".yuv"), streamType, true);
             } else if (TestTask.RECEIVE_H264 == testTask) {
                 connTask.registerH264ObserverTask(remoteUserId,
-                        ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + ".h264"), streamType, true);
+                        ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + ".h264"), streamType, true,
+                        enableSaveFile == 1);
             } else if (TestTask.SEND_RECEIVE_PCM_YUV == testTask) {
                 connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, false);
                 connTask.sendYuvTask(videoFile, 1000 / fps, height, width, fps, false);
                 connTask.registerPcmObserverTask(remoteUserId,
                         ("".equals(audioOutFile)) ? "" : (audioOutFile + "_" + channelId + ".pcm"), numOfChannels,
-                        sampleRate, false);
+                        sampleRate, false, enableSaveFile == 1);
                 connTask.registerYuvObserverTask(remoteUserId,
                         ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + ".yuv"), streamType, true);
             }
@@ -433,13 +492,8 @@ public class AgoraAiTest extends AgoraTest {
                 connTask.releaseConn();
                 testTaskCount.decrementAndGet();
             }
-
-            SampleLogger.log("testTaskCount:" + testTaskCount.get());
-            if (testTaskCount.get() == 0) {
-                singleExecutorService.execute(() -> {
-                    exitTest();
-                });
-            }
+            connTask = null;
+            System.gc();
             SampleLogger.log("createConnectionAndTest done");
         });
         return true;
@@ -456,7 +510,6 @@ public class AgoraAiTest extends AgoraTest {
                         + length);
     }
 
-    @Override
     public void cleanup() {
         singleExecutorService.shutdown();
         testTaskExecutorService.shutdown();
@@ -465,15 +518,5 @@ public class AgoraAiTest extends AgoraTest {
             service.destroy();
             service = null;
         }
-    }
-
-    protected void exitTest() {
-        SampleLogger.log("all task test finished and exit test wait 3s");
-        try {
-            Thread.sleep(3000);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        exitFlag = true;
     }
 }
