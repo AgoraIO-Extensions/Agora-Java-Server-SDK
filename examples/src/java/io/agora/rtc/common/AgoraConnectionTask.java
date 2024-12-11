@@ -50,14 +50,15 @@ import io.agora.rtc.VideoFrame;
 import io.agora.rtc.VideoSubscriptionOptions;
 import io.agora.rtc.mediautils.AacReader;
 import io.agora.rtc.mediautils.H264Reader;
-import io.agora.rtc.mediautils.MediaDecode;
-import io.agora.rtc.mediautils.MediaDecodeUtils;
+import io.agora.rtc.ffmpegutils.MediaDecode;
+import io.agora.rtc.ffmpegutils.MediaDecodeUtils;
 import io.agora.rtc.mediautils.OpusReader;
 import io.agora.rtc.mediautils.Vp8Reader;
+import io.agora.rtc.utils.AudioDataCache;
 
 public class AgoraConnectionTask {
     static {
-        System.loadLibrary("mediautils");
+        System.loadLibrary("media_utils");
     }
 
     private final AgoraService service;
@@ -88,6 +89,7 @@ public class AgoraConnectionTask {
     private final Random random;
     private final ExecutorService singleExecutorService;
     private final ThreadPoolExecutor testTaskExecutorService;
+    private final ThreadPoolExecutor logExecutorService;
     private CountDownLatch userLeftLatch;
     private AgoraAudioVadV2 audioVadV2;
 
@@ -119,6 +121,12 @@ public class AgoraConnectionTask {
         this.testStartTime = System.currentTimeMillis();
         this.singleExecutorService = Executors.newSingleThreadExecutor();
         this.testTaskExecutorService = new ThreadPoolExecutor(
+                0,
+                Integer.MAX_VALUE,
+                1L,
+                TimeUnit.SECONDS,
+                new SynchronousQueue<>());
+        this.logExecutorService = new ThreadPoolExecutor(
                 0,
                 Integer.MAX_VALUE,
                 1L,
@@ -349,6 +357,7 @@ public class AgoraConnectionTask {
 
         singleExecutorService.shutdown();
         testTaskExecutorService.shutdown();
+        logExecutorService.shutdown();
 
         SampleLogger.log("Disconnected from Agora channel successfully\n");
     }
@@ -581,13 +590,15 @@ public class AgoraConnectionTask {
         EncodedAudioFrameInfo encodedInfo = new EncodedAudioFrameInfo();
 
         FileSender opusSendThread = new FileSender(filePath, interval) {
+
             @Override
             public void sendOneFrame(byte[] data, long timestamp) {
                 if (data == null) {
                     return;
                 }
-                if (timestamp == 0) {
-                    timestamp = System.currentTimeMillis();
+
+                if (null == data || data.length == 0) {
+                    return;
                 }
 
                 int ret = audioEncodedFrameSender.send(data, data.length, encodedInfo);
@@ -883,6 +894,9 @@ public class AgoraConnectionTask {
                     } else {
                         if (frame == null) {
                             reset();
+                            if (null != h264Reader) {
+                                h264Reader.reset();
+                            }
                             frameIndex = 0;
                             return null;
                         }
@@ -1391,19 +1405,26 @@ public class AgoraConnectionTask {
                 if (null == frame) {
                     return 0;
                 }
-                SampleLogger.log("onPlaybackAudioFrameBeforeMixing frame:" + frame);
-                // Write PCM samples
-                SampleLogger.log("onPlaybackAudioFrameBeforeMixing audioFrame size " + frame.getBuffer().capacity()
-                        + " channel_id:"
-                        + channel_id + " uid:" + uid + " with current channelId:"
-                        + channelId
-                        + "  userId:" + userId);
+                logExecutorService.execute(() -> {
+                    SampleLogger.log("onPlaybackAudioFrameBeforeMixing frame:" + frame);
+                    SampleLogger.log("onPlaybackAudioFrameBeforeMixing audioFrame size " + frame.getBuffer().capacity()
+                            + " channel_id:"
+                            + channel_id + " uid:" + uid + " with current channelId:"
+                            + channelId
+                            + "  userId:" + userId);
+                });
+
                 if (enableSaveFile) {
-                    writeAudioFrameToFile(frame.getBuffer());
+                    byte[] byteArray = new byte[frame.getBuffer().remaining()];
+                    frame.getBuffer().get(byteArray);
+                    frame.getBuffer().rewind();
+                    writeAudioFrameToFile(byteArray);
                 }
                 if (enableVad) {
                     VadProcessResult vadResult = audioVadV2.processFrame(frame);
-                    SampleLogger.log("onPlaybackAudioFrameBeforeMixing vadResult:" + vadResult);
+                    logExecutorService.execute(() -> {
+                        SampleLogger.log("onPlaybackAudioFrameBeforeMixing vadResult:" + vadResult);
+                    });
                     writeVadAudioToFile(vadResult.getOutFrame(), audioOutFile + "_vad.pcm");
                 }
                 if (testTime > 0 && System.currentTimeMillis() - testStartTime >= testTime * 1000
@@ -1462,14 +1483,19 @@ public class AgoraConnectionTask {
                 if (null == frame) {
                     return 0;
                 }
-                SampleLogger.log("onPlaybackAudioFrame frame:" + frame);
-                // Write PCM samples
-                SampleLogger.log("onPlaybackAudioFrame audioFrame size " + frame.getBuffer().capacity()
-                        + " channel_id:"
-                        + channel_id + " with current channelId:"
-                        + channelId
-                        + "  userId:" + userId);
-                writeAudioFrameToFile(frame.getBuffer());
+                logExecutorService.execute(() -> {
+                    SampleLogger.log("onPlaybackAudioFrame frame:" + frame);
+                    SampleLogger.log("onPlaybackAudioFrame audioFrame size " + frame.getBuffer().capacity()
+                            + " channel_id:"
+                            + channel_id + " with current channelId:"
+                            + channelId
+                            + "  userId:" + userId);
+                });
+                byte[] byteArray = new byte[frame.getBuffer().remaining()];
+                frame.getBuffer().get(byteArray);
+                frame.getBuffer().rewind();
+
+                writeAudioFrameToFile(byteArray);
                 if (testTime > 0 && System.currentTimeMillis() - testStartTime >= testTime * 1000
                         && null != userLeftLatch) {
                     userLeftLatch.countDown();
@@ -1528,24 +1554,54 @@ public class AgoraConnectionTask {
                     return;
                 }
 
-                SampleLogger.log("onFrame width:" + frame.getWidth() + " height:" + frame.getHeight() + " channel_id:"
-                        + channel_id
-                        + " remote_uid:" + remote_uid + " frame size:"
-                        + frame.getYBuffer().remaining() + " " + frame.getUBuffer().remaining() + " " +
-                        +frame.getVBuffer().remaining()
-                        + " with current channelId:" + channelId
-                        + "  userId:" + userId);
+                if (enableSaveFile) {
+                    int ylength = frame.getYBuffer().remaining();
+                    int ulength = frame.getUBuffer().remaining();
+                    int vlength = frame.getVBuffer().remaining();
+                    byte[] data = new byte[ylength + ulength + vlength];
+                    ByteBuffer buffer = ByteBuffer.wrap(data);
+                    buffer.put(frame.getYBuffer());
+                    buffer.position(ylength);
+                    buffer.put(frame.getUBuffer());
+                    buffer.position(ylength + ulength);
+                    buffer.put(frame.getVBuffer());
+                    writeVideoFrameToFile(data);
+                }
+
+                byte[] metaDataBufferData = null;
+                byte[] alphaBufferData = null;
+
                 if (null != frame.getMetadataBuffer() && frame.getMetadataBuffer().capacity() > 0) {
-                    SampleLogger.log("onFrame metaDataBuffer:" + Utils.byteBufferToString(frame.getMetadataBuffer()));
+                    metaDataBufferData = new byte[frame.getMetadataBuffer().capacity()];
+                    frame.getMetadataBuffer().get(metaDataBufferData);
                 }
 
                 if (null != frame.getAlphaBuffer() && frame.getAlphaBuffer().capacity() > 0) {
-                    SampleLogger.log("onFrame getAlphaBuffer size:" + frame.getAlphaBuffer().capacity() + " mode:"
-                            + frame.getAlphaMode());
+                    alphaBufferData = new byte[frame.getAlphaBuffer().capacity()];
+                    frame.getAlphaBuffer().get(alphaBufferData);
                 }
-                if (enableSaveFile) {
-                    writeVideoFrameToFile(frame);
-                }
+
+                final byte[] finalMetaDataBufferData = metaDataBufferData;
+                final byte[] finalAlphaBufferData = alphaBufferData;
+                logExecutorService.execute(() -> {
+                    SampleLogger
+                            .log("onFrame width:" + frame.getWidth() + " height:" + frame.getHeight() + " channel_id:"
+                                    + channel_id
+                                    + " remote_uid:" + remote_uid + " frame size:"
+                                    + frame.getYBuffer().remaining() + " " + frame.getUBuffer().remaining() + " " +
+                                    +frame.getVBuffer().remaining()
+                                    + " with current channelId:" + channelId
+                                    + "  userId:" + userId);
+
+                    if (null != finalMetaDataBufferData) {
+                        SampleLogger.log("onFrame metaDataBuffer :" + new String(finalMetaDataBufferData));
+                    }
+
+                    if (null != finalAlphaBufferData) {
+                        SampleLogger.log("onFrame getAlphaBuffer size:" + finalAlphaBufferData.length + " mode:"
+                                + frame.getAlphaMode());
+                    }
+                });
 
                 if (testTime > 0 && System.currentTimeMillis() - testStartTime >= testTime * 1000
                         && null != userLeftLatch) {
@@ -1570,8 +1626,10 @@ public class AgoraConnectionTask {
     }
 
     public void registerH264ObserverTask(String remoteUserId, String videoOutFile, String streamType,
-            boolean waitRelease) {
-        SampleLogger.log("registerH264ObserverTask remoteUserId:" + remoteUserId + " videoOutFile:" + videoOutFile);
+            boolean waitRelease, boolean enableSaveFile) {
+        SampleLogger.log("registerH264ObserverTask remoteUserId:" + remoteUserId + " videoOutFile:" + videoOutFile +
+                " streamType:" + streamType
+                + " enableSaveFile:" + enableSaveFile);
         if (waitRelease) {
             userLeftLatch = new CountDownLatch(1);
         }
@@ -1598,11 +1656,18 @@ public class AgoraConnectionTask {
                             @Override
                             public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int uid,
                                     ByteBuffer buffer, EncodedVideoFrameInfo info) {
-                                SampleLogger.log("onEncodedVideoFrame uid:" + uid + " length " + buffer.remaining()
-                                        + " with current channelId:"
-                                        + channelId
-                                        + "  userId:" + userId);
-                                writeVideoDataToFile(buffer);
+                                logExecutorService.execute(() -> {
+                                    SampleLogger.log("onEncodedVideoFrame uid:" + uid + " length " + buffer.remaining()
+                                            + " with current channelId:"
+                                            + channelId
+                                            + "  userId:" + userId + " info:" + info);
+                                });
+                                if (enableSaveFile) {
+                                    byte[] byteArray = new byte[buffer.remaining()];
+                                    buffer.get(byteArray);
+                                    buffer.rewind();
+                                    writeVideoDataToFile(byteArray);
+                                }
 
                                 if (testTime > 0
                                         && System.currentTimeMillis() - testStartTime >= testTime * 1000
@@ -1652,10 +1717,16 @@ public class AgoraConnectionTask {
                 if (buffer == null || buffer.remaining() == 0) {
                     return 0;
                 }
-                SampleLogger.log("onEncodedAudioFrameReceived buffer size:" + buffer.remaining() +
-                        " info:" + info + " remoteUserId:" + remoteUserId +
-                        " with current channelId:" + channelId);
-                writeAudioFrameToFile(buffer, audioOutFile + "-" + remoteUserId + "." + fileType);
+                logExecutorService.execute(() -> {
+                    SampleLogger.log("onEncodedAudioFrameReceived buffer size:" + buffer.remaining() +
+                            " info:" + info + " remoteUserId:" + remoteUserId +
+                            " with current channelId:" + channelId);
+                });
+                byte[] byteArray = new byte[buffer.remaining()];
+                buffer.get(byteArray);
+                buffer.rewind();
+
+                writeAudioFrameToFile(byteArray, audioOutFile + "-" + remoteUserId + "." + fileType);
                 if (testTime > 0 && System.currentTimeMillis() - testStartTime >= testTime * 1000
                         && null != userLeftLatch) {
                     userLeftLatch.countDown();

@@ -78,10 +78,11 @@
 执行编译脚本：
 
 ```bash
-./build.sh [-ff]
+./build.sh [-ffmpegUtils] [-mediaUtils]
 ```
 
-- 使用 `-ff` 选项编译 FFmpeg 相关库（MP4 测试必需）
+- 使用 `-ffmpegUtils` 选项编译 FFmpeg 相关库（MP4 测试必需）
+- 使用 `-mediaUtils` 选项编译解码音视频相关库（发送编码音视频测试必须）
 
 ## 运行示例
 

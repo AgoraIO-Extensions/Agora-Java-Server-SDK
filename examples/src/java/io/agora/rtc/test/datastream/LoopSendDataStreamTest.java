@@ -13,7 +13,7 @@ import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.Out;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
-import io.agora.rtc.common.AudioDataCache;
+import io.agora.rtc.utils.AudioDataCache;
 import io.agora.rtc.common.SampleLogger;
 import io.agora.rtc.common.Utils;
 import java.util.concurrent.CountDownLatch;

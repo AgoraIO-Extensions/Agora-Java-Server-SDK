@@ -44,6 +44,7 @@ public class ReceiverPcmH264Test {
     private static int sampleRate = 16000;
 
     private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
+    private static final ExecutorService logExecutorService = Executors.newCachedThreadPool();
 
     public static void main(String[] args) {
         String[] keys = Utils.readAppIdAndToken(".keys");
@@ -188,14 +189,18 @@ public class ReceiverPcmH264Test {
                 if (null == frame) {
                     return 0;
                 }
-                SampleLogger.log("onPlaybackAudioFrameBeforeMixing frame:" + frame);
-                // Write PCM samples
-                SampleLogger.log("onPlaybackAudioFrameBeforeMixing audioFrame size " + frame.getBuffer().capacity()
-                        + " channel_id:"
-                        + channel_id + " uid:" + uid + " with current channelId:"
-                        + channelId
-                        + "  userId:" + userId);
-                writeAudioFrameToFile(frame.getBuffer());
+                logExecutorService.execute(() -> {
+                    SampleLogger.log("onPlaybackAudioFrameBeforeMixing frame:" + frame);
+                    SampleLogger.log("onPlaybackAudioFrameBeforeMixing audioFrame size " + frame.getBuffer().capacity()
+                            + " channel_id:"
+                            + channel_id + " uid:" + uid + " with current channelId:"
+                            + channelId
+                            + "  userId:" + userId);
+                });
+                byte[] byteArray = new byte[frame.getBuffer().remaining()];
+                frame.getBuffer().get(byteArray);
+                frame.getBuffer().rewind();
+                writeAudioFrameToFile(byteArray);
                 return 1;
             }
 
@@ -213,11 +218,16 @@ public class ReceiverPcmH264Test {
                             @Override
                             public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int uid,
                                     ByteBuffer buffer, EncodedVideoFrameInfo info) {
-                                SampleLogger.log("onEncodedVideoFrame uid:" + uid + " length " + buffer.remaining()
-                                        + " with current channelId:"
-                                        + channelId
-                                        + "  userId:" + userId);
-                                writeVideoDataToFile(buffer);
+                                logExecutorService.execute(() -> {
+                                    SampleLogger.log("onEncodedVideoFrame uid:" + uid + " length " + buffer.remaining()
+                                            + " with current channelId:"
+                                            + channelId
+                                            + "  userId:" + userId + " info:" + info);
+                                });
+                                byte[] byteArray = new byte[buffer.remaining()];
+                                buffer.get(byteArray);
+                                buffer.rewind();
+                                writeVideoDataToFile(byteArray);
                                 return 1;
                             }
                         }));
@@ -252,6 +262,9 @@ public class ReceiverPcmH264Test {
         localUserObserver = null;
 
         conn = null;
+
+        testTaskExecutorService.shutdown();
+        logExecutorService.shutdown();
 
         SampleLogger.log("Disconnected from Agora channel successfully");
     }

@@ -4,13 +4,13 @@
 
 1. [Environment Setup](#environment-setup)
 2. [Project Configuration](#project-configuration)
-3. [Compilation Process](#compilation-process)
+3. [Build Process](#build-process)
 4. [Running Examples](#running-examples)
-5. [Common Issues](#common-issues)
+5. [Troubleshooting](#troubleshooting)
 
 ## Environment Setup
 
-### Installing FFmpeg (Optional, required for MP4-related tests)
+### Installing FFmpeg (Optional, for MP4 related testing)
 
 1. Update system packages:
 
@@ -18,7 +18,7 @@
    sudo apt update
    ```
 
-2. Install FFmpeg (version 7.0+ required):
+2. Install FFmpeg (requires 7.0+):
 
    ```bash
    sudo apt install ffmpeg
@@ -47,7 +47,7 @@
    TOKEN=your_token
    ```
 
-   *If certificate is not enabled, TOKEN can be empty, for example:*
+   *If certificate is not enabled, TOKEN value can be empty, for example:*
 
    ```
    APP_ID=abcd1234
@@ -65,7 +65,7 @@
    mv native/linux/x86_64/*.so libs/
    ```
 
-   Ensure the directory structure is as follows:
+   Ensure directory structure is as follows:
 
    ```
    libs/
@@ -73,35 +73,36 @@
    └── lib***.so
    ```
 
-## Compilation Process
+## Build Process
 
-Execute the compilation script:
+Execute build script:
 
 ```bash
-./build.sh [-ff]
+./build.sh [-ffmpegUtils] [-mediaUtils]
 ```
 
-- Use the `-ff` option to compile FFmpeg-related libraries (required for MP4 tests)
+- Use `-ffmpegUtils` option to build FFmpeg related libraries (required for MP4 testing)
+- Use `-mediaUtils` option to build decode audio/video related libraries (required for sending encoded audio/video testing)
 
 ## Running Examples
 
-1. Enter the examples directory:
+1. Navigate to examples directory:
 
    ```bash
    cd examples
    ```
 
-2. Run the test script:
+2. Run test script:
 
    ```bash
    ./script/TestCaseName.sh
    ```
 
-3. Modify test parameters: directly edit the corresponding `.sh` file
+3. Modify test parameters: directly edit corresponding `.sh` file
 
-## Common Issues
+## Troubleshooting
 
 - Ensure Java environment is correctly installed and configured
 - Verify `agora-sdk.jar` version compatibility
 - Check `APP_ID` and `TOKEN` configuration before running
-- Execute steps in order to avoid dependency issues
+- Follow steps in order to avoid dependency issues

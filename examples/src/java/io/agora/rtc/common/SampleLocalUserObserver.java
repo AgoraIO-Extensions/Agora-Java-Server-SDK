@@ -54,17 +54,6 @@ public class SampleLocalUserObserver extends DefaultLocalUserObserver {
         return remoteVideoTrack;
     }
 
-    // public synchronized void setMediaPacketReceiver(IMediaPacketReceiver
-    // receiver) { // lock
-    // mediaPacketReceiver = receiver;
-    // if (remoteAudioTrack != null) {
-    // remoteAudioTrack.registerMediaPacketReceiver(mediaPacketReceiver);
-    // }
-    // if (remoteVideoTrack != null) {
-    // remoteVideoTrack.registerMediaPacketReceiver(mediaPacketReceiver);
-    // }
-    // }
-
     public void setAudioFrameObserver(IAudioFrameObserver observer) {
         audioFrameObserver = observer;
     }
@@ -112,7 +101,6 @@ public class SampleLocalUserObserver extends DefaultLocalUserObserver {
 
     public void onUserAudioTrackStateChanged(AgoraLocalUser agora_local_user, String user_id,
             AgoraRemoteAudioTrack agora_remote_audio_track, int state, int reason, int elapsed) {
-
         SampleLogger.log("onUserAudioTrackStateChanged success: user_id = " + user_id + ", state = " + state
                 + ", reason = " + reason + ", elapsed = " + elapsed);
     }
@@ -126,7 +114,7 @@ public class SampleLocalUserObserver extends DefaultLocalUserObserver {
             isAudioRegistered = true;
             if (remoteAudioTrack != null && audioFrameObserver != null) {
                 int res = localUser.registerAudioFrameObserver(audioFrameObserver);
-                SampleLogger.log("registerAudioFrameObserver success" + res);
+                SampleLogger.log("registerAudioFrameObserver success:" + res);
             }
 
             if (remoteAudioTrack != null && audioEncodedFrameObserver != null) {
@@ -134,7 +122,6 @@ public class SampleLocalUserObserver extends DefaultLocalUserObserver {
                 SampleLogger.log("registerAudioEncodedFrameObserver success:" + res);
             }
         }
-
     }
 
     public void onAudioSubscribeStateChanged(AgoraLocalUser agora_local_user, String channel, String user_id,
@@ -182,5 +169,140 @@ public class SampleLocalUserObserver extends DefaultLocalUserObserver {
     public void onStreamMessage(AgoraLocalUser agora_local_user, String user_id, int stream_id, String data,
             long length) {
         SampleLogger.log("onStreamMessage success");
+    }
+
+    public void onAudioTrackPublishSuccess(AgoraLocalUser agora_local_user,
+            AgoraLocalAudioTrack agora_local_audio_track) {
+        SampleLogger.log("onAudioTrackPublishSuccess success");
+    }
+
+    public void onAudioTrackPublishStart(AgoraLocalUser agora_local_user,
+            AgoraLocalAudioTrack agora_local_audio_track) {
+        SampleLogger.log("onAudioTrackPublishStart success");
+    }
+
+    public void onAudioTrackUnpublished(AgoraLocalUser agora_local_user,
+            AgoraLocalAudioTrack agora_local_audio_track) {
+        SampleLogger.log("onAudioTrackUnpublished success");
+    }
+
+    public void onVideoTrackPublishStart(AgoraLocalUser agora_local_user,
+            AgoraLocalVideoTrack agora_local_video_track) {
+        SampleLogger.log("onVideoTrackPublishStart success");
+    }
+
+    public void onVideoTrackUnpublished(AgoraLocalUser agora_local_user,
+            AgoraLocalVideoTrack agora_local_video_track) {
+        SampleLogger.log("onVideoTrackUnpublished success");
+    }
+
+    public void onAudioTrackPublicationFailure(AgoraLocalUser agora_local_user,
+            AgoraLocalAudioTrack agora_local_audio_track, int error) {
+        SampleLogger.log("onAudioTrackPublicationFailure success");
+    }
+
+    public void onLocalAudioTrackStateChanged(AgoraLocalUser agora_local_user,
+            AgoraLocalAudioTrack agora_local_audio_track, int state, int error) {
+        SampleLogger.log("onLocalAudioTrackStateChanged success");
+    }
+
+    public void onLocalAudioTrackStatistics(AgoraLocalUser agora_local_user, LocalAudioStats stats) {
+        SampleLogger.log("onLocalAudioTrackStatistics success");
+    }
+
+    public void onRemoteAudioTrackStatistics(AgoraLocalUser agora_local_user,
+            AgoraRemoteAudioTrack agora_remote_audio_track, RemoteAudioTrackStats stats) {
+        SampleLogger.log("onRemoteAudioTrackStatistics success");
+    }
+
+    public void onAudioPublishStateChanged(AgoraLocalUser agora_local_user, String channel, int old_state,
+            int new_state, int elapse_since_last_state) {
+        SampleLogger.log("onAudioPublishStateChanged success");
+    }
+
+    public void onFirstRemoteAudioFrame(AgoraLocalUser agora_local_user, String user_id, int elapsed) {
+        SampleLogger.log("onFirstRemoteAudioFrame success");
+    }
+
+    public void onFirstRemoteAudioDecoded(AgoraLocalUser agora_local_user, String user_id, int elapsed) {
+        SampleLogger.log("onFirstRemoteAudioDecoded success");
+    }
+
+    public void onVideoTrackPublishSuccess(AgoraLocalUser agora_local_user,
+            AgoraLocalVideoTrack agora_local_video_track) {
+        SampleLogger.log("onVideoTrackPublishSuccess success");
+    }
+
+    public void onVideoTrackPublicationFailure(AgoraLocalUser agora_local_user,
+            AgoraLocalVideoTrack agora_local_video_track, int error) {
+        SampleLogger.log("onVideoTrackPublicationFailure success");
+    }
+
+    public void onLocalVideoTrackStateChanged(AgoraLocalUser agora_local_user,
+            AgoraLocalVideoTrack agora_local_video_track, int state, int error) {
+        SampleLogger.log("onLocalVideoTrackStateChanged success");
+    }
+
+    public void onLocalVideoTrackStatistics(AgoraLocalUser agora_local_user,
+            AgoraLocalVideoTrack agora_local_video_track, LocalVideoTrackStats stats) {
+        SampleLogger.log("onLocalVideoTrackStatistics success");
+    }
+
+    public void onRemoteVideoTrackStatistics(AgoraLocalUser agora_local_user,
+            AgoraRemoteVideoTrack agora_remote_video_track, RemoteVideoTrackStats stats) {
+        SampleLogger.log("onRemoteVideoTrackStatistics success");
+    }
+
+    public void onAudioVolumeIndication(AgoraLocalUser agora_local_user, AudioVolumeInfo[] speakers,
+            int total_volume) {
+        SampleLogger.log("onAudioVolumeIndication success");
+    }
+
+    public void onActiveSpeaker(AgoraLocalUser agora_local_user, String userId) {
+        SampleLogger.log("onActiveSpeaker success");
+    }
+
+    public void onRemoteVideoStreamInfoUpdated(AgoraLocalUser agora_local_user, RemoteVideoStreamInfo info) {
+        SampleLogger.log("onRemoteVideoStreamInfoUpdated success");
+    }
+
+    public void onVideoSubscribeStateChanged(AgoraLocalUser agora_local_user, String channel, String user_id,
+            int old_state, int new_state, int elapse_since_last_state) {
+        SampleLogger.log("onVideoSubscribeStateChanged success");
+    }
+
+    public void onVideoPublishStateChanged(AgoraLocalUser agora_local_user, String channel, int old_state,
+            int new_state, int elapse_since_last_state) {
+        SampleLogger.log("onVideoPublishStateChanged success");
+    }
+
+    public void onFirstRemoteVideoFrame(AgoraLocalUser agora_local_user, String user_id, int width, int height,
+            int elapsed) {
+        SampleLogger.log("onFirstRemoteVideoFrame success");
+    }
+
+    public void onFirstRemoteVideoDecoded(AgoraLocalUser agora_local_user, String user_id, int width, int height,
+            int elapsed) {
+        SampleLogger.log("onFirstRemoteVideoDecoded success");
+    }
+
+    public void onFirstRemoteVideoFrameRendered(AgoraLocalUser agora_local_user, String user_id, int width,
+            int height,
+            int elapsed) {
+        SampleLogger.log("onFirstRemoteVideoFrameRendered success");
+    }
+
+    public void onVideoSizeChanged(AgoraLocalUser agora_local_user, String user_id, int width, int height,
+            int rotation) {
+        SampleLogger.log("onVideoSizeChanged success");
+    }
+
+    public void onRemoteSubscribeFallbackToAudioOnly(AgoraLocalUser agora_local_user, String user_id,
+            int is_fallback_or_recover) {
+        SampleLogger.log("onRemoteSubscribeFallbackToAudioOnly success");
+    }
+
+    public void onUserStateChanged(AgoraLocalUser agora_local_user, String user_id, int state) {
+        SampleLogger.log("onUserStateChanged success");
     }
 }

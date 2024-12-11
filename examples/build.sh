@@ -3,13 +3,18 @@ set -x
 set -e
 
 # 初始化标志
-build_ff=false
+build_ffmpegUtils=false
+build_mediaUtils=false
 
 # 解析命令行参数
 while [[ $# -gt 0 ]]; do
     case "$1" in
-    -ff)
-        build_ff=true
+    -ffmpegUtils)
+        build_ffmpegUtils=true
+        shift
+        ;;
+    -mediaUtils)
+        build_mediaUtils=true
         shift
         ;;
     *)
@@ -19,37 +24,47 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+OUT=build
+INCLUDE_FFMPEG_UTILS=src/cpp/ffmpeg_utils
+INCLUDE_MEDIA_UTILS=src/cpp/media_utils
+INCLUDE_ARCH=$(ls -d -1 $JAVA_HOME/include/*/)
+
 rm -fr build
 mkdir -p build
-rm -fr libs/libmedia_decode.so
 
-# 如果有 -ff 参数，则编译 libmedia_decode.so
-if $build_ff; then
-    echo "Building libmedia_decode.so..."
+# 如果有 -ffmpegUtils 参数，则编译 libffmpeg_utils.so
+if $build_ffmpegUtils; then
+    echo "Building libffmpeg_utils.so..."
 
     FFMPEG_INCLUDE_DIR=/usr/local/include
     FFMPEG_LIB_DIR=/usr/local/lib
 
-    gcc -shared -o libs/libmedia_decode.so -fPIC \
+    gcc -shared -o $OUT/libffmpeg_utils.so -fPIC \
         -I$JAVA_HOME/include \
         -I$JAVA_HOME/include/linux \
         -I$FFMPEG_INCLUDE_DIR \
         -L$FFMPEG_LIB_DIR \
-        src/cpp/media_decode_jni.cc \
-        src/cpp/decode_media.c \
+        $INCLUDE_FFMPEG_UTILS/media_decode_jni.cc \
+        $INCLUDE_FFMPEG_UTILS/decode_media.c \
         -lavformat -lavcodec -lavutil -lswresample -lswscale \
         -Wl,-rpath=$FFMPEG_LIB_DIR
+
+    cp -f "$OUT/libffmpeg_utils.so" "third_party/libffmpeg_utils.so"
+
 fi
 
-cp -f "third_party/libmediautils.so" "libs/libmediautils.so"
+if $build_mediaUtils; then
+    g++ -c -std=c++14 -fPIC -g -I$INCLUDE_MEDIA_UTILS -I$INCLUDE_MEDIA_UTILS/third-party/opusfile_parser/include -I$JAVA_HOME/include -I$INCLUDE_ARCH $INCLUDE_MEDIA_UTILS/helper_aac_parser.cpp -o $OUT/helper_aac_parser.o
+    g++ -c -std=c++14 -fPIC -g -I$INCLUDE_MEDIA_UTILS -I$INCLUDE_MEDIA_UTILS/third-party/opusfile_parser/include -I$JAVA_HOME/include -I$INCLUDE_ARCH $INCLUDE_MEDIA_UTILS/helper_opus_parser.cpp -o $OUT/helper_opus_parser.o
+    g++ -c -std=c++14 -fPIC -g -I$INCLUDE_MEDIA_UTILS -I$INCLUDE_MEDIA_UTILS/third-party/opusfile_parser/include -I$JAVA_HOME/include -I$INCLUDE_ARCH $INCLUDE_MEDIA_UTILS/helper_h264_parser.cpp -o $OUT/helper_h264_parser.o
+    g++ -c -std=c++14 -fPIC -g -I$INCLUDE_MEDIA_UTILS -I$INCLUDE_MEDIA_UTILS/third-party/opusfile_parser/include -I$JAVA_HOME/include -I$INCLUDE_ARCH $INCLUDE_MEDIA_UTILS/helper_vp8_parser.cpp -o $OUT/helper_vp8_parser.o
+    g++ -c -std=c++14 -fPIC -g -I$INCLUDE_MEDIA_UTILS -I$INCLUDE_MEDIA_UTILSs/third-party/opusfile_parser/include -I$JAVA_HOME/include -I$INCLUDE_ARCH $INCLUDE_MEDIA_UTILS/native-lib.cpp -o $OUT/native-lib.o
+    g++ -shared -std=c++14 -fPIC -g $OUT/helper_vp8_parser.o $OUT/helper_aac_parser.o $OUT/helper_h264_parser.o $OUT/native-lib.o $OUT/helper_opus_parser.o -L$INCLUDE_MEDIA_UTILS/third-party/opusfile_parser/lib/ -lopusfile -logg -lopus -o $OUT/libmedia_utils.so
+    cp -f "$OUT/libmedia_utils.so" "third_party/libmedia_utils.so"
+fi
 
-# 准备 Java 源文件列表
-# if $build_vad; then
-#     echo "Including AgoraAudioVadTest.java for compilation..."
-#     find src -name "*.java" >build/test_source.txt
-# else
-#     find src -name "*.java" | grep -v "AgoraAudioVadTest.java" >build/test_source.txt
-# fi
+cp -f "third_party/libffmpeg_utils.so" "libs/libffmpeg_utils.so"
+cp -f "third_party/libmedia_utils.so" "libs/libmedia_utils.so"
 
 find src -name "*.java" >build/test_source.txt
 

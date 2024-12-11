@@ -69,6 +69,20 @@ public class SampleAudioFrameObserver extends FileWriter implements IAudioFrameO
         });
     }
 
+    public void writeAudioFrameToFile(byte[] buffer) {
+        if ("".equals(outputFilePath.trim()) || buffer == null || buffer.length == 0) {
+            return;
+        }
+
+        writeFileExecutorService.execute(() -> {
+            try {
+                writeData(buffer, buffer.length);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
     public void writeVadAudioToFile(byte[] byteArray, String file) {
         if (byteArray == null || byteArray.length == 0) {
             return;

@@ -1,6 +1,6 @@
 package io.agora.rtc.scenario;
 
-import io.agora.rtc.AgoraAudioPcmDataSender;
+import io.agora.rtc.AgoraAudioEncodedFrameSender;
 import io.agora.rtc.AgoraLocalAudioTrack;
 import io.agora.rtc.AgoraLocalUser;
 import io.agora.rtc.AgoraMediaNodeFactory;
@@ -12,32 +12,36 @@ import io.agora.rtc.DefaultLocalUserObserver;
 import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
-import io.agora.rtc.utils.AudioDataCache;
+import io.agora.rtc.utils.AudioSenderHelper;
 import io.agora.rtc.common.SampleLogger;
 import io.agora.rtc.common.Utils;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class SendPcmFileTest {
+public class SendOpusTest {
+    static {
+        System.loadLibrary("media_utils");
+    }
+
     private static String appId;
     private static String token;
-    private static String DEFAULT_LOG_PATH = "agora_logs/agorasdk.log";
-    private static int DEFAULT_LOG_SIZE = 512 * 1024; // default log size is 512 kb
-    private static String channelId = "agaa";
-    private static String userId = "12345";
+    private static final String DEFAULT_LOG_PATH = "agora_logs/agorasdk.log";
+    private static final int DEFAULT_LOG_SIZE = 512 * 1024; // default log size is 512 kb
+    private static final String channelId = "agaa";
+    private static final String userId = "12345";
+    private static final String filePath = "test_data/send_audio.opus";
 
     private static AgoraService service;
     private static AgoraRtcConn conn;
     private static AgoraMediaNodeFactory mediaNodeFactory;
 
-    private static AgoraAudioPcmDataSender audioFrameSender;
-    private static AgoraLocalAudioTrack customAudioTrack;
+    private static AgoraAudioEncodedFrameSender audioEncodedFrameSender;
+    private static AgoraLocalAudioTrack customEncodedAudioTrack;
+
+    private static AudioSenderHelper audioSenderHelper;
 
     private static CountDownLatch exitLatch;
-
-    private static int numOfChannels = 1;
-    private static int sampleRate = 16000;
 
     private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
 
@@ -159,41 +163,56 @@ public class SendPcmFileTest {
     }
 
     private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
-        audioFrameSender = mediaNodeFactory.createAudioPcmDataSender();
         // Create audio track
-        customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
-        conn.getLocalUser().publishAudio(customAudioTrack);
+        audioEncodedFrameSender = mediaNodeFactory.createAudioEncodedFrameSender();
+        customEncodedAudioTrack = service.createCustomAudioTrackEncoded(audioEncodedFrameSender,
+                Constants.TMixMode.MIX_DISABLED.value);
+        conn.getLocalUser().publishAudio(customEncodedAudioTrack);
 
-        AudioDataCache audioDataCache = new AudioDataCache(numOfChannels, sampleRate);
+        audioSenderHelper = new AudioSenderHelper();
 
-        final byte[] pcmData = Utils.readPcmFromFile("test_data/send_audio_16k_1ch.pcm");
-
-        audioDataCache.pushData(pcmData);
-        SampleLogger.log("pushData");
-
-        byte[] sendData = null;
-        while (true) {
-            // If the remaining cache duration is less than 60 ms, push data into the cache
-            if (audioDataCache.getRemainingCacheDurationInMs() < 60) {
-                audioDataCache.pushData(pcmData);
-                SampleLogger.log("pushData");
+        audioSenderHelper.setCallback(new AudioSenderHelper.AudioSenderCallback() {
+            @Override
+            public void onTaskStart(AudioSenderHelper.TaskInfo task) {
+                SampleLogger.log("onTaskStart for task:" + task);
             }
-            sendData = audioDataCache.getData();
-            int ret = audioFrameSender.send(sendData, 0,
-                    audioDataCache.getSamplesPerChannel(sendData.length), 2,
-                    numOfChannels,
-                    sampleRate);
-            // SampleLogger.log("send ret:" + ret);
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+
+            @Override
+            public void onTaskComplete(AudioSenderHelper.TaskInfo task) {
+                SampleLogger.log("onTaskComplete for task:" + task);
             }
+
+            @Override
+            public void onTaskCancel(AudioSenderHelper.TaskInfo task) {
+                SampleLogger.log("onTaskCancel for task:" + task);
+            }
+        });
+
+        audioSenderHelper.send(
+                new AudioSenderHelper.TaskInfo(
+                        channelId,
+                        userId,
+                        filePath,
+                        AudioSenderHelper.FileType.OPUS,
+                        audioEncodedFrameSender,
+                        1),
+                true);
+
+        try {
+            Thread.sleep(10 * 1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+        audioSenderHelper.send(
+                new AudioSenderHelper.TaskInfo(
+                        channelId,
+                        userId,
+                        filePath,
+                        AudioSenderHelper.FileType.OPUS,
+                        audioEncodedFrameSender,
+                        1),
+                true);
 
-        // if (null != exitLatch) {
-        // exitLatch.countDown();
-        // }
     }
 
     private static void releaseConn() {
@@ -202,51 +221,22 @@ public class SendPcmFileTest {
             return;
         }
 
+        if (null != audioSenderHelper) {
+            audioSenderHelper.destroy();
+        }
+
         if (null != mediaNodeFactory) {
             mediaNodeFactory.destroy();
         }
 
-        if (null != audioFrameSender) {
-            audioFrameSender.destroy();
+        if (null != audioEncodedFrameSender) {
+            audioEncodedFrameSender.destroy();
         }
 
-        if (null != customAudioTrack) {
-            customAudioTrack.clearSenderBuffer();
-            conn.getLocalUser().unpublishAudio(customAudioTrack);
-            customAudioTrack.destroy();
+        if (null != customEncodedAudioTrack) {
+            conn.getLocalUser().unpublishAudio(customEncodedAudioTrack);
+            customEncodedAudioTrack.destroy();
         }
-
-        // if (null != customEncodedImageSender) {
-        //     customEncodedImageSender.destroy();
-        // }
-
-        // if (null != customEncodedVideoTrack) {
-        //     conn.getLocalUser().unpublishVideo(customEncodedVideoTrack);
-        //     customEncodedVideoTrack.destroy();
-        // }
-
-        // if (null != videoFrameSender) {
-        //     videoFrameSender.destroy();
-        // }
-
-        // if (null != customVideoTrack) {
-        //     conn.getLocalUser().unpublishVideo(customVideoTrack);
-        //     customVideoTrack.destroy();
-        // }
-
-        // if (null != audioEncodedFrameSender) {
-        //     audioEncodedFrameSender.destroy();
-        // }
-
-        // if (null != customEncodedAudioTrack) {
-        //     conn.getLocalUser().unpublishAudio(customEncodedAudioTrack);
-        //     customEncodedAudioTrack.destroy();
-        // }
-
-        // if (null != localUserObserver) {
-        //     localUserObserver.unsetAudioFrameObserver();
-        //     localUserObserver.unsetVideoFrameObserver();
-        // }
 
         int ret = conn.disconnect();
         if (ret != 0) {
@@ -260,15 +250,8 @@ public class SendPcmFileTest {
         conn.destroy();
 
         mediaNodeFactory = null;
-        audioFrameSender = null;
-        customAudioTrack = null;
-        // customEncodedImageSender = null;
-        // customEncodedVideoTrack = null;
-        // videoFrameSender = null;
-        // customVideoTrack = null;
-        // audioEncodedFrameSender = null;
-        // customEncodedAudioTrack = null;
-        // localUserObserver = null;
+        audioEncodedFrameSender = null;
+        customEncodedAudioTrack = null;
 
         conn = null;
 

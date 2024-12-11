@@ -41,4 +41,18 @@ public class SampleAudioEncodedFrameObserver extends FileWriter implements IAudi
         });
     }
 
+    public void writeAudioFrameToFile(byte[] buffer, String filePath) {
+        if ("".equals(filePath.trim()) || buffer == null || buffer.length == 0) {
+            return;
+        }
+
+        writeFileExecutorService.execute(() -> {
+            try {
+                writeData(buffer, buffer.length, filePath);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
 }

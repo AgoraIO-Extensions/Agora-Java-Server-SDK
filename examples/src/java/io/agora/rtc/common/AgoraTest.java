@@ -10,6 +10,7 @@ import io.agora.rtc.common.SampleCommon;
 import io.agora.rtc.common.SampleLogger;
 import io.agora.rtc.common.Utils;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -90,8 +91,9 @@ public class AgoraTest {
         SEND_VP8_PCM,
         SEND_DATA_STREAM,
         SEND_PCM_YUV,
+        SEND_PCM_H264,
         RECEIVE_PCM, RECEIVE_YUV,
-        RECEIVE_H264, RECEIVE_MIXED_AUDIO, RECEIVE_ENCODED_AUDIO,
+        RECEIVE_H264, RECEIVE_PCM_H264, RECEIVE_MIXED_AUDIO, RECEIVE_ENCODED_AUDIO,
         SEND_RECEIVE_PCM_YUV
     }
 
@@ -133,6 +135,16 @@ public class AgoraTest {
 
     public void handleOptions(String[] args) {
         SampleLogger.log(Arrays.toString(args));
+        ArrayList<String> filteredArgsList = new ArrayList<>();
+
+        for (String arg : args) {
+            if (!"-asan".equals(arg)) {
+                filteredArgsList.add(arg);
+            }
+        }
+
+        String[] filteredArgs = filteredArgsList.toArray(new String[0]);
+
         Options options = new Options();
         Option optToken = new Option("token", true, "The token for authentication");
         Option optChannelId = new Option("channelId", true, "Channel Id");
@@ -217,7 +229,7 @@ public class AgoraTest {
         CommandLine commandLine = null;
         CommandLineParser parser = new DefaultParser();
         try {
-            commandLine = parser.parse(options, args);
+            commandLine = parser.parse(options, filteredArgs);
         } catch (Exception e) {
             // e.printStackTrace();
             SampleLogger.log("unkown option: " + e.getMessage());
@@ -485,6 +497,7 @@ public class AgoraTest {
     }
 
     public void setup() {
+        SampleLogger.log("setup");
         File testDataOutFile = new File("test_data_out/");
         if (!testDataOutFile.exists()) {
             testDataOutFile.mkdirs();
@@ -503,9 +516,6 @@ public class AgoraTest {
         SampleLogger.log("connectionCount:" + connectionCount + " enableStringUid:" + enableStringUid);
 
         service = SampleCommon.createAndInitAgoraService(0, 1, 1, useStringUid, APPID);
-
-        // connPool = new AgoraRtcConnPool((int) Math.ceil(connectionCount * 1.5));
-
     }
 
     protected boolean createConnectionAndTest(RtcConnConfig ccfg, String channelId, String userId, TestTask testTask,
@@ -551,6 +561,9 @@ public class AgoraTest {
                 connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, false, enableAudioCache == 1);
                 connTask.sendYuvTask(videoFile, 1000 / fps, height, width, fps, Constants.VIDEO_STREAM_HIGH,
                         enableSimulcastStream == 1, true, enableAlpha == 1);
+            } else if (TestTask.SEND_PCM_H264 == testTask) {
+                connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, false, enableAudioCache == 1);
+                connTask.sendH264Task(videoFile, 1000 / fps, 0, 0, Constants.VIDEO_STREAM_HIGH, false, true);
             } else if (TestTask.SEND_AAC == testTask) {
                 connTask.sendAacTask(audioFile, 20, numOfChannels, sampleRate, true);
             } else if (TestTask.SEND_OPUS == testTask) {
@@ -584,6 +597,14 @@ public class AgoraTest {
                         ("".equals(audioOutFile)) ? "" : (audioOutFile + "_" + channelId + "_" + userId + ".pcm"),
                         numOfChannels,
                         sampleRate, true, enableSaveFile == 1, enableVad == 1);
+            } else if (TestTask.RECEIVE_PCM_H264 == testTask) {
+                connTask.registerPcmObserverTask(remoteUserId,
+                        ("".equals(audioOutFile)) ? "" : (audioOutFile + "_" + channelId + "_" + userId + ".pcm"),
+                        numOfChannels,
+                        sampleRate, false, enableSaveFile == 1, enableVad == 1);
+                connTask.registerH264ObserverTask(remoteUserId,
+                        ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + "_" + userId + ".h264"),
+                        streamType, true, enableSaveFile == 1);
             } else if (TestTask.RECEIVE_MIXED_AUDIO == testTask) {
                 connTask.registerMixedAudioObserverTask(remoteUserId,
                         ("".equals(audioOutFile)) ? "" : (audioOutFile + "_" + channelId + "_" + userId + ".pcm"),
@@ -597,7 +618,7 @@ public class AgoraTest {
             } else if (TestTask.RECEIVE_H264 == testTask) {
                 connTask.registerH264ObserverTask(remoteUserId,
                         ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + "_" + userId + ".h264"),
-                        streamType, true);
+                        streamType, true, enableSaveFile == 1);
             } else if (TestTask.RECEIVE_ENCODED_AUDIO == testTask) {
                 connTask.registerEncodedAudioObserverTask("", ("".equals(audioOutFile)) ? "" : audioOutFile, fileType,
                         true);
@@ -651,6 +672,7 @@ public class AgoraTest {
     }
 
     public void cleanup() {
+        SampleLogger.log("cleanup");
         singleExecutorService.shutdown();
         testTaskExecutorService.shutdown();
         // connPool.releaseAllConn();

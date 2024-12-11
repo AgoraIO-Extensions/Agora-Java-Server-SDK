@@ -41,4 +41,18 @@ public class SampleVideoEncodedFrameObserver extends FileWriter implements IVide
         });
     }
 
+    public void writeVideoDataToFile(byte[] buffer) {
+        if ("".equals(outputFilePath.trim()) || buffer == null || buffer.length == 0) {
+            return;
+        }
+
+        writeFileExecutorService.execute(() -> {
+            try {
+                writeData(buffer, buffer.length);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
 }

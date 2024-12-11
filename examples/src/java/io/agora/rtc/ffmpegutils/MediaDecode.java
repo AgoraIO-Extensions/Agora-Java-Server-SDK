@@ -1,8 +1,8 @@
-package io.agora.rtc.mediautils;
+package io.agora.rtc.ffmpegutils;
 
 public class MediaDecode {
     static {
-        System.loadLibrary("media_decode");
+        System.loadLibrary("ffmpeg_utils");
     }
 
     private long decoder = 0;

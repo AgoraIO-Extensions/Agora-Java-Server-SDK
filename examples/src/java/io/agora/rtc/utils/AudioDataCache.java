@@ -1,4 +1,4 @@
-package io.agora.rtc.common;
+package io.agora.rtc.utils;
 
 import java.nio.ByteBuffer;
 

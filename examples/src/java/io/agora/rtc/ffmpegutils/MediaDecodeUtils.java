@@ -1,4 +1,4 @@
-package io.agora.rtc.mediautils;
+package io.agora.rtc.ffmpegutils;
 
 import io.agora.rtc.common.SampleLogger;
 

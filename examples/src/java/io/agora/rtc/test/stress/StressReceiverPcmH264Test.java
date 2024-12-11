@@ -5,15 +5,15 @@ import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.common.SampleLogger;
 import io.agora.rtc.test.common.AgoraTest;
 import java.util.Random;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class StressTest extends AgoraTest {
+public class StressReceiverPcmH264Test extends AgoraTest {
     private long testStartTime;
     private final ThreadPoolExecutor testTaskExecutorService;
 
-    public StressTest() {
+    public StressReceiverPcmH264Test() {
         this.testTaskExecutorService = new ThreadPoolExecutor(
                 0,
                 Integer.MAX_VALUE,
@@ -23,7 +23,7 @@ public class StressTest extends AgoraTest {
     }
 
     public static void main(String[] args) {
-        startTest(args, new StressTest());
+        startTest(args, new StressReceiverPcmH264Test());
     }
 
     public void setup() {
@@ -42,10 +42,11 @@ public class StressTest extends AgoraTest {
             final int threadId = i;
             testTaskExecutorService.execute(() -> {
                 int taskCount = 0;
+                int index = 0;
                 while (checkTestTime()) {
-                    int t1 = random.nextInt(5) + 5;
+                    int t1 = random.nextInt(10) + 5;
 
-                    createConnectionAndTest(ccfg, channelId + threadId + taskCount, userId, TestTask.SEND_PCM_YUV, t1);
+                    createConnectionAndTest(ccfg, channelId, userId + threadId + (index++), TestTask.RECEIVE_PCM_H264, t1);
 
                     taskCount++;
                     SampleLogger.log("taskCount: " + taskCount);

@@ -28,21 +28,11 @@ public class SampleVideFrameObserver extends FileWriter implements IVideoFrameOb
             VideoFrame frame) {
     }
 
-    public void writeVideoFrameToFile(VideoFrame frame) {
-        if ("".equals(outputFilePath.trim())) {
+    public void writeVideoFrameToFile(byte[] data) {
+        if ("".equals(outputFilePath.trim()) || data == null || data.length == 0) {
             return;
         }
         writeFileExecutorService.execute(() -> {
-            int ylength = frame.getYBuffer().remaining();
-            int ulength = frame.getUBuffer().remaining();
-            int vlength = frame.getVBuffer().remaining();
-            byte[] data = new byte[ylength + ulength + vlength];
-            ByteBuffer buffer = ByteBuffer.wrap(data);
-            buffer.put(frame.getYBuffer());
-            buffer.position(ylength);
-            buffer.put(frame.getUBuffer());
-            buffer.position(ylength + ulength);
-            buffer.put(frame.getVBuffer());
             File file = new File(outputFilePath);
             FileOutputStream fileOutputStream = null;
             try {

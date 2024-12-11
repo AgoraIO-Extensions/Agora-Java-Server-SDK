@@ -23,8 +23,8 @@ import io.agora.rtc.VideoDimensions;
 import io.agora.rtc.VideoEncoderConfig;
 import io.agora.rtc.common.SampleLogger;
 import io.agora.rtc.common.Utils;
-import io.agora.rtc.mediautils.MediaDecode;
-import io.agora.rtc.mediautils.MediaDecodeUtils;
+import io.agora.rtc.ffmpegutils.MediaDecode;
+import io.agora.rtc.ffmpegutils.MediaDecodeUtils;
 import io.agora.rtc.test.common.AgoraTest;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
@@ -319,17 +319,17 @@ public class SendMp4Test {
         }
 
         // if (null != audioEncodedFrameSender) {
-        //     audioEncodedFrameSender.destroy();
+        // audioEncodedFrameSender.destroy();
         // }
 
         // if (null != customEncodedAudioTrack) {
-        //     conn.getLocalUser().unpublishAudio(customEncodedAudioTrack);
-        //     customEncodedAudioTrack.destroy();
+        // conn.getLocalUser().unpublishAudio(customEncodedAudioTrack);
+        // customEncodedAudioTrack.destroy();
         // }
 
         // if (null != localUserObserver) {
-        //     localUserObserver.unsetAudioFrameObserver();
-        //     localUserObserver.unsetVideoFrameObserver();
+        // localUserObserver.unsetAudioFrameObserver();
+        // localUserObserver.unsetVideoFrameObserver();
         // }
 
         int ret = conn.disconnect();

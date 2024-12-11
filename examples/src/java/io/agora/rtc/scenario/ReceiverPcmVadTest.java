@@ -1,47 +1,96 @@
 package io.agora.rtc.scenario;
 
-import io.agora.rtc.AgoraAudioPcmDataSender;
-import io.agora.rtc.AgoraLocalAudioTrack;
+import io.agora.rtc.AgoraAudioVadConfigV2;
+import io.agora.rtc.AgoraAudioVadV2;
 import io.agora.rtc.AgoraLocalUser;
-import io.agora.rtc.AgoraMediaNodeFactory;
 import io.agora.rtc.AgoraRtcConn;
 import io.agora.rtc.AgoraService;
 import io.agora.rtc.AgoraServiceConfig;
+import io.agora.rtc.AudioFrame;
 import io.agora.rtc.Constants;
 import io.agora.rtc.DefaultLocalUserObserver;
 import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
+import io.agora.rtc.VadProcessResult;
 import io.agora.rtc.utils.AudioDataCache;
+import io.agora.rtc.common.FileSender;
+import io.agora.rtc.common.SampleAudioFrameObserver;
+import io.agora.rtc.common.SampleLocalUserObserver;
 import io.agora.rtc.common.SampleLogger;
 import io.agora.rtc.common.Utils;
+import io.agora.rtc.utils.VadDumpUtils;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class SendPcmFileTest {
+public class ReceiverPcmVadTest {
     private static String appId;
     private static String token;
     private static String DEFAULT_LOG_PATH = "agora_logs/agorasdk.log";
     private static int DEFAULT_LOG_SIZE = 512 * 1024; // default log size is 512 kb
-    private static String channelId = "agaa";
-    private static String userId = "12345";
 
     private static AgoraService service;
     private static AgoraRtcConn conn;
-    private static AgoraMediaNodeFactory mediaNodeFactory;
-
-    private static AgoraAudioPcmDataSender audioFrameSender;
-    private static AgoraLocalAudioTrack customAudioTrack;
+    private static SampleLocalUserObserver localUserObserver;
+    private static AgoraAudioVadV2 audioVadV2;
+    private static VadDumpUtils vadDumpUtils;
 
     private static CountDownLatch exitLatch;
 
+    private static String channelId = "agaa";
+    private static String userId = "12345";
+    private static String audioOutFile = "test_data_out/receiver_audio_out";
     private static int numOfChannels = 1;
     private static int sampleRate = 16000;
 
     private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
+    private static final ExecutorService logExecutorService = Executors.newCachedThreadPool();
+
+    private static void parseArgs(String[] args) {
+        SampleLogger.log("parseArgs args:" + Arrays.toString(args));
+        if (args == null || args.length == 0) {
+            return;
+        }
+
+        Map<String, String> parsedArgs = new HashMap<>();
+        for (int i = 0; i < args.length; i += 2) {
+            if (i + 1 < args.length) {
+                parsedArgs.put(args[i], args[i + 1]);
+            } else {
+                SampleLogger.log("Missing value for argument: " + args[i]);
+            }
+        }
+
+        if (parsedArgs.containsKey("-channelId")) {
+            channelId = parsedArgs.get("-channelId");
+        }
+
+        if (parsedArgs.containsKey("-userId")) {
+            userId = parsedArgs.get("-userId");
+        }
+
+        if (parsedArgs.containsKey("-audioOutFile")) {
+            audioOutFile = parsedArgs.get("-audioOutFile");
+        }
+
+        if (parsedArgs.containsKey("-numOfChannels")) {
+            numOfChannels = Integer.parseInt(parsedArgs.get("-numOfChannels"));
+        }
+
+        if (parsedArgs.containsKey("-sampleRate")) {
+            sampleRate = Integer.parseInt(parsedArgs.get("-sampleRate"));
+        }
+    }
 
     public static void main(String[] args) {
+        parseArgs(args);
         String[] keys = Utils.readAppIdAndToken(".keys");
         appId = keys[0];
         token = keys[1];
@@ -85,8 +134,6 @@ public class SendPcmFileTest {
             @Override
             public void onConnected(AgoraRtcConn agora_rtc_conn, RtcConnInfo conn_info, int reason) {
                 super.onConnected(agora_rtc_conn, conn_info, reason);
-                SampleLogger.log(
-                        "onConnected chennalId:" + conn_info.getChannelId() + " userId:" + conn_info.getLocalUserId());
                 testTaskExecutorService.execute(() -> onConnConnected(agora_rtc_conn, conn_info, reason));
             }
 
@@ -137,16 +184,19 @@ public class SendPcmFileTest {
             @Override
             public void onVideoPublishStateChanged(AgoraLocalUser agora_local_user, String channel, int old_state,
                     int new_state, int elapse_since_last_state) {
-                // TODO Auto-generated method stub
                 SampleLogger
                         .log("onVideoPublishStateChanged channel:" + channel + " old_state:" + old_state + " new_state:"
                                 + new_state + " userRole:" + agora_local_user.getUserRole());
             }
+
+            public void onUserVideoTrackStateChanged(AgoraLocalUser agora_local_user, String user_id,
+                    io.agora.rtc.AgoraRemoteVideoTrack agora_remote_video_track, int state, int reason, int elapsed) {
+                SampleLogger.log("onUserVideoTrackStateChanged user_id:" + user_id + " state:" + state + " reason:"
+                        + reason + " elapsed:" + elapsed);
+            };
         });
 
         conn.getLocalUser().setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
-
-        mediaNodeFactory = service.createMediaNodeFactory();
 
         exitLatch = new CountDownLatch(1);
         try {
@@ -159,37 +209,65 @@ public class SendPcmFileTest {
     }
 
     private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
-        audioFrameSender = mediaNodeFactory.createAudioPcmDataSender();
-        // Create audio track
-        customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
-        conn.getLocalUser().publishAudio(customAudioTrack);
+        SampleLogger.log("onConnConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
 
-        AudioDataCache audioDataCache = new AudioDataCache(numOfChannels, sampleRate);
-
-        final byte[] pcmData = Utils.readPcmFromFile("test_data/send_audio_16k_1ch.pcm");
-
-        audioDataCache.pushData(pcmData);
-        SampleLogger.log("pushData");
-
-        byte[] sendData = null;
-        while (true) {
-            // If the remaining cache duration is less than 60 ms, push data into the cache
-            if (audioDataCache.getRemainingCacheDurationInMs() < 60) {
-                audioDataCache.pushData(pcmData);
-                SampleLogger.log("pushData");
-            }
-            sendData = audioDataCache.getData();
-            int ret = audioFrameSender.send(sendData, 0,
-                    audioDataCache.getSamplesPerChannel(sendData.length), 2,
-                    numOfChannels,
-                    sampleRate);
-            // SampleLogger.log("send ret:" + ret);
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        conn.getLocalUser().subscribeAllAudio();
+        // Register local user observer
+        if (null == localUserObserver) {
+            localUserObserver = new SampleLocalUserObserver(conn.getLocalUser());
         }
+        conn.getLocalUser().registerObserver(localUserObserver);
+
+        int ret = conn.getLocalUser().setPlaybackAudioFrameBeforeMixingParameters(numOfChannels, sampleRate);
+        SampleLogger.log("setPlaybackAudioFrameBeforeMixingParameters numOfChannels:" + numOfChannels + " sampleRate:"
+                + sampleRate);
+        if (ret > 0) {
+            SampleLogger.log("setPlaybackAudioFrameBeforeMixingParameters fail ret=" + ret);
+            return;
+        }
+
+        audioVadV2 = new AgoraAudioVadV2(new AgoraAudioVadConfigV2());
+        vadDumpUtils = new VadDumpUtils("test_data_out/vad_dump");
+
+        localUserObserver.setAudioFrameObserver(
+                new SampleAudioFrameObserver(audioOutFile + "_" + channelId + "_" + userId + ".pcm") {
+                    @Override
+                    public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agora_local_user, String channel_id,
+                            String uid,
+                            AudioFrame frame) {
+                        if (null == frame) {
+                            return 0;
+                        }
+                        logExecutorService.execute(() -> {
+                            SampleLogger.log("onPlaybackAudioFrameBeforeMixing frame:" + frame);
+                            SampleLogger.log(
+                                    "onPlaybackAudioFrameBeforeMixing audioFrame size " + frame.getBuffer().capacity()
+                                            + " channel_id:"
+                                            + channel_id + " uid:" + uid + " with current channelId:"
+                                            + channelId
+                                            + "  userId:" + userId);
+                        });
+
+                        byte[] byteArray = new byte[frame.getBuffer().remaining()];
+                        frame.getBuffer().get(byteArray);
+                        frame.getBuffer().rewind();
+                        writeAudioFrameToFile(byteArray);
+
+                        VadProcessResult vadResult = audioVadV2.processFrame(frame);
+                        logExecutorService.execute(() -> {
+                            SampleLogger.log("onPlaybackAudioFrameBeforeMixing vadResult:" + vadResult);
+                        });
+                        if (vadResult.getState() == Constants.VadState.START_SPEAKING
+                                || vadResult.getState() == Constants.VadState.SPEAKING
+                                || vadResult.getState() == Constants.VadState.STOP_SPEAKING) {
+                            writeVadAudioToFile(vadResult.getOutFrame(),
+                                    audioOutFile + "_" + channelId + "_" + userId + "_vad.pcm");
+                        }
+                        vadDumpUtils.write(frame, vadResult.getOutFrame(), vadResult.getState());
+                        return 1;
+                    }
+
+                });
 
         // if (null != exitLatch) {
         // exitLatch.countDown();
@@ -202,51 +280,19 @@ public class SendPcmFileTest {
             return;
         }
 
-        if (null != mediaNodeFactory) {
-            mediaNodeFactory.destroy();
+        if (null != audioVadV2) {
+            audioVadV2.destroy();
+            audioVadV2 = null;
         }
 
-        if (null != audioFrameSender) {
-            audioFrameSender.destroy();
+        if (null != vadDumpUtils) {
+            vadDumpUtils.destroy();
+            vadDumpUtils = null;
         }
 
-        if (null != customAudioTrack) {
-            customAudioTrack.clearSenderBuffer();
-            conn.getLocalUser().unpublishAudio(customAudioTrack);
-            customAudioTrack.destroy();
+        if (null != localUserObserver) {
+            localUserObserver.unsetAudioFrameObserver();
         }
-
-        // if (null != customEncodedImageSender) {
-        //     customEncodedImageSender.destroy();
-        // }
-
-        // if (null != customEncodedVideoTrack) {
-        //     conn.getLocalUser().unpublishVideo(customEncodedVideoTrack);
-        //     customEncodedVideoTrack.destroy();
-        // }
-
-        // if (null != videoFrameSender) {
-        //     videoFrameSender.destroy();
-        // }
-
-        // if (null != customVideoTrack) {
-        //     conn.getLocalUser().unpublishVideo(customVideoTrack);
-        //     customVideoTrack.destroy();
-        // }
-
-        // if (null != audioEncodedFrameSender) {
-        //     audioEncodedFrameSender.destroy();
-        // }
-
-        // if (null != customEncodedAudioTrack) {
-        //     conn.getLocalUser().unpublishAudio(customEncodedAudioTrack);
-        //     customEncodedAudioTrack.destroy();
-        // }
-
-        // if (null != localUserObserver) {
-        //     localUserObserver.unsetAudioFrameObserver();
-        //     localUserObserver.unsetVideoFrameObserver();
-        // }
 
         int ret = conn.disconnect();
         if (ret != 0) {
@@ -259,18 +305,12 @@ public class SendPcmFileTest {
 
         conn.destroy();
 
-        mediaNodeFactory = null;
-        audioFrameSender = null;
-        customAudioTrack = null;
-        // customEncodedImageSender = null;
-        // customEncodedVideoTrack = null;
-        // videoFrameSender = null;
-        // customVideoTrack = null;
-        // audioEncodedFrameSender = null;
-        // customEncodedAudioTrack = null;
-        // localUserObserver = null;
+        localUserObserver = null;
 
         conn = null;
+
+        testTaskExecutorService.shutdown();
+        logExecutorService.shutdown();
 
         SampleLogger.log("Disconnected from Agora channel successfully");
     }
