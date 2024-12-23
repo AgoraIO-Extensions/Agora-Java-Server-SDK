@@ -168,7 +168,26 @@ public class Main {
 
 ## 更新日志
 
-### v4.4.30.2（2024-11-20)
+### v4.4.31（2024-12-23）
+
+#### 新增功能
+
+- 在 `AgoraServiceConfig` 中新增 `DomainLimit` 配置选项，用于域名限制管理。
+- 新增 `VadDumpUtils` 工具类，支持导出 VAD 处理过程的调试数据，便于问题诊断。
+- 新增 `AudioConsumerUtils` 类，提供优化的 PCM 数据传输机制，有效避免音频失真问题。
+- 在 `AgoraLocalUser` 中修改 `registerAudioFrameObserver` 方法，支持配置 `AgoraAudioVadConfigV2` 参数。
+- 在 `IAudioFrameObserver` 中新增 `onPlaybackAudioFrameBeforeMixing` 回调的 `vadResult` 参数，提供更详细的 VAD 处理结果。
+- 在 `AgoraLocalUser` 类中新增 `sendAudioMetaData` 方法，支持发送音频元数据。
+- 在 `ILocalUserObserver` 类中新增 `onAudioMetaDataReceived` 回调，用于接收音频元数据。
+- 在 `ExternalVideoFrame` 类中增加 `ColorSpace` 属性，支持自定义颜色空间设置。
+
+#### 性能优化
+
+- 优化代码逻辑架构，显著提升内存使用效率。
+- 修复多处内存泄露问题，提高系统稳定性。
+- 增强内存访问安全机制，有效防止内存踩踏问题。
+
+### v4.4.30.2（2024-11-20）
 
 - 增强了 AgoraAudioVadV2 的 `processFrame` 处理，新增 `START_SPEAKING` 和 `STOP_SPEAKING` 状态回调。
 - 改进了编码帧回调的参数类型，`onEncodedAudioFrameReceived`、`onEncodedVideoImageReceived`、`onEncodedVideoFrame` 现在使用 `ByteBuffer` 替代 `Byte` 数组，提高性能和灵活性。

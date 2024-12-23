@@ -12,7 +12,7 @@ import io.agora.rtc.DefaultLocalUserObserver;
 import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
-import io.agora.rtc.utils.AudioDataCache;
+import io.agora.rtc.utils.AudioConsumerUtils;
 import io.agora.rtc.common.FileSender;
 import io.agora.rtc.common.SampleLogger;
 import io.agora.rtc.common.Utils;
@@ -174,7 +174,7 @@ public class SendPcmRealTimeTest {
         byte[] buffer = new byte[bufferSize];
 
         FileSender pcmSendThread = new FileSender(filePath, interval) {
-            private AudioDataCache audioDataCache = null;
+            private AudioConsumerUtils audioConsumerUtils = null;
 
             @Override
             public void sendOneFrame(byte[] data, long timestamp) {
@@ -182,33 +182,10 @@ public class SendPcmRealTimeTest {
                     return;
                 }
 
-                byte[] sendData = null;
-                if (null != audioDataCache) {
-                    sendData = audioDataCache.getData();
-                } else {
-                    sendData = data;
-                }
-
-                if (sendData == null) {
-                    return;
-                }
-
-                int samplesPerChannel;
-                if (null != audioDataCache) {
-                    samplesPerChannel = audioDataCache.getSamplesPerChannel(sendData.length);
-                } else {
-                    samplesPerChannel = sendData.length / 2 / numOfChannels;
-                }
-
                 if (null != audioFrameSender) {
-                    int ret = audioFrameSender.send(sendData, 0,
-                            samplesPerChannel, 2,
-                            numOfChannels,
-                            sampleRate);
-                    SampleLogger.log("send pcm frame data size:" + sendData.length + " sampleRate:" + sampleRate
-                            + " numOfChannels:" + numOfChannels
-                            + " to channelId:"
-                            + channelId + " from userId:" + userId + " ret:" + ret);
+                    int consumeFrameCount = audioConsumerUtils.consume();
+                    SampleLogger.log("send pcm " + consumeFrameCount + " frame data to channelId:"
+                            + channelId + " from userId:" + userId);
                 } else {
                     release(false);
                 }
@@ -228,18 +205,19 @@ public class SendPcmRealTimeTest {
                     }
                 }
 
-                if (null == audioDataCache) {
-                    audioDataCache = new AudioDataCache(numOfChannels, sampleRate);
+                if (null == audioConsumerUtils) {
+                    audioConsumerUtils = new AudioConsumerUtils(audioFrameSender, numOfChannels,
+                            sampleRate);
                 }
-                audioDataCache.pushData(buffer);
+                audioConsumerUtils.pushPcmData(buffer);
                 return buffer;
             }
 
             @Override
             public void release(boolean withJoin) {
                 super.release(withJoin);
-                if (null != audioDataCache) {
-                    audioDataCache.clear();
+                if (null != audioConsumerUtils) {
+                    audioConsumerUtils.release();
                 }
             }
         };
@@ -279,35 +257,35 @@ public class SendPcmRealTimeTest {
         }
 
         // if (null != customEncodedImageSender) {
-        //     customEncodedImageSender.destroy();
+        // customEncodedImageSender.destroy();
         // }
 
         // if (null != customEncodedVideoTrack) {
-        //     conn.getLocalUser().unpublishVideo(customEncodedVideoTrack);
-        //     customEncodedVideoTrack.destroy();
+        // conn.getLocalUser().unpublishVideo(customEncodedVideoTrack);
+        // customEncodedVideoTrack.destroy();
         // }
 
         // if (null != videoFrameSender) {
-        //     videoFrameSender.destroy();
+        // videoFrameSender.destroy();
         // }
 
         // if (null != customVideoTrack) {
-        //     conn.getLocalUser().unpublishVideo(customVideoTrack);
-        //     customVideoTrack.destroy();
+        // conn.getLocalUser().unpublishVideo(customVideoTrack);
+        // customVideoTrack.destroy();
         // }
 
         // if (null != audioEncodedFrameSender) {
-        //     audioEncodedFrameSender.destroy();
+        // audioEncodedFrameSender.destroy();
         // }
 
         // if (null != customEncodedAudioTrack) {
-        //     conn.getLocalUser().unpublishAudio(customEncodedAudioTrack);
-        //     customEncodedAudioTrack.destroy();
+        // conn.getLocalUser().unpublishAudio(customEncodedAudioTrack);
+        // customEncodedAudioTrack.destroy();
         // }
 
         // if (null != localUserObserver) {
-        //     localUserObserver.unsetAudioFrameObserver();
-        //     localUserObserver.unsetVideoFrameObserver();
+        // localUserObserver.unregisterAudioFrameObserver();
+        // localUserObserver.unregisterVideoFrameObserver();
         // }
 
         int ret = conn.disconnect();

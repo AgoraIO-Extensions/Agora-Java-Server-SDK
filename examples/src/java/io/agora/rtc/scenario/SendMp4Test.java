@@ -190,7 +190,6 @@ public class SendMp4Test {
                             audioFrameSender = mediaNodeFactory.createAudioPcmDataSender();
                             // Create audio track
                             customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
-                            customAudioTrack.setMaxBufferedAudioFrameNumber(1000);
                             conn.getLocalUser().publishAudio(customAudioTrack);
                         }
 
@@ -328,8 +327,8 @@ public class SendMp4Test {
         // }
 
         // if (null != localUserObserver) {
-        // localUserObserver.unsetAudioFrameObserver();
-        // localUserObserver.unsetVideoFrameObserver();
+        // localUserObserver.unregisterAudioFrameObserver();
+        // localUserObserver.unregisterVideoFrameObserver();
         // }
 
         int ret = conn.disconnect();

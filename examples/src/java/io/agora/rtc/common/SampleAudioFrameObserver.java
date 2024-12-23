@@ -3,6 +3,7 @@ package io.agora.rtc.common;
 import io.agora.rtc.AgoraLocalUser;
 import io.agora.rtc.AudioFrame;
 import io.agora.rtc.IAudioFrameObserver;
+import io.agora.rtc.VadProcessResult;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
@@ -43,7 +44,7 @@ public class SampleAudioFrameObserver extends FileWriter implements IAudioFrameO
 
     @Override
     public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agora_local_user, String channel_id, String uid,
-            AudioFrame frame) {
+            AudioFrame frame, VadProcessResult vadResult) {
         return 0;
     }
 

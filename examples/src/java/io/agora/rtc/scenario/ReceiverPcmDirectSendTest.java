@@ -13,6 +13,7 @@ import io.agora.rtc.DefaultLocalUserObserver;
 import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
+import io.agora.rtc.VadProcessResult;
 import io.agora.rtc.common.SampleAudioFrameObserver;
 import io.agora.rtc.common.SampleLocalUserObserver;
 import io.agora.rtc.common.SampleLogger;
@@ -214,7 +215,6 @@ public class ReceiverPcmDirectSendTest {
         audioFrameSender = mediaNodeFactory.createAudioPcmDataSender();
         // Create audio track
         customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
-        customAudioTrack.setMaxBufferedAudioFrameNumber(1000);
         conn.getLocalUser().publishAudio(customAudioTrack);
 
         conn.getLocalUser().subscribeAllAudio();
@@ -237,7 +237,7 @@ public class ReceiverPcmDirectSendTest {
                     @Override
                     public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agora_local_user, String channel_id,
                             String uid,
-                            AudioFrame frame) {
+                            AudioFrame frame, VadProcessResult vadResult) {
                         if (null == frame) {
                             return 0;
                         }
@@ -294,7 +294,7 @@ public class ReceiverPcmDirectSendTest {
         }
 
         if (null != localUserObserver) {
-            localUserObserver.unsetAudioFrameObserver();
+            localUserObserver.unregisterAudioFrameObserver();
         }
 
         int ret = conn.disconnect();

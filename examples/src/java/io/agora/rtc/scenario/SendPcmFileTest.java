@@ -12,7 +12,7 @@ import io.agora.rtc.DefaultLocalUserObserver;
 import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
-import io.agora.rtc.utils.AudioDataCache;
+import io.agora.rtc.utils.AudioConsumerUtils;
 import io.agora.rtc.common.SampleLogger;
 import io.agora.rtc.common.Utils;
 import java.util.concurrent.CountDownLatch;
@@ -164,32 +164,30 @@ public class SendPcmFileTest {
         customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
         conn.getLocalUser().publishAudio(customAudioTrack);
 
-        AudioDataCache audioDataCache = new AudioDataCache(numOfChannels, sampleRate);
+        AudioConsumerUtils audioConsumerUtils = new AudioConsumerUtils(audioFrameSender, numOfChannels, sampleRate);
 
         final byte[] pcmData = Utils.readPcmFromFile("test_data/send_audio_16k_1ch.pcm");
 
-        audioDataCache.pushData(pcmData);
+        audioConsumerUtils.pushPcmData(pcmData);
         SampleLogger.log("pushData");
 
-        byte[] sendData = null;
         while (true) {
             // If the remaining cache duration is less than 60 ms, push data into the cache
-            if (audioDataCache.getRemainingCacheDurationInMs() < 60) {
-                audioDataCache.pushData(pcmData);
+            if (audioConsumerUtils.getRemainingCacheDurationInMs() < 60) {
+                audioConsumerUtils.pushPcmData(pcmData);
                 SampleLogger.log("pushData");
             }
-            sendData = audioDataCache.getData();
-            int ret = audioFrameSender.send(sendData, 0,
-                    audioDataCache.getSamplesPerChannel(sendData.length), 2,
-                    numOfChannels,
-                    sampleRate);
-            // SampleLogger.log("send ret:" + ret);
+            int consumeFrameCount = audioConsumerUtils.consume();
+            SampleLogger.log("send pcm " + consumeFrameCount + " frame data to channelId:"
+                    + channelId + " from userId:" + userId);
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+
+        // audioConsumerUtils.release();
 
         // if (null != exitLatch) {
         // exitLatch.countDown();
@@ -217,35 +215,35 @@ public class SendPcmFileTest {
         }
 
         // if (null != customEncodedImageSender) {
-        //     customEncodedImageSender.destroy();
+        // customEncodedImageSender.destroy();
         // }
 
         // if (null != customEncodedVideoTrack) {
-        //     conn.getLocalUser().unpublishVideo(customEncodedVideoTrack);
-        //     customEncodedVideoTrack.destroy();
+        // conn.getLocalUser().unpublishVideo(customEncodedVideoTrack);
+        // customEncodedVideoTrack.destroy();
         // }
 
         // if (null != videoFrameSender) {
-        //     videoFrameSender.destroy();
+        // videoFrameSender.destroy();
         // }
 
         // if (null != customVideoTrack) {
-        //     conn.getLocalUser().unpublishVideo(customVideoTrack);
-        //     customVideoTrack.destroy();
+        // conn.getLocalUser().unpublishVideo(customVideoTrack);
+        // customVideoTrack.destroy();
         // }
 
         // if (null != audioEncodedFrameSender) {
-        //     audioEncodedFrameSender.destroy();
+        // audioEncodedFrameSender.destroy();
         // }
 
         // if (null != customEncodedAudioTrack) {
-        //     conn.getLocalUser().unpublishAudio(customEncodedAudioTrack);
-        //     customEncodedAudioTrack.destroy();
+        // conn.getLocalUser().unpublishAudio(customEncodedAudioTrack);
+        // customEncodedAudioTrack.destroy();
         // }
 
         // if (null != localUserObserver) {
-        //     localUserObserver.unsetAudioFrameObserver();
-        //     localUserObserver.unsetVideoFrameObserver();
+        // localUserObserver.unregisterAudioFrameObserver();
+        // localUserObserver.unregisterVideoFrameObserver();
         // }
 
         int ret = conn.disconnect();

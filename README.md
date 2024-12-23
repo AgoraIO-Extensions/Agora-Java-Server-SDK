@@ -168,6 +168,25 @@ public class Main {
 
 ## Changelog
 
+### v4.4.31 (2024-12-23)
+
+#### New Features
+
+- Added `DomainLimit` configuration option in `AgoraServiceConfig` for domain restriction management.
+- Added `VadDumpUtils` utility class to support exporting VAD process debug data for troubleshooting.
+- Added `AudioConsumerUtils` class, providing optimized PCM data transmission mechanism to effectively prevent audio distortion.
+- Modified `registerAudioFrameObserver` method in `AgoraLocalUser` to support `AgoraAudioVadConfigV2` parameter configuration.
+- Added `vadResult` parameter in `onPlaybackAudioFrameBeforeMixing` callback of `IAudioFrameObserver` to provide more detailed VAD processing results.
+- Added `sendAudioMetaData` method in `AgoraLocalUser` class for sending audio metadata.
+- Added `onAudioMetaDataReceived` callback in `ILocalUserObserver` class for receiving audio metadata.
+- Added `ColorSpace` property in the `ExternalVideoFrame` class to support custom color space configuration.
+
+#### Performance Improvements
+
+- Optimized code logic architecture to significantly improve memory efficiency.
+- Fixed multiple memory leak issues to enhance system stability.
+- Enhanced memory access security mechanism to effectively prevent memory corruption.
+
 ### v4.4.30.2 (2024-11-20)
 
 - Enhanced the `processFrame` handling in `AgoraAudioVadV2` with new `START_SPEAKING` and `STOP_SPEAKING` state callbacks.

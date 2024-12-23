@@ -12,6 +12,7 @@ import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.EncodedVideoFrameInfo;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
+import io.agora.rtc.VadProcessResult;
 import io.agora.rtc.VideoSubscriptionOptions;
 import io.agora.rtc.common.SampleAudioFrameObserver;
 import io.agora.rtc.common.SampleLocalUserObserver;
@@ -185,7 +186,7 @@ public class ReceiverPcmH264Test {
         localUserObserver.setAudioFrameObserver(new SampleAudioFrameObserver(audioOutFile) {
             @Override
             public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agora_local_user, String channel_id, String uid,
-                    AudioFrame frame) {
+                    AudioFrame frame, VadProcessResult vadResult) {
                 if (null == frame) {
                     return 0;
                 }
@@ -244,8 +245,8 @@ public class ReceiverPcmH264Test {
         }
 
         if (null != localUserObserver) {
-            localUserObserver.unsetAudioFrameObserver();
-            localUserObserver.unsetVideoFrameObserver();
+            localUserObserver.unregisterAudioFrameObserver();
+            localUserObserver.unregisterVideoFrameObserver();
         }
 
         int ret = conn.disconnect();

@@ -54,12 +54,12 @@ if $build_ffmpegUtils; then
 fi
 
 if $build_mediaUtils; then
-    g++ -c -std=c++14 -fPIC -g -I$INCLUDE_MEDIA_UTILS -I$INCLUDE_MEDIA_UTILS/third-party/opusfile_parser/include -I$JAVA_HOME/include -I$INCLUDE_ARCH $INCLUDE_MEDIA_UTILS/helper_aac_parser.cpp -o $OUT/helper_aac_parser.o
-    g++ -c -std=c++14 -fPIC -g -I$INCLUDE_MEDIA_UTILS -I$INCLUDE_MEDIA_UTILS/third-party/opusfile_parser/include -I$JAVA_HOME/include -I$INCLUDE_ARCH $INCLUDE_MEDIA_UTILS/helper_opus_parser.cpp -o $OUT/helper_opus_parser.o
-    g++ -c -std=c++14 -fPIC -g -I$INCLUDE_MEDIA_UTILS -I$INCLUDE_MEDIA_UTILS/third-party/opusfile_parser/include -I$JAVA_HOME/include -I$INCLUDE_ARCH $INCLUDE_MEDIA_UTILS/helper_h264_parser.cpp -o $OUT/helper_h264_parser.o
-    g++ -c -std=c++14 -fPIC -g -I$INCLUDE_MEDIA_UTILS -I$INCLUDE_MEDIA_UTILS/third-party/opusfile_parser/include -I$JAVA_HOME/include -I$INCLUDE_ARCH $INCLUDE_MEDIA_UTILS/helper_vp8_parser.cpp -o $OUT/helper_vp8_parser.o
-    g++ -c -std=c++14 -fPIC -g -I$INCLUDE_MEDIA_UTILS -I$INCLUDE_MEDIA_UTILSs/third-party/opusfile_parser/include -I$JAVA_HOME/include -I$INCLUDE_ARCH $INCLUDE_MEDIA_UTILS/native-lib.cpp -o $OUT/native-lib.o
-    g++ -shared -std=c++14 -fPIC -g $OUT/helper_vp8_parser.o $OUT/helper_aac_parser.o $OUT/helper_h264_parser.o $OUT/native-lib.o $OUT/helper_opus_parser.o -L$INCLUDE_MEDIA_UTILS/third-party/opusfile_parser/lib/ -lopusfile -logg -lopus -o $OUT/libmedia_utils.so
+    g++ -c -std=c++11 -fPIC -g -I$INCLUDE_MEDIA_UTILS -I$INCLUDE_MEDIA_UTILS/third-party/opusfile_parser/include -I$JAVA_HOME/include -I$INCLUDE_ARCH $INCLUDE_MEDIA_UTILS/helper_aac_parser.cpp -o $OUT/helper_aac_parser.o
+    g++ -c -std=c++11 -fPIC -g -I$INCLUDE_MEDIA_UTILS -I$INCLUDE_MEDIA_UTILS/third-party/opusfile_parser/include -I$JAVA_HOME/include -I$INCLUDE_ARCH $INCLUDE_MEDIA_UTILS/helper_opus_parser.cpp -o $OUT/helper_opus_parser.o
+    g++ -c -std=c++11 -fPIC -g -I$INCLUDE_MEDIA_UTILS -I$INCLUDE_MEDIA_UTILS/third-party/opusfile_parser/include -I$JAVA_HOME/include -I$INCLUDE_ARCH $INCLUDE_MEDIA_UTILS/helper_h264_parser.cpp -o $OUT/helper_h264_parser.o
+    g++ -c -std=c++11 -fPIC -g -I$INCLUDE_MEDIA_UTILS -I$INCLUDE_MEDIA_UTILS/third-party/opusfile_parser/include -I$JAVA_HOME/include -I$INCLUDE_ARCH $INCLUDE_MEDIA_UTILS/helper_vp8_parser.cpp -o $OUT/helper_vp8_parser.o
+    g++ -c -std=c++11 -fPIC -g -I$INCLUDE_MEDIA_UTILS -I$INCLUDE_MEDIA_UTILSs/third-party/opusfile_parser/include -I$JAVA_HOME/include -I$INCLUDE_ARCH $INCLUDE_MEDIA_UTILS/native-lib.cpp -o $OUT/native-lib.o
+    g++ -shared -std=c++11 -fPIC -g $OUT/helper_vp8_parser.o $OUT/helper_aac_parser.o $OUT/helper_h264_parser.o $OUT/native-lib.o $OUT/helper_opus_parser.o -L$INCLUDE_MEDIA_UTILS/third-party/opusfile_parser/lib/ -lopusfile -logg -lopus -o $OUT/libmedia_utils.so
     cp -f "$OUT/libmedia_utils.so" "third_party/libmedia_utils.so"
 fi
 

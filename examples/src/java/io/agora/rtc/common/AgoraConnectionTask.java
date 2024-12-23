@@ -1,7 +1,9 @@
 package io.agora.rtc.common;
 
 import io.agora.rtc.AgoraAudioVadConfigV2;
+import io.agora.rtc.DownlinkNetworkInfo;
 import io.agora.rtc.EncodedAudioFrameReceiverInfo;
+import io.agora.rtc.UplinkNetworkInfo;
 import io.agora.rtc.VadProcessResult;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -18,7 +20,6 @@ import java.util.concurrent.TimeUnit;
 
 import io.agora.rtc.AgoraAudioEncodedFrameSender;
 import io.agora.rtc.AgoraAudioPcmDataSender;
-import io.agora.rtc.AgoraAudioVadV2;
 import io.agora.rtc.AgoraLocalAudioTrack;
 import io.agora.rtc.AgoraLocalUser;
 import io.agora.rtc.AgoraLocalVideoTrack;
@@ -39,6 +40,7 @@ import io.agora.rtc.EncodedAudioFrameInfo;
 import io.agora.rtc.EncodedVideoFrameInfo;
 import io.agora.rtc.EncryptionConfig;
 import io.agora.rtc.ExternalVideoFrame;
+import io.agora.rtc.INetworkObserver;
 import io.agora.rtc.Out;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
@@ -54,7 +56,6 @@ import io.agora.rtc.ffmpegutils.MediaDecode;
 import io.agora.rtc.ffmpegutils.MediaDecodeUtils;
 import io.agora.rtc.mediautils.OpusReader;
 import io.agora.rtc.mediautils.Vp8Reader;
-import io.agora.rtc.utils.AudioDataCache;
 
 public class AgoraConnectionTask {
     static {
@@ -82,7 +83,7 @@ public class AgoraConnectionTask {
     private AgoraAudioEncodedFrameSender audioEncodedFrameSender;
     private AgoraLocalAudioTrack customEncodedAudioTrack;
 
-    private SampleLocalUserObserver localUserObserver;
+    private SampleLocalUserObserver sampleLocalUserObserver;
 
     private String channelId;
     private String userId;
@@ -91,7 +92,6 @@ public class AgoraConnectionTask {
     private final ThreadPoolExecutor testTaskExecutorService;
     private final ThreadPoolExecutor logExecutorService;
     private CountDownLatch userLeftLatch;
-    private AgoraAudioVadV2 audioVadV2;
 
     public interface TaskCallback {
         default void onConnected() {
@@ -211,6 +211,19 @@ public class AgoraConnectionTask {
         });
         SampleLogger.log("registerObserver ret:" + ret);
 
+        ret = conn.registerNetworkObserver(new INetworkObserver() {
+            @Override
+            public void onUplinkNetworkInfoUpdated(AgoraRtcConn agora_rtc_conn, UplinkNetworkInfo info) {
+                SampleLogger.log("onUplinkNetworkInfoUpdated info:" + info);
+            }
+
+            @Override
+            public void onDownlinkNetworkInfoUpdated(AgoraRtcConn agora_rtc_conn, DownlinkNetworkInfo info) {
+                SampleLogger.log("onDownlinkNetworkInfoUpdated info:" + info);
+            }
+        });
+        SampleLogger.log("registerNetworkObserver ret:" + ret);
+
         if (enableEncryptionMode == 1 && !Utils.isNullOrEmpty(encryptionKey)) {
             EncryptionConfig encryptionConfig = new EncryptionConfig();
             encryptionConfig.setEncryptionMode(encryptionMode);
@@ -233,43 +246,11 @@ public class AgoraConnectionTask {
         ret = conn.connect(token, channelId, userId);
         SampleLogger.log("Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
 
-        conn.getLocalUser().registerObserver(new DefaultLocalUserObserver() {
-            @Override
-            public void onStreamMessage(AgoraLocalUser agora_local_user, String user_id, int stream_id, String data,
-                    long length) {
-                SampleLogger.log("onStreamMessage: userid " + user_id + " stream_id " + stream_id + "  data " + data);
-                if (null != callback) {
-                    callback.onStreamMessage(user_id, stream_id, data, length);
-                }
-            }
-
-            @Override
-            public void onAudioPublishStateChanged(AgoraLocalUser agora_local_user, String channel, int old_state,
-                    int new_state, int elapse_since_last_state) {
-                SampleLogger
-                        .log("onAudioPublishStateChanged channel:" + channel + " old_state:" + old_state + " new_state:"
-                                + new_state + " userRole:" + agora_local_user.getUserRole());
-            }
-
-            @Override
-            public void onVideoPublishStateChanged(AgoraLocalUser agora_local_user, String channel, int old_state,
-                    int new_state, int elapse_since_last_state) {
-                // TODO Auto-generated method stub
-                SampleLogger
-                        .log("onVideoPublishStateChanged channel:" + channel + " old_state:" + old_state + " new_state:"
-                                + new_state + " userRole:" + agora_local_user.getUserRole());
-            }
-
-            @Override
-            public void onAudioVolumeIndication(AgoraLocalUser agora_local_user, AudioVolumeInfo[] speakers,
-                    int total_volume) {
-                super.onAudioVolumeIndication(agora_local_user, speakers, total_volume);
-                SampleLogger.log("onAudioVolumeIndication speakers:" + Arrays.toString(speakers) + " total_volume:"
-                        + total_volume);
-
-            }
-        });
-        conn.getLocalUser().setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
+        // Register local user observer
+        if (null == sampleLocalUserObserver) {
+            sampleLocalUserObserver = new SampleLocalUserObserver(conn.getLocalUser());
+        }
+        conn.getLocalUser().registerObserver(sampleLocalUserObserver);
 
         mediaNodeFactory = service.createMediaNodeFactory();
     }
@@ -278,11 +259,6 @@ public class AgoraConnectionTask {
         SampleLogger.log("releaseConn for channelId:" + channelId + " userId:" + userId);
         if (conn == null) {
             return;
-        }
-
-        if (null != audioVadV2) {
-            audioVadV2.destroy();
-            audioVadV2 = null;
         }
 
         if (null != mediaNodeFactory) {
@@ -326,9 +302,9 @@ public class AgoraConnectionTask {
             customEncodedAudioTrack.destroy();
         }
 
-        if (null != localUserObserver) {
-            localUserObserver.unsetAudioFrameObserver();
-            localUserObserver.unsetVideoFrameObserver();
+        if (null != sampleLocalUserObserver) {
+            sampleLocalUserObserver.unregisterAudioFrameObserver();
+            sampleLocalUserObserver.unregisterVideoFrameObserver();
         }
 
         int ret = conn.disconnect();
@@ -351,7 +327,7 @@ public class AgoraConnectionTask {
         customVideoTrack = null;
         audioEncodedFrameSender = null;
         customEncodedAudioTrack = null;
-        localUserObserver = null;
+        sampleLocalUserObserver = null;
 
         conn = null;
 
@@ -363,57 +339,47 @@ public class AgoraConnectionTask {
     }
 
     public void sendPcmTask(String filePath, int interval, int numOfChannels, int sampleRate,
-            boolean waitRelease, boolean enableAudioCache) {
+            boolean waitRelease, boolean enableAudioCache, boolean enableSendAudioMetaData) {
         SampleLogger
                 .log("sendPcmTask filePath:" + filePath + " interval:" + interval + " numOfChannels:" + numOfChannels
-                        + " sampleRate:" + sampleRate + " enableAudioCache:" + enableAudioCache);
+                        + " sampleRate:" + sampleRate + " enableAudioCache:" + enableAudioCache
+                        + " enableSendAudioMetaData:"
+                        + enableSendAudioMetaData);
         audioFrameSender = mediaNodeFactory.createAudioPcmDataSender();
         // Create audio track
         customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
-        customAudioTrack.setMaxBufferedAudioFrameNumber(1000);
+        // customAudioTrack.setMaxBufferedAudioFrameNumber(1000);
         conn.getLocalUser().publishAudio(customAudioTrack);
 
         int bufferSize = numOfChannels * (sampleRate / 1000) * interval * 2;
         byte[] buffer = new byte[bufferSize];
 
         FileSender pcmSendThread = new FileSender(filePath, interval) {
-            private AudioDataCache audioDataCache = null;
-
             @Override
             public void sendOneFrame(byte[] data, long timestamp) {
                 if (data == null) {
                     return;
                 }
 
-                byte[] sendData = null;
-                if (enableAudioCache && null != audioDataCache) {
-                    sendData = audioDataCache.getData();
-                } else {
-                    sendData = data;
-                }
-
-                if (sendData == null) {
-                    return;
-                }
-
-                int samplesPerChannel;
-                if (enableAudioCache && null != audioDataCache) {
-                    samplesPerChannel = audioDataCache.getSamplesPerChannel(sendData.length);
-                } else {
-                    samplesPerChannel = sendData.length / 2 / numOfChannels;
-                }
+                int samplesPerChannel = data.length / 2 / numOfChannels;
 
                 if (null != audioFrameSender) {
-                    int ret = audioFrameSender.send(sendData, 0,
+                    int ret = audioFrameSender.send(data, 0,
                             samplesPerChannel, 2,
                             numOfChannels,
                             sampleRate);
-                    SampleLogger.log("send pcm frame data size:" + sendData.length + " sampleRate:" + sampleRate
+                    SampleLogger.log("send pcm frame data size:" + data.length + " sampleRate:" +
+                            sampleRate
                             + " numOfChannels:" + numOfChannels
                             + " to channelId:"
                             + channelId + " from userId:" + userId + " ret:" + ret + " testStartTime:"
                             + Utils.formatTimestamp(testStartTime)
                             + " testTime:" + testTime);
+
+                    if (enableSendAudioMetaData) {
+                        ret = conn.getLocalUser().sendAudioMetaData(("testSendAudioMetaData " + timestamp).getBytes());
+                        SampleLogger.log("sendAudioMetaData ret:" + ret);
+                    }
                 } else {
                     release(false);
                 }
@@ -444,21 +410,12 @@ public class AgoraConnectionTask {
                         e.printStackTrace();
                     }
                 }
-                if (enableAudioCache) {
-                    if (null == audioDataCache) {
-                        audioDataCache = new AudioDataCache(numOfChannels, sampleRate);
-                    }
-                    audioDataCache.pushData(buffer);
-                }
                 return buffer;
             }
 
             @Override
             public void release(boolean withJoin) {
                 super.release(withJoin);
-                if (enableAudioCache && null != audioDataCache) {
-                    audioDataCache.clear();
-                }
             }
         };
 
@@ -1238,7 +1195,7 @@ public class AgoraConnectionTask {
                             audioFrameSender = mediaNodeFactory.createAudioPcmDataSender();
                             // Create audio track
                             customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
-                            customAudioTrack.setMaxBufferedAudioFrameNumber(1000);
+                            // customAudioTrack.setMaxBufferedAudioFrameNumber(1000);
                             conn.getLocalUser().publishAudio(customAudioTrack);
                         }
 
@@ -1379,11 +1336,6 @@ public class AgoraConnectionTask {
         }
 
         conn.getLocalUser().subscribeAllAudio();
-        // Register local user observer
-        if (null == localUserObserver) {
-            localUserObserver = new SampleLocalUserObserver(conn.getLocalUser());
-        }
-        conn.getLocalUser().registerObserver(localUserObserver);
 
         // Register audio frame observer to receive audio stream
         int ret = conn.getLocalUser().setPlaybackAudioFrameBeforeMixingParameters(numOfChannels, sampleRate);
@@ -1394,24 +1346,21 @@ public class AgoraConnectionTask {
             return;
         }
 
-        if (enableVad) {
-            audioVadV2 = new AgoraAudioVadV2(new AgoraAudioVadConfigV2());
-        }
-
-        localUserObserver.setAudioFrameObserver(new SampleAudioFrameObserver(audioOutFile) {
+        sampleLocalUserObserver.setAudioFrameObserver(new SampleAudioFrameObserver(audioOutFile) {
             @Override
             public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agora_local_user, String channel_id, String uid,
-                    AudioFrame frame) {
+                    AudioFrame frame, VadProcessResult vadResult) {
                 if (null == frame) {
                     return 0;
                 }
                 logExecutorService.execute(() -> {
                     SampleLogger.log("onPlaybackAudioFrameBeforeMixing frame:" + frame);
-                    SampleLogger.log("onPlaybackAudioFrameBeforeMixing audioFrame size " + frame.getBuffer().capacity()
+                    SampleLogger.log("onPlaybackAudioFrameBeforeMixing audioFrame size " +
+                            frame.getBuffer().capacity()
                             + " channel_id:"
                             + channel_id + " uid:" + uid + " with current channelId:"
                             + channelId
-                            + "  userId:" + userId);
+                            + " userId:" + userId);
                 });
 
                 if (enableSaveFile) {
@@ -1420,8 +1369,7 @@ public class AgoraConnectionTask {
                     frame.getBuffer().rewind();
                     writeAudioFrameToFile(byteArray);
                 }
-                if (enableVad) {
-                    VadProcessResult vadResult = audioVadV2.processFrame(frame);
+                if (null != vadResult) {
                     logExecutorService.execute(() -> {
                         SampleLogger.log("onPlaybackAudioFrameBeforeMixing vadResult:" + vadResult);
                     });
@@ -1434,7 +1382,7 @@ public class AgoraConnectionTask {
                 return 1;
             }
 
-        });
+        }, enableVad, new AgoraAudioVadConfigV2());
 
         if (waitRelease) {
             try {
@@ -1462,11 +1410,6 @@ public class AgoraConnectionTask {
         }
 
         conn.getLocalUser().subscribeAllAudio();
-        // Register local user observer
-        if (null == localUserObserver) {
-            localUserObserver = new SampleLocalUserObserver(conn.getLocalUser());
-        }
-        conn.getLocalUser().registerObserver(localUserObserver);
 
         // Register audio frame observer to receive audio stream
         int ret = conn.getLocalUser().setPlaybackAudioFrameParameters(numOfChannels, sampleRate, 0,
@@ -1477,7 +1420,7 @@ public class AgoraConnectionTask {
             SampleLogger.log("setPlaybackAudioFrameBeforeMixingParameters fail ret=" + ret);
             return;
         }
-        localUserObserver.setAudioFrameObserver(new SampleAudioFrameObserver(audioOutFile) {
+        sampleLocalUserObserver.setAudioFrameObserver(new SampleAudioFrameObserver(audioOutFile) {
             @Override
             public int onPlaybackAudioFrame(AgoraLocalUser agora_local_user, String channel_id, AudioFrame frame) {
                 if (null == frame) {
@@ -1539,13 +1482,7 @@ public class AgoraConnectionTask {
         }
         conn.getLocalUser().subscribeAllVideo(subscriptionOptions);
 
-        // Register local user observer
-        if (null == localUserObserver) {
-            localUserObserver = new SampleLocalUserObserver(conn.getLocalUser());
-        }
-        conn.getLocalUser().registerObserver(localUserObserver);
-
-        localUserObserver.setVideoFrameObserver(new SampleVideFrameObserver(videoOutFile) {
+        sampleLocalUserObserver.setVideoFrameObserver(new SampleVideFrameObserver(videoOutFile) {
             @Override
             public void onFrame(AgoraVideoFrameObserver2 agora_video_frame_observer2, String channel_id,
                     String remote_uid,
@@ -1644,11 +1581,6 @@ public class AgoraConnectionTask {
             return;
         }
         conn.getLocalUser().subscribeAllVideo(subscriptionOptions);
-        // Register local user observer
-        if (null == localUserObserver) {
-            localUserObserver = new SampleLocalUserObserver(conn.getLocalUser());
-        }
-        conn.getLocalUser().registerObserver(localUserObserver);
 
         conn.getLocalUser()
                 .registerVideoEncodedFrameObserver(
@@ -1704,13 +1636,8 @@ public class AgoraConnectionTask {
         }
 
         conn.getLocalUser().subscribeAllAudio();
-        // Register local user observer
-        if (null == localUserObserver) {
-            localUserObserver = new SampleLocalUserObserver(conn.getLocalUser());
-        }
-        conn.getLocalUser().registerObserver(localUserObserver);
 
-        localUserObserver.setAudioEncodedFrameObserver(new SampleAudioEncodedFrameObserver(audioOutFile) {
+        sampleLocalUserObserver.setAudioEncodedFrameObserver(new SampleAudioEncodedFrameObserver(audioOutFile) {
             @Override
             public int onEncodedAudioFrameReceived(String remoteUserId, ByteBuffer buffer,
                     EncodedAudioFrameReceiverInfo info) {

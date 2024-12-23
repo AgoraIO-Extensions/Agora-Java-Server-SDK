@@ -11,6 +11,7 @@ import io.agora.rtc.AgoraRemoteVideoTrack;
 import io.agora.rtc.IMediaPacketReceiver;
 import io.agora.rtc.IVideoEncodedFrameObserver;
 import io.agora.rtc.IAudioFrameObserver;
+import io.agora.rtc.AgoraAudioVadConfigV2;
 import io.agora.rtc.AgoraLocalAudioTrack;
 import io.agora.rtc.AgoraLocalVideoTrack;
 import io.agora.rtc.LocalAudioStats;
@@ -38,6 +39,9 @@ public class SampleLocalUserObserver extends DefaultLocalUserObserver {
     private boolean isAudioRegistered = false;
     private boolean isVideoRegistered = false;
 
+    private boolean enableVad = false;
+    private AgoraAudioVadConfigV2 vadConfig;
+
     public SampleLocalUserObserver(AgoraLocalUser localUser) {
         this.localUser = localUser;
     }
@@ -58,11 +62,18 @@ public class SampleLocalUserObserver extends DefaultLocalUserObserver {
         audioFrameObserver = observer;
     }
 
+    public void setAudioFrameObserver(IAudioFrameObserver observer, boolean enableVad,
+            AgoraAudioVadConfigV2 vadConfig) {
+        this.audioFrameObserver = observer;
+        this.enableVad = enableVad;
+        this.vadConfig = vadConfig;
+    }
+
     public void setAudioEncodedFrameObserver(IAudioEncodedFrameObserver observer) {
         audioEncodedFrameObserver = observer;
     }
 
-    public void unsetAudioFrameObserver() {
+    public void unregisterAudioFrameObserver() {
         if (audioFrameObserver != null) {
             localUser.unregisterAudioFrameObserver();
         }
@@ -73,6 +84,8 @@ public class SampleLocalUserObserver extends DefaultLocalUserObserver {
         }
 
         isAudioRegistered = false;
+        this.enableVad = false;
+        this.vadConfig = null;
     }
 
     public void setVideoFrameObserver(IVideoFrameObserver2 observer) {
@@ -83,7 +96,7 @@ public class SampleLocalUserObserver extends DefaultLocalUserObserver {
         videoEncodedFrameObserver = new AgoraVideoEncodedFrameObserver(observer);
     }
 
-    public void unsetVideoFrameObserver() {
+    public void unregisterVideoFrameObserver() {
         if (remoteVideoTrack != null && videoFrameObserver2 != null) {
             localUser.unregisterVideoFrameObserver(videoFrameObserver2);
             videoFrameObserver2.destroy();
@@ -107,13 +120,12 @@ public class SampleLocalUserObserver extends DefaultLocalUserObserver {
 
     public synchronized void onUserAudioTrackSubscribed(AgoraLocalUser agora_local_user, String user_id,
             AgoraRemoteAudioTrack agora_remote_audio_track) {
-        // lock
         SampleLogger.log("onUserAudioTrackSubscribed success " + user_id + " " + agora_remote_audio_track);
         remoteAudioTrack = agora_remote_audio_track;
         if (!isAudioRegistered) {
             isAudioRegistered = true;
             if (remoteAudioTrack != null && audioFrameObserver != null) {
-                int res = localUser.registerAudioFrameObserver(audioFrameObserver);
+                int res = localUser.registerAudioFrameObserver(audioFrameObserver, enableVad, vadConfig);
                 SampleLogger.log("registerAudioFrameObserver success:" + res);
             }
 
@@ -168,141 +180,155 @@ public class SampleLocalUserObserver extends DefaultLocalUserObserver {
 
     public void onStreamMessage(AgoraLocalUser agora_local_user, String user_id, int stream_id, String data,
             long length) {
-        SampleLogger.log("onStreamMessage success");
+        SampleLogger.log("onStreamMessage success " + user_id + " " + stream_id + " " + data + " " + length);
     }
 
     public void onAudioTrackPublishSuccess(AgoraLocalUser agora_local_user,
             AgoraLocalAudioTrack agora_local_audio_track) {
-        SampleLogger.log("onAudioTrackPublishSuccess success");
+        SampleLogger.log("onAudioTrackPublishSuccess agora_local_audio_track:" + agora_local_audio_track);
     }
 
     public void onAudioTrackPublishStart(AgoraLocalUser agora_local_user,
             AgoraLocalAudioTrack agora_local_audio_track) {
-        SampleLogger.log("onAudioTrackPublishStart success");
+        SampleLogger.log("onAudioTrackPublishStart agora_local_audio_track:" + agora_local_audio_track);
     }
 
     public void onAudioTrackUnpublished(AgoraLocalUser agora_local_user,
             AgoraLocalAudioTrack agora_local_audio_track) {
-        SampleLogger.log("onAudioTrackUnpublished success");
+        SampleLogger.log("onAudioTrackUnpublished agora_local_audio_track:" + agora_local_audio_track);
     }
 
     public void onVideoTrackPublishStart(AgoraLocalUser agora_local_user,
             AgoraLocalVideoTrack agora_local_video_track) {
-        SampleLogger.log("onVideoTrackPublishStart success");
+        SampleLogger.log("onVideoTrackPublishStart agora_local_video_track:" + agora_local_video_track);
     }
 
     public void onVideoTrackUnpublished(AgoraLocalUser agora_local_user,
             AgoraLocalVideoTrack agora_local_video_track) {
-        SampleLogger.log("onVideoTrackUnpublished success");
+        SampleLogger.log("onVideoTrackUnpublished agora_local_video_track:" + agora_local_video_track);
     }
 
     public void onAudioTrackPublicationFailure(AgoraLocalUser agora_local_user,
             AgoraLocalAudioTrack agora_local_audio_track, int error) {
-        SampleLogger.log("onAudioTrackPublicationFailure success");
+        SampleLogger.log("onAudioTrackPublicationFailure agora_local_audio_track:" + agora_local_audio_track
+                + " error:" + error);
     }
 
     public void onLocalAudioTrackStateChanged(AgoraLocalUser agora_local_user,
             AgoraLocalAudioTrack agora_local_audio_track, int state, int error) {
-        SampleLogger.log("onLocalAudioTrackStateChanged success");
+        SampleLogger.log("onLocalAudioTrackStateChanged state:" + state + " error:" + error);
     }
 
     public void onLocalAudioTrackStatistics(AgoraLocalUser agora_local_user, LocalAudioStats stats) {
-        SampleLogger.log("onLocalAudioTrackStatistics success");
+        SampleLogger.log("onLocalAudioTrackStatistics stats:" + stats);
     }
 
     public void onRemoteAudioTrackStatistics(AgoraLocalUser agora_local_user,
             AgoraRemoteAudioTrack agora_remote_audio_track, RemoteAudioTrackStats stats) {
-        SampleLogger.log("onRemoteAudioTrackStatistics success");
+        SampleLogger.log("onRemoteAudioTrackStatistics stats:" + stats);
     }
 
     public void onAudioPublishStateChanged(AgoraLocalUser agora_local_user, String channel, int old_state,
             int new_state, int elapse_since_last_state) {
-        SampleLogger.log("onAudioPublishStateChanged success");
+        SampleLogger.log("onAudioPublishStateChanged channel:" + channel + " old_state:" + old_state + " new_state:"
+                + new_state + " elapse_since_last_state:" + elapse_since_last_state);
     }
 
     public void onFirstRemoteAudioFrame(AgoraLocalUser agora_local_user, String user_id, int elapsed) {
-        SampleLogger.log("onFirstRemoteAudioFrame success");
+        SampleLogger.log("onFirstRemoteAudioFrame user_id:" + user_id + " elapsed:" + elapsed);
     }
 
     public void onFirstRemoteAudioDecoded(AgoraLocalUser agora_local_user, String user_id, int elapsed) {
-        SampleLogger.log("onFirstRemoteAudioDecoded success");
+        SampleLogger.log("onFirstRemoteAudioDecoded user_id:" + user_id + " elapsed:" + elapsed);
     }
 
     public void onVideoTrackPublishSuccess(AgoraLocalUser agora_local_user,
             AgoraLocalVideoTrack agora_local_video_track) {
-        SampleLogger.log("onVideoTrackPublishSuccess success");
+        SampleLogger.log("onVideoTrackPublishSuccess agora_local_video_track:" + agora_local_video_track);
     }
 
     public void onVideoTrackPublicationFailure(AgoraLocalUser agora_local_user,
             AgoraLocalVideoTrack agora_local_video_track, int error) {
-        SampleLogger.log("onVideoTrackPublicationFailure success");
+        SampleLogger.log("onVideoTrackPublicationFailure error:" + error);
     }
 
     public void onLocalVideoTrackStateChanged(AgoraLocalUser agora_local_user,
             AgoraLocalVideoTrack agora_local_video_track, int state, int error) {
-        SampleLogger.log("onLocalVideoTrackStateChanged success");
+        SampleLogger.log("onLocalVideoTrackStateChanged state:" + state + " error:" + error);
     }
 
     public void onLocalVideoTrackStatistics(AgoraLocalUser agora_local_user,
             AgoraLocalVideoTrack agora_local_video_track, LocalVideoTrackStats stats) {
-        SampleLogger.log("onLocalVideoTrackStatistics success");
+        SampleLogger.log("onLocalVideoTrackStatistics stats:" + stats);
     }
 
     public void onRemoteVideoTrackStatistics(AgoraLocalUser agora_local_user,
             AgoraRemoteVideoTrack agora_remote_video_track, RemoteVideoTrackStats stats) {
-        SampleLogger.log("onRemoteVideoTrackStatistics success");
+        SampleLogger.log("onRemoteVideoTrackStatistics stats:" + stats);
     }
 
     public void onAudioVolumeIndication(AgoraLocalUser agora_local_user, AudioVolumeInfo[] speakers,
             int total_volume) {
-        SampleLogger.log("onAudioVolumeIndication success");
+        SampleLogger.log("onAudioVolumeIndication speakers:" + Arrays.toString(speakers) + " total_volume:"
+                + total_volume);
     }
 
     public void onActiveSpeaker(AgoraLocalUser agora_local_user, String userId) {
-        SampleLogger.log("onActiveSpeaker success");
+        SampleLogger.log("onActiveSpeaker  " + userId);
     }
 
     public void onRemoteVideoStreamInfoUpdated(AgoraLocalUser agora_local_user, RemoteVideoStreamInfo info) {
-        SampleLogger.log("onRemoteVideoStreamInfoUpdated success");
+        SampleLogger.log("onRemoteVideoStreamInfoUpdated info:" + info);
     }
 
     public void onVideoSubscribeStateChanged(AgoraLocalUser agora_local_user, String channel, String user_id,
             int old_state, int new_state, int elapse_since_last_state) {
-        SampleLogger.log("onVideoSubscribeStateChanged success");
+        SampleLogger.log("onVideoSubscribeStateChanged channel:" + channel + " user_id:" + user_id + " old_state:"
+                + old_state + " new_state:" + new_state + " elapse_since_last_state:" + elapse_since_last_state);
     }
 
     public void onVideoPublishStateChanged(AgoraLocalUser agora_local_user, String channel, int old_state,
             int new_state, int elapse_since_last_state) {
-        SampleLogger.log("onVideoPublishStateChanged success");
+        SampleLogger.log("onVideoPublishStateChanged channel:" + channel + " old_state:" + old_state + " new_state:"
+                + new_state + " elapse_since_last_state:" + elapse_since_last_state);
     }
 
     public void onFirstRemoteVideoFrame(AgoraLocalUser agora_local_user, String user_id, int width, int height,
             int elapsed) {
-        SampleLogger.log("onFirstRemoteVideoFrame success");
+        SampleLogger.log("onFirstRemoteVideoFrame user_id:" + user_id + " width:" + width + " height:" + height
+                + " elapsed:" + elapsed);
     }
 
     public void onFirstRemoteVideoDecoded(AgoraLocalUser agora_local_user, String user_id, int width, int height,
             int elapsed) {
-        SampleLogger.log("onFirstRemoteVideoDecoded success");
+        SampleLogger.log("onFirstRemoteVideoDecoded user_id:" + user_id + " width:" + width + " height:"
+                + height + " elapsed:" + elapsed);
     }
 
     public void onFirstRemoteVideoFrameRendered(AgoraLocalUser agora_local_user, String user_id, int width,
             int height,
             int elapsed) {
-        SampleLogger.log("onFirstRemoteVideoFrameRendered success");
+        SampleLogger.log("onFirstRemoteVideoFrameRendered user_id:" + user_id + " width:" + width + " height:"
+                + height + " elapsed:" + elapsed);
     }
 
     public void onVideoSizeChanged(AgoraLocalUser agora_local_user, String user_id, int width, int height,
             int rotation) {
-        SampleLogger.log("onVideoSizeChanged success");
+        SampleLogger.log("onVideoSizeChanged user_id:" + user_id + " width:" + width + " height:" + height
+                + " rotation:" + rotation);
     }
 
     public void onRemoteSubscribeFallbackToAudioOnly(AgoraLocalUser agora_local_user, String user_id,
             int is_fallback_or_recover) {
-        SampleLogger.log("onRemoteSubscribeFallbackToAudioOnly success");
+        SampleLogger.log("onRemoteSubscribeFallbackToAudioOnly user_id:" + user_id + " is_fallback_or_recover:"
+                + is_fallback_or_recover);
     }
 
     public void onUserStateChanged(AgoraLocalUser agora_local_user, String user_id, int state) {
-        SampleLogger.log("onUserStateChanged success");
+        SampleLogger.log("onUserStateChanged user_id:" + user_id + " state:" + state);
+    }
+
+    public void onAudioMetaDataReceived(AgoraLocalUser agoraLocalUser, String userId, byte[] metaData) {
+        SampleLogger.log("onAudioMetaDataReceived userId:" + userId + " metaData:" + new String(metaData));
     }
 }

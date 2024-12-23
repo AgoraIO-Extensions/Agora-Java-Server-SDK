@@ -43,9 +43,9 @@ public class StressSendPcmYuvTest extends AgoraTest {
             testTaskExecutorService.execute(() -> {
                 int taskCount = 0;
                 while (checkTestTime()) {
-                    int t1 = random.nextInt(5) + 5;
-
-                    createConnectionAndTest(ccfg, channelId + threadId + taskCount, userId, TestTask.SEND_PCM_YUV, t1);
+                    int t1 = random.nextInt(sleepTime - 5);
+                    String channel = connectionCount == 1 ? channelId : channelId + threadId;
+                    createConnectionAndTest(ccfg, channel, userId + threadId, TestTask.SEND_PCM_YUV, t1);
 
                     taskCount++;
                     SampleLogger.log("taskCount: " + taskCount);
