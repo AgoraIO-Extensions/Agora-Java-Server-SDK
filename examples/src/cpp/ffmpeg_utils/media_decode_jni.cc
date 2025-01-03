@@ -6,7 +6,7 @@
 static MediaPacket *currentPacket = nullptr;
 
 jobject createJavaMediaPacket(JNIEnv *env, const MediaPacket &packet) {
-    jclass mediaPacketClass = env->FindClass("io/agora/rtc/mediautils/MediaDecode$MediaPacket");
+    jclass mediaPacketClass = env->FindClass("io/agora/rtc/ffmpegutils/MediaDecode$MediaPacket");
     jmethodID constructor = env->GetMethodID(mediaPacketClass, "<init>", "()V");
     jobject jPacket = env->NewObject(mediaPacketClass, constructor);
 
@@ -38,7 +38,7 @@ jobject createJavaMediaPacket(JNIEnv *env, const MediaPacket &packet) {
 }
 
 jobject createJavaMediaFrame(JNIEnv *env, const MediaFrame &frame) {
-    jclass frameClass = env->FindClass("io/agora/rtc/mediautils/MediaDecode$MediaFrame");
+    jclass frameClass = env->FindClass("io/agora/rtc/ffmpegutils/MediaDecode$MediaFrame");
     if (!frameClass) {
         return NULL; // Exception already thrown
     }
@@ -113,9 +113,9 @@ MediaPacket convertToNativeMediaPacket(JNIEnv *env, jobject jPacket) {
 }
 
 extern "C" {
-JNIEXPORT jlong JNICALL Java_io_agora_rtc_mediautils_MediaDecode_openMediaFile(JNIEnv *env,
-                                                                               jobject obj,
-                                                                               jstring fileName) {
+JNIEXPORT jlong JNICALL Java_io_agora_rtc_ffmpegutils_MediaDecode_openMediaFile(JNIEnv *env,
+                                                                                jobject obj,
+                                                                                jstring fileName) {
     const char *nativeFileName = NULL;
     void *decoder = NULL;
 
@@ -139,9 +139,9 @@ JNIEXPORT jlong JNICALL Java_io_agora_rtc_mediautils_MediaDecode_openMediaFile(J
     return (jlong)decoder;
 }
 
-JNIEXPORT jlong JNICALL Java_io_agora_rtc_mediautils_MediaDecode_getMediaDuration(JNIEnv *env,
-                                                                                  jobject obj,
-                                                                                  jlong decoder) {
+JNIEXPORT jlong JNICALL Java_io_agora_rtc_ffmpegutils_MediaDecode_getMediaDuration(JNIEnv *env,
+                                                                                   jobject obj,
+                                                                                   jlong decoder) {
     if (!decoder) {
         return 0;
     }
@@ -149,9 +149,9 @@ JNIEXPORT jlong JNICALL Java_io_agora_rtc_mediautils_MediaDecode_getMediaDuratio
     return get_media_duration((void *)decoder);
 }
 
-JNIEXPORT jobject JNICALL Java_io_agora_rtc_mediautils_MediaDecode_getFrame(JNIEnv *env,
-                                                                            jobject obj,
-                                                                            jlong decoder) {
+JNIEXPORT jobject JNICALL Java_io_agora_rtc_ffmpegutils_MediaDecode_getFrame(JNIEnv *env,
+                                                                             jobject obj,
+                                                                             jlong decoder) {
     if (!decoder) {
         env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"), "Decoder is null");
         return NULL;
@@ -171,18 +171,18 @@ JNIEXPORT jobject JNICALL Java_io_agora_rtc_mediautils_MediaDecode_getFrame(JNIE
     return createJavaMediaFrame(env, mediaFrame);
 }
 
-JNIEXPORT void JNICALL Java_io_agora_rtc_mediautils_MediaDecode_closeMediaFile(JNIEnv *env,
-                                                                               jobject obj,
-                                                                               jlong decoder) {
+JNIEXPORT void JNICALL Java_io_agora_rtc_ffmpegutils_MediaDecode_closeMediaFile(JNIEnv *env,
+                                                                                jobject obj,
+                                                                                jlong decoder) {
     if (decoder) {
         close_media_file((void *)decoder);
     }
     currentPacket = nullptr;
 }
 
-JNIEXPORT jobject JNICALL Java_io_agora_rtc_mediautils_MediaDecode_getPacket(JNIEnv *env,
-                                                                             jobject thiz,
-                                                                             jlong decoder) {
+JNIEXPORT jobject JNICALL Java_io_agora_rtc_ffmpegutils_MediaDecode_getPacket(JNIEnv *env,
+                                                                              jobject thiz,
+                                                                              jlong decoder) {
     if (decoder) {
         int result = get_packet(reinterpret_cast<void *>(decoder), &currentPacket);
         if (result != 0) {
@@ -205,16 +205,16 @@ JNIEXPORT jobject JNICALL Java_io_agora_rtc_mediautils_MediaDecode_getPacket(JNI
     return nullptr;
 }
 
-JNIEXPORT jint JNICALL Java_io_agora_rtc_mediautils_MediaDecode_freePacket(JNIEnv *env,
-                                                                           jobject thiz,
-                                                                           jlong decoder,
-                                                                           jobject jPacket) {
+JNIEXPORT jint JNICALL Java_io_agora_rtc_ffmpegutils_MediaDecode_freePacket(JNIEnv *env,
+                                                                            jobject thiz,
+                                                                            jlong decoder,
+                                                                            jobject jPacket) {
     int result = free_packet(&currentPacket);
     currentPacket = nullptr;
     return result;
 }
 
-JNIEXPORT jobject JNICALL Java_io_agora_rtc_mediautils_MediaDecode_convertH264ToAnnexB(
+JNIEXPORT jobject JNICALL Java_io_agora_rtc_ffmpegutils_MediaDecode_convertH264ToAnnexB(
     JNIEnv *env, jobject thiz, jlong decoder, jobject jPacket) {
     if (decoder) {
         int result = h264_to_annexb(reinterpret_cast<void *>(decoder), &currentPacket);
@@ -228,10 +228,10 @@ JNIEXPORT jobject JNICALL Java_io_agora_rtc_mediautils_MediaDecode_convertH264To
     }
 }
 
-JNIEXPORT jobject JNICALL Java_io_agora_rtc_mediautils_MediaDecode_decodePacket(JNIEnv *env,
-                                                                                jobject thiz,
-                                                                                jlong decoder,
-                                                                                jobject jPacket) {
+JNIEXPORT jobject JNICALL Java_io_agora_rtc_ffmpegutils_MediaDecode_decodePacket(JNIEnv *env,
+                                                                                 jobject thiz,
+                                                                                 jlong decoder,
+                                                                                 jobject jPacket) {
     if (decoder) {
         MediaFrame frame;
         memset(&frame, 0, sizeof(frame));

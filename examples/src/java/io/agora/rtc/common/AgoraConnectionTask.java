@@ -1,6 +1,7 @@
 package io.agora.rtc.common;
 
 import io.agora.rtc.AgoraAudioVadConfigV2;
+import io.agora.rtc.ColorSpace;
 import io.agora.rtc.DownlinkNetworkInfo;
 import io.agora.rtc.EncodedAudioFrameReceiverInfo;
 import io.agora.rtc.UplinkNetworkInfo;
@@ -17,6 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.agora.rtc.AgoraAudioEncodedFrameSender;
 import io.agora.rtc.AgoraAudioPcmDataSender;
@@ -92,6 +94,7 @@ public class AgoraConnectionTask {
     private final ThreadPoolExecutor testTaskExecutorService;
     private final ThreadPoolExecutor logExecutorService;
     private CountDownLatch userLeftLatch;
+    private AtomicBoolean taskStarted = new AtomicBoolean(false);
 
     public interface TaskCallback {
         default void onConnected() {
@@ -255,7 +258,8 @@ public class AgoraConnectionTask {
         mediaNodeFactory = service.createMediaNodeFactory();
     }
 
-    public void releaseConn() {
+    public synchronized void releaseConn() {
+        taskStarted.set(false);
         SampleLogger.log("releaseConn for channelId:" + channelId + " userId:" + userId);
         if (conn == null) {
             return;
@@ -363,7 +367,7 @@ public class AgoraConnectionTask {
 
                 int samplesPerChannel = data.length / 2 / numOfChannels;
 
-                if (null != audioFrameSender) {
+                if (null != audioFrameSender && taskStarted.get()) {
                     int ret = audioFrameSender.send(data, 0,
                             samplesPerChannel, 2,
                             numOfChannels,
@@ -377,7 +381,8 @@ public class AgoraConnectionTask {
                             + " testTime:" + testTime);
 
                     if (enableSendAudioMetaData) {
-                        ret = conn.getLocalUser().sendAudioMetaData(("testSendAudioMetaData " + timestamp).getBytes());
+                        ret = conn.getLocalUser()
+                                .sendAudioMetaData(("testSendAudioMetaData " + timestamp).getBytes());
                         SampleLogger.log("sendAudioMetaData ret:" + ret);
                     }
                 } else {
@@ -421,6 +426,10 @@ public class AgoraConnectionTask {
 
         pcmSendThread.start();
 
+        if (!taskStarted.get()) {
+            taskStarted.set(true);
+        }
+
         SampleLogger.log("sendPcmTask start");
         if (waitRelease) {
             try {
@@ -460,7 +469,9 @@ public class AgoraConnectionTask {
                 if (timestamp == 0) {
                     timestamp = System.currentTimeMillis();
                 }
-
+                if (!taskStarted.get()) {
+                    return;
+                }
                 int ret = audioEncodedFrameSender.send(data, data.length, encodedInfo);
                 SampleLogger.log("send aac frame data size:" + data.length + " timestamp:"
                         + timestamp + " encodedInfo:" + encodedInfo
@@ -515,7 +526,9 @@ public class AgoraConnectionTask {
         };
 
         aacSendThread.start();
-
+        if (!taskStarted.get()) {
+            taskStarted.set(true);
+        }
         SampleLogger.log("sendAacTask start");
 
         if (waitRelease) {
@@ -555,6 +568,10 @@ public class AgoraConnectionTask {
                 }
 
                 if (null == data || data.length == 0) {
+                    return;
+                }
+
+                if (!taskStarted.get()) {
                     return;
                 }
 
@@ -612,7 +629,9 @@ public class AgoraConnectionTask {
         };
 
         opusSendThread.start();
-
+        if (!taskStarted.get()) {
+            taskStarted.set(true);
+        }
         SampleLogger.log("sendOpusTask start");
 
         if (waitRelease) {
@@ -713,6 +732,9 @@ public class AgoraConnectionTask {
                     externalVideoFrame.setFillAlphaBuffer(1);
                 }
 
+                if (!taskStarted.get()) {
+                    return;
+                }
                 int ret = videoFrameSender.send(externalVideoFrame);
                 frameIndex++;
 
@@ -765,6 +787,9 @@ public class AgoraConnectionTask {
         };
 
         yuvSender.start();
+        if (!taskStarted.get()) {
+            taskStarted.set(true);
+        }
         SampleLogger.log("sendYuvTask start");
 
         if (waitRelease) {
@@ -832,6 +857,9 @@ public class AgoraConnectionTask {
                 info.setDecodeTimeMs(currentTime);
                 info.setFramesPerSecond(fps);
                 info.setRotation(0);
+                if (!taskStarted.get()) {
+                    return;
+                }
                 customEncodedImageSender.send(data, data.length, info);
                 frameIndex++;
                 SampleLogger.log("send h264 frame data size:" + data.length +
@@ -883,6 +911,9 @@ public class AgoraConnectionTask {
         };
 
         h264SendThread.start();
+        if (!taskStarted.get()) {
+            taskStarted.set(true);
+        }
         SampleLogger.log("sendH264Task start");
 
         if (waitRelease) {
@@ -973,6 +1004,16 @@ public class AgoraConnectionTask {
                 externalVideoFrame.setAlphaBuffer(alphaBuffer);
                 externalVideoFrame.setTimestamp(timestamp);
                 externalVideoFrame.setRotation(0);
+                // ColorSpace colorSpace = new ColorSpace();
+                // colorSpace.setPrimaries(1);
+                // colorSpace.setTransfer(1);
+                // colorSpace.setMatrix(5);
+                // colorSpace.setRange(1);
+                // externalVideoFrame.setColorSpace(colorSpace);
+
+                if (!taskStarted.get()) {
+                    return;
+                }
                 videoFrameSender.send(externalVideoFrame);
                 frameIndex++;
 
@@ -1024,6 +1065,9 @@ public class AgoraConnectionTask {
         };
 
         rgbaSender.start();
+        if (!taskStarted.get()) {
+            taskStarted.set(true);
+        }
         SampleLogger.log("sendRgbaTask start");
 
         if (waitRelease) {
@@ -1105,6 +1149,11 @@ public class AgoraConnectionTask {
                 info.setDecodeTimeMs(currentTime);
                 info.setFramesPerSecond(fps);
                 info.setRotation(0);
+
+                if (!taskStarted.get()) {
+                    return;
+                }
+
                 int ret = customEncodedImageSender.send(data, data.length, info);
                 frameIndex++;
                 SampleLogger.log("send vp8 ret:" + ret + " frame data size:" + data.length + " width:" + width
@@ -1162,6 +1211,9 @@ public class AgoraConnectionTask {
         };
 
         vp8SendThread.start();
+        if (!taskStarted.get()) {
+            taskStarted.set(true);
+        }
         SampleLogger.log("sendVp8Task start");
 
         if (waitRelease) {
@@ -1198,7 +1250,9 @@ public class AgoraConnectionTask {
                             // customAudioTrack.setMaxBufferedAudioFrameNumber(1000);
                             conn.getLocalUser().publishAudio(customAudioTrack);
                         }
-
+                        if (!taskStarted.get()) {
+                            return;
+                        }
                         int ret = audioFrameSender.send(frame.buffer, (int) (frame.pts),
                                 frame.samples, frame.bytesPerSample,
                                 frame.channels,
@@ -1235,6 +1289,9 @@ public class AgoraConnectionTask {
                         externalVideoFrame.setFormat(Constants.EXTERNAL_VIDEO_FRAME_PIXEL_FORMAT_I420);
                         externalVideoFrame.setType(Constants.EXTERNAL_VIDEO_FRAME_BUFFER_TYPE_RAW_DATA);
                         externalVideoFrame.setTimestamp(frame.pts);
+                        if (!taskStarted.get()) {
+                            return;
+                        }
                         int ret = videoFrameSender.send(externalVideoFrame);
                         SampleLogger.log("SendVideoFrame frame.pts:" + frame.pts + " ret:" + ret);
                     }
@@ -1244,7 +1301,9 @@ public class AgoraConnectionTask {
         if (initRet) {
             mediaDecodeUtils.start();
         }
-
+        if (!taskStarted.get()) {
+            taskStarted.set(true);
+        }
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
