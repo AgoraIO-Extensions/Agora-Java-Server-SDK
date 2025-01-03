@@ -567,6 +567,8 @@ public class AgoraTest {
                 e.printStackTrace();
             }
 
+            onConnected(connTask.getConn(), channelId, userId);
+
             if (TestTask.SEND_PCM == testTask) {
                 connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, true, enableAudioCache == 1,
                         enableSendAudioMetaData == 1);
@@ -654,8 +656,6 @@ public class AgoraTest {
                         streamType, true,
                         enableSaveFile == 1);
             }
-
-            onConnected(connTask.getConn(), channelId, userId);
 
             if (TestTask.NONE != testTask) {
                 try {

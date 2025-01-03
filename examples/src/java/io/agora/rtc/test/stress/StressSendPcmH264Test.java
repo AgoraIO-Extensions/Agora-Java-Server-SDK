@@ -42,7 +42,7 @@ public class StressSendPcmH264Test extends AgoraTest {
             final int threadId = i;
             testTaskExecutorService.execute(() -> {
                 while (checkTestTime()) {
-                    int t1 = random.nextInt(sleepTime - 5);
+                    int t1 = random.nextInt(sleepTime - 5) + 1;
                     String channel = connectionCount == 1 ? channelId : channelId + threadId;
                     createConnectionAndTest(ccfg, channel, userId + threadId, TestTask.SEND_PCM_H264, t1);
 
