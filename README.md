@@ -65,21 +65,22 @@ public AgoraAudioVadV2(AgoraAudioVadConfigV2 config)
 ```
 
 - **Parameters**
+
   - `config`: `AgoraAudioVadConfigV2` type, VAD configuration.
 
   ###### AgoraAudioVadConfigV2 Properties
 
-| Property Name | Type | Description | Default Value | Range |
-|---------------|------|-------------|---------------|-------|
-| preStartRecognizeCount | int | Number of audio frames saved before starting speech state | 16 | [0, Integer.MAX_VALUE] |
-| startRecognizeCount | int | Number of audio frames in speech state | 30 | [1, Integer.MAX_VALUE] |
-| stopRecognizeCount | int | Number of audio frames in stop speech state | 20 | [1, Integer.MAX_VALUE] |
-| activePercent | float | Percentage of active frames in startRecognizeCount frames | 0.7 | [0.0, 1.0] |
-| inactivePercent | float | Percentage of inactive frames in stopRecognizeCount frames | 0.5 | [0.0, 1.0] |
-| startVoiceProb | int | Probability threshold for starting voice detection | 70 | [0, 100] |
-| stopVoiceProb | int | Probability threshold for stopping voice detection | 70 | [0, 100] |
-| startRmsThreshold | int | RMS threshold for starting voice detection | -50 | [-100, 0] |
-| stopRmsThreshold | int | RMS threshold for stopping voice detection | -50 | [-100, 0] |
+| Property Name          | Type  | Description                                                | Default Value | Range                  |
+| ---------------------- | ----- | ---------------------------------------------------------- | ------------- | ---------------------- |
+| preStartRecognizeCount | int   | Number of audio frames saved before starting speech state  | 16            | [0, Integer.MAX_VALUE] |
+| startRecognizeCount    | int   | Number of audio frames in speech state                     | 30            | [1, Integer.MAX_VALUE] |
+| stopRecognizeCount     | int   | Number of audio frames in stop speech state                | 20            | [1, Integer.MAX_VALUE] |
+| activePercent          | float | Percentage of active frames in startRecognizeCount frames  | 0.7           | [0.0, 1.0]             |
+| inactivePercent        | float | Percentage of inactive frames in stopRecognizeCount frames | 0.5           | [0.0, 1.0]             |
+| startVoiceProb         | int   | Probability threshold for starting voice detection         | 70            | [0, 100]               |
+| stopVoiceProb          | int   | Probability threshold for stopping voice detection         | 70            | [0, 100]               |
+| startRmsThreshold      | int   | RMS threshold for starting voice detection                 | -50           | [-100, 0]              |
+| stopRmsThreshold       | int   | RMS threshold for stopping voice detection                 | -50           | [-100, 0]              |
 
 ###### Notes
 
@@ -167,6 +168,12 @@ public class Main {
 ```
 
 ## Changelog
+
+### v4.4.31.1 (2025-01-06)
+
+#### Feature Optimization
+
+- Optimized VAD functionality configuration, now VAD functionality is enabled by default without manual configuration
 
 ### v4.4.31 (2024-12-23)
 

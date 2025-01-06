@@ -44,7 +44,7 @@
 
 ## API 参考
 
-### 基础API 参考
+### 基础 API 参考
 
 完整 API 文档请访问 [Agora Java Server SDK API 参考](https://doc.shengwang.cn/api-ref/rtc-server-sdk/java/overview)
 
@@ -56,7 +56,7 @@
 
 #### 类和方法
 
-##### AgoraAudioVadV2类
+##### AgoraAudioVadV2 类
 
 ###### 构造方法
 
@@ -69,17 +69,17 @@ public AgoraAudioVadV2(AgoraAudioVadConfigV2 config)
 
 ###### AgoraAudioVadConfigV2 属性
 
-| 属性名                 | 类型  | 描述                               | 默认值 | 取值范围            |
-|------------------------|-------|------------------------------------|--------|---------------------|
-| preStartRecognizeCount | int   | 开始说话状态前保存的音频帧数       | 16     | [0, Integer.MAX_VALUE] |
-| startRecognizeCount    | int   | 说话状态的音频帧数                 | 30     | [1, Integer.MAX_VALUE] |
-| stopRecognizeCount     | int   | 停止说话状态的音频帧数             | 20     | [1, Integer.MAX_VALUE] |
-| activePercent          | float | 在 startRecognizeCount 帧中活跃帧的百分比 | 0.7    | [0.0, 1.0]           |
-| inactivePercent        | float | 在 stopRecognizeCount 帧中非活跃帧的百分比 | 0.5    | [0.0, 1.0]           |
-| startVoiceProb         | int   | 开始语音检测的概率阈值             | 70     | [0, 100]             |
-| stopVoiceProb          | int   | 停止语音检测的概率阈值             | 70     | [0, 100]             |
-| startRmsThreshold      | int   | 开始语音检测的 RMS 阈值            | -50    | [-100, 0]            |
-| stopRmsThreshold       | int   | 停止语音检测的 RMS 阈值            | -50    | [-100, 0]            |
+| 属性名                 | 类型  | 描述                                       | 默认值 | 取值范围               |
+| ---------------------- | ----- | ------------------------------------------ | ------ | ---------------------- |
+| preStartRecognizeCount | int   | 开始说话状态前保存的音频帧数               | 16     | [0, Integer.MAX_VALUE] |
+| startRecognizeCount    | int   | 说话状态的音频帧数                         | 30     | [1, Integer.MAX_VALUE] |
+| stopRecognizeCount     | int   | 停止说话状态的音频帧数                     | 20     | [1, Integer.MAX_VALUE] |
+| activePercent          | float | 在 startRecognizeCount 帧中活跃帧的百分比  | 0.7    | [0.0, 1.0]             |
+| inactivePercent        | float | 在 stopRecognizeCount 帧中非活跃帧的百分比 | 0.5    | [0.0, 1.0]             |
+| startVoiceProb         | int   | 开始语音检测的概率阈值                     | 70     | [0, 100]               |
+| stopVoiceProb          | int   | 停止语音检测的概率阈值                     | 70     | [0, 100]               |
+| startRmsThreshold      | int   | 开始语音检测的 RMS 阈值                    | -50    | [-100, 0]              |
+| stopRmsThreshold       | int   | 停止语音检测的 RMS 阈值                    | -50    | [-100, 0]              |
 
 ###### 注意事项
 
@@ -167,6 +167,12 @@ public class Main {
 ```
 
 ## 更新日志
+
+### v4.4.31.1（2025-01-06）
+
+#### 功能优化
+
+- 优化 VAD 功能配置,现在默认开启 VAD 功能,无需手动配置
 
 ### v4.4.31（2024-12-23）
 
