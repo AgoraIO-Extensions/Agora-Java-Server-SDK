@@ -528,6 +528,16 @@ public class AgoraTest {
         SampleLogger.log("connectionCount:" + connectionCount + " enableStringUid:" + enableStringUid);
 
         service = SampleCommon.createAndInitAgoraService(0, 1, 1, useStringUid, APPID);
+
+        // AgoraParameter parameter = service.getAgoraParameter();
+        // parameter.setParameters("{\"che.audio.custom_payload_type\":78}");
+        // parameter.setParameters("{\"che.audio.aec.enable\":false}");
+        // parameter.setParameters("{\"che.audio.ans.enable\":false}");
+        // parameter.setParameters("{\"che.audio.agc.enable\":false}");
+        // parameter.setParameters("{\"che.audio.custom_bitrate\":128000}");
+        // parameter.setParameters(
+        // "{\"che.audio.frame_dump\":{\"location\":\"all\",\"action\":\"start\",\"max_size_bytes\":\"100000000\",\"uuid\":\"123456789\",
+        // \"duration\": \"150000\"}}");
     }
 
     protected boolean createConnectionAndTest(RtcConnConfig ccfg, String channelId, String userId, TestTask testTask,

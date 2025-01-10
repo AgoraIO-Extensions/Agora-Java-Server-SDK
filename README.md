@@ -1,5 +1,7 @@
 # Agora Java Server SDK
 
+[中文](README.zh.md) | English
+
 ## Table of Contents
 
 - [System Requirements](#system-requirements)
@@ -35,8 +37,21 @@ Refer to the [official example documentation](https://doc.shengwang.cn/doc/rtc-s
 
 ## SDK Acquisition
 
-- [Maven](https://central.sonatype.com/artifact/io.agora.rtc/linux-java-sdk/overview)
-- [Official Download Page](https://doc.shengwang.cn/doc/rtc-server-sdk/java/resources)
+### Maven Dependency
+
+Add the following dependency to your project's `pom.xml` file:
+
+```xml
+<dependency>
+    <groupId>io.agora.rtc</groupId>
+    <artifactId>linux-java-sdk</artifactId>
+    <version>4.4.31.1</version>
+</dependency>
+```
+
+### Download SDK
+
+[linux-java-sdk-4.4.31.1](https://repo1.maven.org/maven2/io/agora/rtc/linux-java-sdk/4.4.31.1/linux-java-sdk-4.4.31.1.jar)
 
 ## API Examples
 

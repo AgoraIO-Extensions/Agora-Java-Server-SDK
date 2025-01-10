@@ -1473,10 +1473,10 @@ public class AgoraConnectionTask {
         // Register audio frame observer to receive audio stream
         int ret = conn.getLocalUser().setPlaybackAudioFrameParameters(numOfChannels, sampleRate, 0,
                 sampleRate / 100 * numOfChannels);
-        SampleLogger.log("setPlaybackAudioFrameBeforeMixingParameters numOfChannels:" + numOfChannels + " sampleRate:"
+        SampleLogger.log("setPlaybackAudioFrameParameters numOfChannels:" + numOfChannels + " sampleRate:"
                 + sampleRate);
         if (ret > 0) {
-            SampleLogger.log("setPlaybackAudioFrameBeforeMixingParameters fail ret=" + ret);
+            SampleLogger.log("setPlaybackAudioFrameParameters fail ret=" + ret);
             return;
         }
         sampleLocalUserObserver.setAudioFrameObserver(new SampleAudioFrameObserver(audioOutFile) {
