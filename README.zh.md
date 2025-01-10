@@ -35,8 +35,21 @@
 
 ## SDK 获取
 
-- [Maven](https://central.sonatype.com/artifact/io.agora.rtc/linux-java-sdk/overview)
-- [官方下载页面](https://doc.shengwang.cn/doc/rtc-server-sdk/java/resources)
+### Maven 依赖
+
+在项目的 pom.xml 文件中添加以下依赖:
+
+```xml
+<dependency>
+    <groupId>io.agora.rtc</groupId>
+    <artifactId>linux-java-sdk</artifactId>
+    <version>4.4.31.1</version>
+</dependency>
+```
+
+### 下载 SDK
+
+[linux-java-sdk-4.4.31.1](https://repo1.maven.org/maven2/io/agora/rtc/linux-java-sdk/4.4.31.1/linux-java-sdk-4.4.31.1.jar)
 
 ## API 示例
 
