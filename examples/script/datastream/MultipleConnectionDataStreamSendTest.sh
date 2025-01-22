@@ -1,1 +1,1 @@
-sh run.zsh io.agora.rtc.test.datastream.MultipleConnectionDataStreamSendTest -channelId dataStreamChannel -userId 11116 -connectionCount 1 -videoFile test_data/360p_I420.yuv -height 360 -width 640 -fps 8
+sh run.zsh io.agora.rtc.example.test.datastream.MultipleConnectionDataStreamSendTest -channelId dataStreamChannel -userId 11116 -connectionCount 1 -videoFile test_data/360p_I420.yuv -height 360 -width 640 -fps 8

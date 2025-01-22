@@ -1,1 +1,1 @@
-sh run.zsh io.agora.rtc.scenario.ReceiverPcmH264Test
+sh run.zsh io.agora.rtc.example.scenario.ReceiverPcmH264Test

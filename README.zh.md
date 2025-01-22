@@ -1,4 +1,4 @@
-# Agora Java Server SDK
+# Agora Server Java SDK
 
 ## 目录
 

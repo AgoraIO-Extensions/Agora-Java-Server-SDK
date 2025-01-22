@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-#sh run.zsh io.agora.rtc.test.H264PcmTest -channelId  aga -token 123 -sampleRate 23900
+#sh run.zsh io.agora.rtc.example.test.H264PcmTest -channelId  aga -token 123 -sampleRate 23900
 
 export DYLD_LIBRARY_PATH=$(pwd)/libs/
 export LD_LIBRARY_PATH=$(pwd)/libs/

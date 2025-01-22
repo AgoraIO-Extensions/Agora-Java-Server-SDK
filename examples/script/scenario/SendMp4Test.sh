@@ -1,1 +1,1 @@
-sh run.zsh io.agora.rtc.scenario.SendMp4Test
+sh run.zsh io.agora.rtc.example.scenario.SendMp4Test

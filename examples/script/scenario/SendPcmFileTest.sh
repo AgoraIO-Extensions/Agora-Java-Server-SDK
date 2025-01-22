@@ -1,1 +1,1 @@
-sh run.zsh io.agora.rtc.scenario.SendPcmFileTest
+sh run.zsh io.agora.rtc.example.scenario.SendPcmFileTest

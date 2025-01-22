@@ -1,1 +1,1 @@
-sh run.zsh io.agora.rtc.test.pcm.MultipleConnectionPcmReceiveTest -channelId encryptedPcmChannel -userId 11129 -connectionCount 1 -sampleRate 16000 -numOfChannels 1 -audioOutFile test_data_out/received_encrypted_pcm -enableEncryptionMode 1 -encryptionMode 4 -encryptionKey 123456
+sh run.zsh io.agora.rtc.example.test.pcm.MultipleConnectionPcmReceiveTest -channelId encryptedPcmChannel -userId 11129 -connectionCount 1 -sampleRate 16000 -numOfChannels 1 -audioOutFile test_data_out/received_encrypted_pcm -enableEncryptionMode 1 -encryptionMode 4 -encryptionKey 123456

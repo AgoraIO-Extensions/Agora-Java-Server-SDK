@@ -1,1 +1,1 @@
-sh run.zsh io.agora.rtc.test.vp8.MultipleConnectionVp8PcmSendTest -channelId vp8Channel -userId 202409296 -connectionCount 1 -sampleRate 16000 -numOfChannels 1 -audioFile test_data/send_audio_16k_1ch.pcm -videoFile test_data/test.vp8.ivf -height 108 -width 192 -fps 15
+sh run.zsh io.agora.rtc.example.test.vp8.MultipleConnectionVp8PcmSendTest -channelId vp8Channel -userId 202409296 -connectionCount 1 -sampleRate 16000 -numOfChannels 1 -audioFile test_data/send_audio_16k_1ch.pcm -videoFile test_data/test.vp8.ivf -height 108 -width 192 -fps 15
