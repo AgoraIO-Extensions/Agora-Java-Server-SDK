@@ -1,1 +1,1 @@
-sh run.zsh io.agora.rtc.scenario.SendPcmRealTimeTest
+sh run.zsh io.agora.rtc.example.scenario.SendPcmRealTimeTest

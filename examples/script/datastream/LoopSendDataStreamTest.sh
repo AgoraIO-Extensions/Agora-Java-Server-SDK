@@ -1,1 +1,1 @@
-sh run.zsh io.agora.rtc.test.datastream.LoopSendDataStreamTest
+sh run.zsh io.agora.rtc.example.test.datastream.LoopSendDataStreamTest

@@ -1,1 +1,1 @@
-sh run.zsh io.agora.rtc.test.encoded_audio.MultipleConnectionReceiveEncodedAudioTest -channelId opusChannel -userId 20241105 -connectionCount 1 -audioOutFile test_data_out/received_encoded_audio -fileType opus
+sh run.zsh io.agora.rtc.example.test.encoded_audio.MultipleConnectionReceiveEncodedAudioTest -channelId opusChannel -userId 20241105 -connectionCount 1 -audioOutFile test_data_out/received_encoded_audio -fileType opus
