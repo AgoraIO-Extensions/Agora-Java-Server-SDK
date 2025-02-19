@@ -33,8 +33,8 @@ public class FullTest extends AgoraTest {
                 AgoraConnectionTask connTask = new AgoraConnectionTask(service, 0);
                 connTask.setCallback(new AgoraConnectionTask.TaskCallback() {
                     @Override
-                    public void onConnected() {
-                        SampleLogger.log("FullTest onConnected");
+                    public void onConnected(String userId) {
+                        SampleLogger.log("FullTest onConnected userId: " + userId);
                     }
 
                     @Override

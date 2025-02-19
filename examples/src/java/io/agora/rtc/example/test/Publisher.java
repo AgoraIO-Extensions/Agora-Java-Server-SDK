@@ -1,7 +1,7 @@
 package io.agora.rtc.example.test;
 
 import io.agora.rtc.example.common.SampleLogger;
-import io.agora.rtc.example.common.Utils;
+import io.agora.rtc.example.utils.Utils;
 import java.io.File;
 import java.util.Scanner;
 import io.agora.rtc.AgoraCameraCapturer;

@@ -46,8 +46,8 @@ public class StressReceiverYuvTest extends AgoraTest {
                 while (checkTestTime()) {
                     int t1 = random.nextInt(sleepTime - 5) + 1;
                     String channel = connectionCount == 1 ? channelId : channelId + threadId;
-                    createConnectionAndTest(ccfg, channel, userId + threadId + (index++),
-                            TestTask.RECEIVE_YUV, t1);
+                    String connUserId = userId.equals("0") ? userId : userId + threadId + (index++);
+                    createConnectionAndTest(ccfg, channel, connUserId, TestTask.RECEIVE_YUV, t1);
 
                     taskCount++;
                     SampleLogger.log("taskCount: " + taskCount);

@@ -14,7 +14,7 @@ import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
 import io.agora.rtc.utils.AudioConsumerUtils;
 import io.agora.rtc.example.common.SampleLogger;
-import io.agora.rtc.example.common.Utils;
+import io.agora.rtc.example.utils.Utils;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,7 +25,7 @@ public class SendPcmFileTest {
     private static String DEFAULT_LOG_PATH = "agora_logs/agorasdk.log";
     private static int DEFAULT_LOG_SIZE = 512 * 1024; // default log size is 512 kb
     private static String channelId = "agaa";
-    private static String userId = "12345";
+    private static String userId = "0";
 
     private static AgoraService service;
     private static AgoraRtcConn conn;
@@ -83,34 +83,34 @@ public class SendPcmFileTest {
 
         ret = conn.registerObserver(new DefaultRtcConnObserver() {
             @Override
-            public void onConnected(AgoraRtcConn agora_rtc_conn, RtcConnInfo conn_info, int reason) {
-                super.onConnected(agora_rtc_conn, conn_info, reason);
+            public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
+                super.onConnected(agoraRtcConn, connInfo, reason);
                 SampleLogger.log(
-                        "onConnected chennalId:" + conn_info.getChannelId() + " userId:" + conn_info.getLocalUserId());
-                testTaskExecutorService.execute(() -> onConnConnected(agora_rtc_conn, conn_info, reason));
+                        "onConnected chennalId:" + connInfo.getChannelId() + " userId:" + connInfo.getLocalUserId());
+                testTaskExecutorService.execute(() -> onConnConnected(agoraRtcConn, connInfo, reason));
             }
 
             @Override
-            public void onUserJoined(AgoraRtcConn agora_rtc_conn, String user_id) {
-                super.onUserJoined(agora_rtc_conn, user_id);
-                SampleLogger.log("onUserJoined user_id:" + user_id);
-
-            }
-
-            @Override
-            public void onUserLeft(AgoraRtcConn agora_rtc_conn, String user_id, int reason) {
-                super.onUserLeft(agora_rtc_conn, user_id, reason);
-                SampleLogger.log("onUserLeft user_id:" + user_id + " reason:" + reason);
+            public void onUserJoined(AgoraRtcConn agoraRtcConn, String userId) {
+                super.onUserJoined(agoraRtcConn, userId);
+                SampleLogger.log("onUserJoined userId:" + userId);
 
             }
 
             @Override
-            public void onChangeRoleSuccess(AgoraRtcConn agora_rtc_conn, int old_role, int new_role) {
-                SampleLogger.log("onChangeRoleSuccess old_role:" + old_role + " new_role:" + new_role);
+            public void onUserLeft(AgoraRtcConn agoraRtcConn, String userId, int reason) {
+                super.onUserLeft(agoraRtcConn, userId, reason);
+                SampleLogger.log("onUserLeft userId:" + userId + " reason:" + reason);
+
             }
 
             @Override
-            public void onChangeRoleFailure(AgoraRtcConn agora_rtc_conn) {
+            public void onChangeRoleSuccess(AgoraRtcConn agoraRtcConn, int oldRole, int newRole) {
+                SampleLogger.log("onChangeRoleSuccess oldRole:" + oldRole + " newRole:" + newRole);
+            }
+
+            @Override
+            public void onChangeRoleFailure(AgoraRtcConn agoraRtcConn) {
                 SampleLogger.log("onChangeRoleFailure");
             }
         });
@@ -121,26 +121,26 @@ public class SendPcmFileTest {
 
         conn.getLocalUser().registerObserver(new DefaultLocalUserObserver() {
             @Override
-            public void onStreamMessage(AgoraLocalUser agora_local_user, String user_id, int stream_id, String data,
+            public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data,
                     long length) {
-                SampleLogger.log("onStreamMessage: userid " + user_id + " stream_id " + stream_id + "  data " + data);
+                SampleLogger.log("onStreamMessage: userid " + userId + " streamId " + streamId + "  data " + data);
             }
 
             @Override
-            public void onAudioPublishStateChanged(AgoraLocalUser agora_local_user, String channel, int old_state,
-                    int new_state, int elapse_since_last_state) {
+            public void onAudioPublishStateChanged(AgoraLocalUser agoraLocalUser, String channel, int oldState,
+                    int newState, int elapseSinceLastState) {
                 SampleLogger
-                        .log("onAudioPublishStateChanged channel:" + channel + " old_state:" + old_state + " new_state:"
-                                + new_state + " userRole:" + agora_local_user.getUserRole());
+                        .log("onAudioPublishStateChanged channel:" + channel + " oldState:" + oldState + " newState:"
+                                + newState + " userRole:" + agoraLocalUser.getUserRole());
             }
 
             @Override
-            public void onVideoPublishStateChanged(AgoraLocalUser agora_local_user, String channel, int old_state,
-                    int new_state, int elapse_since_last_state) {
+            public void onVideoPublishStateChanged(AgoraLocalUser agoraLocalUser, String channel, int oldState,
+                    int newState, int elapseSinceLastState) {
                 // TODO Auto-generated method stub
                 SampleLogger
-                        .log("onVideoPublishStateChanged channel:" + channel + " old_state:" + old_state + " new_state:"
-                                + new_state + " userRole:" + agora_local_user.getUserRole());
+                        .log("onVideoPublishStateChanged channel:" + channel + " oldState:" + oldState + " newState:"
+                                + newState + " userRole:" + agoraLocalUser.getUserRole());
             }
         });
 

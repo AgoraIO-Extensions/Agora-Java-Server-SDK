@@ -9,6 +9,7 @@ import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import io.agora.rtc.example.utils.Utils;
 
 public class SampleAudioFrameObserver extends FileWriter implements IAudioFrameObserver {
     protected final ExecutorService writeFileExecutorService = Executors.newSingleThreadExecutor();
@@ -22,28 +23,84 @@ public class SampleAudioFrameObserver extends FileWriter implements IAudioFrameO
         this.outputFilePath = outputFilePath;
     }
 
+    /**
+     * Note: To improve data transmission efficiency, the buffer of the frame object
+     * is a DirectByteBuffer.
+     * Be sure to extract the byte array value in the callback synchronously and
+     * then transfer it to the asynchronous thread for processing.
+     * You can refer to {@link io.agora.rtc.utils.Utils#getBytes(ByteBuffer)}.
+     * 
+     * @param agoraLocalUser the local user
+     * @param channelId      the channel id
+     * @param frame          the audio frame
+     * @return 0/1, the return value currently has no practical significance
+     */
     @Override
-    public int onRecordAudioFrame(AgoraLocalUser agora_local_user, String channel_id, AudioFrame frame) {
+    public int onRecordAudioFrame(AgoraLocalUser agoraLocalUser, String channelId, AudioFrame frame) {
         return 1;
     }
 
+    /**
+     * Note: To improve data transmission efficiency, the buffer of the frame object
+     * is a DirectByteBuffer.
+     * Be sure to extract the byte array value in the callback synchronously and
+     * then transfer it to the asynchronous thread for processing.
+     * You can refer to {@link io.agora.rtc.utils.Utils#getBytes(ByteBuffer)}.
+     * 
+     * @param agoraLocalUser the local user
+     * @param channelId      the channel id
+     * @param frame          the audio frame
+     * @return 0/1, the return value currently has no practical significance
+     */
     @Override
-    public int onPlaybackAudioFrame(AgoraLocalUser agora_local_user, String channel_id, AudioFrame frame) {
+    public int onPlaybackAudioFrame(AgoraLocalUser agoraLocalUser, String channelId, AudioFrame frame) {
         return 1;
     }
 
+    /**
+     * Note: To improve data transmission efficiency, the buffer of the frame object
+     * is a DirectByteBuffer.
+     * Be sure to extract the byte array value in the callback synchronously and
+     * then transfer it to the asynchronous thread for processing.
+     * You can refer to {@link io.agora.rtc.utils.Utils#getBytes(ByteBuffer)}.
+     */
     @Override
-    public int onMixedAudioFrame(AgoraLocalUser agora_local_user, String channel_id, AudioFrame frame) {
+    public int onMixedAudioFrame(AgoraLocalUser agoraLocalUser, String channelId, AudioFrame frame) {
         return 1;
     }
 
+    /**
+     * Note: To improve data transmission efficiency, the buffer of the frame object
+     * is a DirectByteBuffer.
+     * Be sure to extract the byte array value in the callback synchronously and
+     * then transfer it to the asynchronous thread for processing.
+     * You can refer to {@link io.agora.rtc.utils.Utils#getBytes(ByteBuffer)}.
+     * 
+     * @param agoraLocalUser the local user
+     * @param frame          the audio frame
+     * @return 0/1, the return value currently has no practical significance
+     */
     @Override
-    public int onEarMonitoringAudioFrame(AgoraLocalUser agora_local_user, AudioFrame frame) {
+    public int onEarMonitoringAudioFrame(AgoraLocalUser agoraLocalUser, AudioFrame frame) {
         return 1;
     }
 
+    /**
+     * Note: To improve data transmission efficiency, the buffer of the frame object
+     * is a DirectByteBuffer.
+     * Be sure to extract the byte array value in the callback synchronously and
+     * then transfer it to the asynchronous thread for processing.
+     * You can refer to {@link io.agora.rtc.utils.Utils#getBytes(ByteBuffer)}.
+     * 
+     * @param agoraLocalUser the local user
+     * @param channelId      the channel id
+     * @param userId         the user id
+     * @param frame          the audio frame
+     * @param vadResult      the vad result
+     * @return 0/1, the return value currently has no practical significance
+     */
     @Override
-    public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agora_local_user, String channel_id, String uid,
+    public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser, String channelId, String userId,
             AudioFrame frame, VadProcessResult vadResult) {
         return 0;
     }
@@ -57,9 +114,7 @@ public class SampleAudioFrameObserver extends FileWriter implements IAudioFrameO
         if ("".equals(outputFilePath.trim())) {
             return;
         }
-        byte[] byteArray = new byte[buffer.remaining()];
-        buffer.get(byteArray);
-        buffer.rewind();
+        byte[] byteArray = io.agora.rtc.utils.Utils.getBytes(buffer);
 
         writeFileExecutorService.execute(() -> {
             try {

@@ -24,7 +24,8 @@ public class MultipleConnectionRgbaPcmSendTest extends AgoraTest {
             createConnectionAndTest(ccfg, channelId, userId, TestTask.SEND_RGBA_PCM, testTime);
         } else {
             for (int i = 0; i < connectionCount; i++) {
-                createConnectionAndTest(ccfg, channelId + i, userId, TestTask.SEND_RGBA_PCM, testTime);
+                String connUserId = userId.equals("0") ? userId : userId + i;
+                createConnectionAndTest(ccfg, channelId + i, connUserId, TestTask.SEND_RGBA_PCM, testTime);
             }
         }
     }

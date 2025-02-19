@@ -43,13 +43,13 @@
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.31.1</version>
+    <version>4.4.31.2</version>
 </dependency>
 ```
 
 ### 下载 SDK
 
-[linux-java-sdk-4.4.31.1](https://repo1.maven.org/maven2/io/agora/rtc/linux-java-sdk/4.4.31.1/linux-java-sdk-4.4.31.1.jar)
+[linux-java-sdk-4.4.31.2](https://repo1.maven.org/maven2/io/agora/rtc/linux-java-sdk/4.4.31.2/linux-java-sdk-4.4.31.2.jar)
 
 ## API 示例
 
@@ -180,6 +180,16 @@ public class Main {
 ```
 
 ## 更新日志
+
+### v4.4.31.2（2025-02-19）
+
+#### 优化
+
+- 优化代码处理，提高系统稳健性。
+
+#### 新增
+
+- 新增 `sendStreamMessage(int streamId, byte[] messageData)` 方法，弃用 `sendStreamMessage(int streamId, String message, int length)` 方法。
 
 ### v4.4.31.1（2025-01-06）
 

@@ -32,8 +32,16 @@ public class MultipleConnectionPcmReceiveTest extends AgoraTest {
         if (connectionCount == 1) {
             createConnectionAndTest(ccfg, channelId, userId, TestTask.RECEIVE_PCM, testTime);
         } else {
-            for (int i = 0; i < connectionCount; i++) {
-                createConnectionAndTest(ccfg, channelId + i, userId, TestTask.RECEIVE_PCM, testTime);
+            if (singleChannel == 1) {
+                for (int i = 0; i < connectionCount; i++) {
+                    String connUserId = userId.equals("0") ? userId : userId + i;
+                    createConnectionAndTest(ccfg, channelId, connUserId, TestTask.RECEIVE_PCM, testTime);
+                }
+            } else {
+                for (int i = 0; i < connectionCount; i++) {
+                    String connUserId = userId.equals("0") ? userId : userId + i;
+                    createConnectionAndTest(ccfg, channelId + i, connUserId, TestTask.RECEIVE_PCM, testTime);
+                }
             }
         }
 

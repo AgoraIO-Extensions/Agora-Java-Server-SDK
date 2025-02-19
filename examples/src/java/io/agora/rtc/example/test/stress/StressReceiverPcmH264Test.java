@@ -46,7 +46,8 @@ public class StressReceiverPcmH264Test extends AgoraTest {
                 while (checkTestTime()) {
                     int t1 = random.nextInt(sleepTime - 5) + 1;
                     String channel = connectionCount == 1 ? channelId : channelId + threadId;
-                    createConnectionAndTest(ccfg, channel, userId + threadId + (index++), TestTask.RECEIVE_PCM_H264,
+                    String connUserId = userId.equals("0") ? userId : userId + threadId + (index++);
+                    createConnectionAndTest(ccfg, channel, connUserId, TestTask.RECEIVE_PCM_H264,
                             t1);
 
                     taskCount++;

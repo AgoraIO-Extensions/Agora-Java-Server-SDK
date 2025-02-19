@@ -7,6 +7,7 @@ import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import io.agora.rtc.example.utils.Utils;
 
 public class SampleVideoEncodedFrameObserver extends FileWriter implements IVideoEncodedFrameObserver {
     protected final ExecutorService writeFileExecutorService = Executors.newSingleThreadExecutor();
@@ -18,8 +19,21 @@ public class SampleVideoEncodedFrameObserver extends FileWriter implements IVide
         this.outputFilePath = outputFilePath;
     }
 
+    /**
+     * Note: To improve data transmission efficiency, the buffer of the frame object
+     * is a DirectByteBuffer.
+     * Be sure to extract the byte array value in the callback synchronously and
+     * then transfer it to the asynchronous thread for processing.
+     * You can refer to {@link io.agora.rtc.utils.Utils#getBytes(ByteBuffer)}.
+     * 
+     * @param observer the video encoded frame observer
+     * @param userId   the user id
+     * @param buffer   the video encoded frame buffer
+     * @param info     the video encoded frame info
+     * @return 0/1, the return value currently has no practical significance
+     */
     @Override
-    public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int uid,
+    public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int userId,
             ByteBuffer buffer, EncodedVideoFrameInfo info) {
         return 1;
     }
@@ -28,9 +42,7 @@ public class SampleVideoEncodedFrameObserver extends FileWriter implements IVide
         if ("".equals(outputFilePath.trim()) || buffer == null || buffer.remaining() == 0) {
             return;
         }
-        byte[] byteArray = new byte[buffer.remaining()];
-        buffer.get(byteArray);
-        buffer.rewind();
+        byte[] byteArray = io.agora.rtc.utils.Utils.getBytes(buffer);
 
         writeFileExecutorService.execute(() -> {
             try {

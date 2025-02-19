@@ -23,8 +23,20 @@ public class SampleVideFrameObserver extends FileWriter implements IVideoFrameOb
         this.outputFilePath = outputFilePath;
     }
 
+    /**
+     * Note: To improve data transmission efficiency, the buffer of the frame object
+     * is a DirectByteBuffer.
+     * Be sure to extract the byte array value in the callback synchronously and
+     * then transfer it to the asynchronous thread for processing.
+     * You can refer to {@link io.agora.rtc.utils.Utils#getBytes(ByteBuffer)}.
+     * 
+     * @param agoraVideoFrameObserver2 the video frame observer
+     * @param channelId                the channel id
+     * @param remoteUserId             the remote user id
+     * @param frame                    the video frame
+     */
     @Override
-    public void onFrame(AgoraVideoFrameObserver2 agora_video_frame_observer2, String channel_id, String remote_uid,
+    public void onFrame(AgoraVideoFrameObserver2 agoraVideoFrameObserver2, String channelId, String remoteUserId,
             VideoFrame frame) {
     }
 

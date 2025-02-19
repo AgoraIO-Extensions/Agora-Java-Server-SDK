@@ -11,13 +11,14 @@ import io.agora.rtc.AudioFrame;
 import io.agora.rtc.Constants;
 import io.agora.rtc.DefaultLocalUserObserver;
 import io.agora.rtc.DefaultRtcConnObserver;
+import io.agora.rtc.IAudioFrameObserver;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
 import io.agora.rtc.VadProcessResult;
 import io.agora.rtc.example.common.SampleAudioFrameObserver;
 import io.agora.rtc.example.common.SampleLocalUserObserver;
 import io.agora.rtc.example.common.SampleLogger;
-import io.agora.rtc.example.common.Utils;
+import io.agora.rtc.example.utils.Utils;
 import java.io.FileInputStream;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -40,10 +41,12 @@ public class ReceiverPcmDirectSendTest {
     private static AgoraAudioPcmDataSender audioFrameSender;
     private static AgoraLocalAudioTrack customAudioTrack;
 
+    private static IAudioFrameObserver audioFrameObserver;
+
     private static CountDownLatch exitLatch;
 
     private static String channelId = "agaa";
-    private static String userId = "12345";
+    private static String userId = "0";
     private static String audioOutFile = "test_data_out/receiver_audio_out";
     private static int numOfChannels = 1;
     private static int sampleRate = 16000;
@@ -131,32 +134,32 @@ public class ReceiverPcmDirectSendTest {
 
         ret = conn.registerObserver(new DefaultRtcConnObserver() {
             @Override
-            public void onConnected(AgoraRtcConn agora_rtc_conn, RtcConnInfo conn_info, int reason) {
-                super.onConnected(agora_rtc_conn, conn_info, reason);
-                testTaskExecutorService.execute(() -> onConnConnected(agora_rtc_conn, conn_info, reason));
+            public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
+                super.onConnected(agoraRtcConn, connInfo, reason);
+                testTaskExecutorService.execute(() -> onConnConnected(agoraRtcConn, connInfo, reason));
             }
 
             @Override
-            public void onUserJoined(AgoraRtcConn agora_rtc_conn, String user_id) {
-                super.onUserJoined(agora_rtc_conn, user_id);
-                SampleLogger.log("onUserJoined user_id:" + user_id);
-
-            }
-
-            @Override
-            public void onUserLeft(AgoraRtcConn agora_rtc_conn, String user_id, int reason) {
-                super.onUserLeft(agora_rtc_conn, user_id, reason);
-                SampleLogger.log("onUserLeft user_id:" + user_id + " reason:" + reason);
+            public void onUserJoined(AgoraRtcConn agoraRtcConn, String userId) {
+                super.onUserJoined(agoraRtcConn, userId);
+                SampleLogger.log("onUserJoined userId:" + userId);
 
             }
 
             @Override
-            public void onChangeRoleSuccess(AgoraRtcConn agora_rtc_conn, int old_role, int new_role) {
-                SampleLogger.log("onChangeRoleSuccess old_role:" + old_role + " new_role:" + new_role);
+            public void onUserLeft(AgoraRtcConn agoraRtcConn, String userId, int reason) {
+                super.onUserLeft(agoraRtcConn, userId, reason);
+                SampleLogger.log("onUserLeft userId:" + userId + " reason:" + reason);
+
             }
 
             @Override
-            public void onChangeRoleFailure(AgoraRtcConn agora_rtc_conn) {
+            public void onChangeRoleSuccess(AgoraRtcConn agoraRtcConn, int oldRole, int newRole) {
+                SampleLogger.log("onChangeRoleSuccess oldRole:" + oldRole + " newRole:" + newRole);
+            }
+
+            @Override
+            public void onChangeRoleFailure(AgoraRtcConn agoraRtcConn) {
                 SampleLogger.log("onChangeRoleFailure");
             }
         });
@@ -167,30 +170,30 @@ public class ReceiverPcmDirectSendTest {
 
         conn.getLocalUser().registerObserver(new DefaultLocalUserObserver() {
             @Override
-            public void onStreamMessage(AgoraLocalUser agora_local_user, String user_id, int stream_id, String data,
+            public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data,
                     long length) {
-                SampleLogger.log("onStreamMessage: userid " + user_id + " stream_id " + stream_id + "  data " + data);
+                SampleLogger.log("onStreamMessage: userid " + userId + " streamId " + streamId + "  data " + data);
             }
 
             @Override
-            public void onAudioPublishStateChanged(AgoraLocalUser agora_local_user, String channel, int old_state,
-                    int new_state, int elapse_since_last_state) {
+            public void onAudioPublishStateChanged(AgoraLocalUser agoraLocalUser, String channel, int oldState,
+                    int newState, int elapseSinceLastState) {
                 SampleLogger
-                        .log("onAudioPublishStateChanged channel:" + channel + " old_state:" + old_state + " new_state:"
-                                + new_state + " userRole:" + agora_local_user.getUserRole());
+                        .log("onAudioPublishStateChanged channel:" + channel + " oldState:" + oldState + " newState:"
+                                + newState + " userRole:" + agoraLocalUser.getUserRole());
             }
 
             @Override
-            public void onVideoPublishStateChanged(AgoraLocalUser agora_local_user, String channel, int old_state,
-                    int new_state, int elapse_since_last_state) {
+            public void onVideoPublishStateChanged(AgoraLocalUser agoraLocalUser, String channel, int oldState,
+                    int newState, int elapseSinceLastState) {
                 SampleLogger
-                        .log("onVideoPublishStateChanged channel:" + channel + " old_state:" + old_state + " new_state:"
-                                + new_state + " userRole:" + agora_local_user.getUserRole());
+                        .log("onVideoPublishStateChanged channel:" + channel + " oldState:" + oldState + " newState:"
+                                + newState + " userRole:" + agoraLocalUser.getUserRole());
             }
 
-            public void onUserVideoTrackStateChanged(AgoraLocalUser agora_local_user, String user_id,
-                    io.agora.rtc.AgoraRemoteVideoTrack agora_remote_video_track, int state, int reason, int elapsed) {
-                SampleLogger.log("onUserVideoTrackStateChanged user_id:" + user_id + " state:" + state + " reason:"
+            public void onUserVideoTrackStateChanged(AgoraLocalUser agoraLocalUser, String userId,
+                    io.agora.rtc.AgoraRemoteVideoTrack agoraRemoteVideoTrack, int state, int reason, int elapsed) {
+                SampleLogger.log("onUserVideoTrackStateChanged userId:" + userId + " state:" + state + " reason:"
                         + reason + " elapsed:" + elapsed);
             };
         });
@@ -232,41 +235,46 @@ public class ReceiverPcmDirectSendTest {
             return;
         }
 
-        localUserObserver.setAudioFrameObserver(
-                new SampleAudioFrameObserver(audioOutFile + "_" + channelId + "_" + userId + ".pcm") {
-                    @Override
-                    public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agora_local_user, String channel_id,
-                            String uid,
-                            AudioFrame frame, VadProcessResult vadResult) {
-                        if (null == frame) {
-                            return 0;
-                        }
-                        logExecutorService.execute(() -> {
-                            SampleLogger.log("onPlaybackAudioFrameBeforeMixing frame:" + frame);
-                            SampleLogger.log(
-                                    "onPlaybackAudioFrameBeforeMixing audioFrame size " + frame.getBuffer().capacity()
-                                            + " channel_id:"
-                                            + channel_id + " uid:" + uid + " with current channelId:"
-                                            + channelId
-                                            + "  userId:" + userId);
-                        });
+        audioFrameObserver = new SampleAudioFrameObserver(audioOutFile + "_" + channelId + "_" + userId + ".pcm") {
+            @Override
+            public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser, String channelId,
+                    String userId,
+                    AudioFrame frame, VadProcessResult vadResult) {
+                if (null == frame) {
+                    return 0;
+                }
+                // Note: To improve data transmission efficiency, the buffer of the frame
+                // object is a DirectByteBuffer.
+                // Be sure to extract the byte array value in the callback synchronously
+                // and then transfer it to the asynchronous thread for processing.
+                // You can refer to {@link io.agora.rtc.utils.Utils#getBytes(ByteBuffer)}.
+                byte[] byteArray = io.agora.rtc.utils.Utils.getBytes(frame.getBuffer());
+                if (byteArray == null) {
+                    return 0;
+                }
 
-                        byte[] byteArray = new byte[frame.getBuffer().remaining()];
-                        frame.getBuffer().get(byteArray);
-                        frame.getBuffer().rewind();
-
-                        writeAudioFrameToFile(byteArray);
-
-                        senderExecutorService.execute(() -> {
-                            audioFrameSender.send(byteArray, 0,
-                                    byteArray.length / 2 / numOfChannels, 2,
-                                    numOfChannels,
-                                    sampleRate);
-                        });
-                        return 1;
-                    }
-
+                logExecutorService.execute(() -> {
+                    SampleLogger.log("onPlaybackAudioFrameBeforeMixing frame:" + frame);
+                    SampleLogger.log(
+                            "onPlaybackAudioFrameBeforeMixing audioFrame size " + byteArray.length
+                                    + " channelId:"
+                                    + channelId + " userId:" + userId);
                 });
+
+                writeAudioFrameToFile(byteArray);
+
+                senderExecutorService.execute(() -> {
+                    audioFrameSender.send(byteArray, 0,
+                            byteArray.length / 2 / numOfChannels, 2,
+                            numOfChannels,
+                            sampleRate);
+                });
+                return 1;
+            }
+
+        };
+
+        conn.getLocalUser().registerAudioFrameObserver(audioFrameObserver, false, null);
 
         // if (null != exitLatch) {
         // exitLatch.countDown();
@@ -293,8 +301,9 @@ public class ReceiverPcmDirectSendTest {
             customAudioTrack.destroy();
         }
 
-        if (null != localUserObserver) {
-            localUserObserver.unregisterAudioFrameObserver();
+        if (null != audioFrameObserver) {
+            conn.getLocalUser().unregisterAudioFrameObserver();
+            audioFrameObserver = null;
         }
 
         int ret = conn.disconnect();

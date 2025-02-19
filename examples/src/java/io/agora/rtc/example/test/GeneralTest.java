@@ -1,7 +1,7 @@
 package io.agora.rtc.example.test;
 
 import io.agora.rtc.example.common.SampleLogger;
-import io.agora.rtc.example.common.Utils;
+import io.agora.rtc.example.utils.Utils;
 import org.junit.Test;
 
 import java.io.File;
@@ -23,9 +23,9 @@ public class GeneralTest {
         }
 
         @Override
-        public void onUserJoined(AgoraRtcConn agora_rtc_conn, String user_id) {
-            super.onUserJoined(agora_rtc_conn, user_id);
-            SampleLogger.log("user join success: " + user_id);
+        public void onUserJoined(AgoraRtcConn agoraRtcConn, String userId) {
+            super.onUserJoined(agoraRtcConn, userId);
+            SampleLogger.log("user join success: " + userId);
         }
 
     }

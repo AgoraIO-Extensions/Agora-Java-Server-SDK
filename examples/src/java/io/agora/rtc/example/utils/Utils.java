@@ -1,4 +1,4 @@
-package io.agora.rtc.example.common;
+package io.agora.rtc.example.utils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -114,13 +114,6 @@ public class Utils {
             e.printStackTrace();
         }
         return null;
-    }
-
-    public static void cleanDirectBuffer(ByteBuffer buffer) {
-        if (null != buffer && buffer.isDirect()) {
-            buffer = null;
-            System.gc();
-        }
     }
 
     public static String bytesToHex(byte[] bytes) {
