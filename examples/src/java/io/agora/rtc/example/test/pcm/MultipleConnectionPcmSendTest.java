@@ -25,11 +25,13 @@ public class MultipleConnectionPcmSendTest extends AgoraTest {
         } else {
             if (singleChannel == 1) {
                 for (int i = 0; i < connectionCount; i++) {
-                    createConnectionAndTest(ccfg, channelId, userId + i, TestTask.SEND_PCM, testTime);
+                    String connUserId = userId.equals("0") ? userId : userId + i;
+                    createConnectionAndTest(ccfg, channelId, connUserId, TestTask.SEND_PCM, testTime);
                 }
             } else {
                 for (int i = 0; i < connectionCount; i++) {
-                    createConnectionAndTest(ccfg, channelId + i, userId, TestTask.SEND_PCM, testTime);
+                    String connUserId = userId.equals("0") ? userId : userId + i;
+                    createConnectionAndTest(ccfg, channelId + i, connUserId, TestTask.SEND_PCM, testTime);
                 }
             }
         }

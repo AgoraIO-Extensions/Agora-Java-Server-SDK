@@ -45,13 +45,13 @@ Add the following dependency to your project's `pom.xml` file:
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.31.1</version>
+    <version>4.4.31.2</version>
 </dependency>
 ```
 
 ### Download SDK
 
-[linux-java-sdk-4.4.31.1](https://repo1.maven.org/maven2/io/agora/rtc/linux-java-sdk/4.4.31.1/linux-java-sdk-4.4.31.1.jar)
+[linux-java-sdk-4.4.31.2](https://repo1.maven.org/maven2/io/agora/rtc/linux-java-sdk/4.4.31.2/linux-java-sdk-4.4.31.2.jar)
 
 ## API Examples
 
@@ -183,6 +183,16 @@ public class Main {
 ```
 
 ## Changelog
+
+### v4.4.31.2 (2025-02-19)
+
+#### Optimization
+
+- Optimized code handling to improve system robustness.
+
+#### New Features
+
+- Added `sendStreamMessage(int streamId, byte[] messageData)` method, deprecated `sendStreamMessage(int streamId, String message, int length)` method.
 
 ### v4.4.31.1 (2025-01-06)
 

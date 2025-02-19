@@ -14,7 +14,7 @@ import io.agora.rtc.Out;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
 import io.agora.rtc.example.common.SampleLogger;
-import io.agora.rtc.example.common.Utils;
+import io.agora.rtc.example.utils.Utils;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,7 +25,7 @@ public class LoopSendDataStreamTest {
     private static String DEFAULT_LOG_PATH = "agora_logs/agorasdk.log";
     private static int DEFAULT_LOG_SIZE = 512 * 1024; // default log size is 512 kb
     private static String channelId = "dataStreamChannel";
-    private static String userId = "12345";
+    private static String userId = "0";
 
     private static AgoraService service;
     private static AgoraRtcConn conn;
@@ -74,38 +74,38 @@ public class LoopSendDataStreamTest {
 
         ret = conn.registerObserver(new DefaultRtcConnObserver() {
             @Override
-            public void onConnected(AgoraRtcConn agora_rtc_conn, RtcConnInfo conn_info, int reason) {
-                super.onConnected(agora_rtc_conn, conn_info, reason);
-                testTaskExecutorService.execute(() -> onConnConnected(agora_rtc_conn, conn_info, reason));
+            public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
+                super.onConnected(agoraRtcConn, connInfo, reason);
+                testTaskExecutorService.execute(() -> onConnConnected(agoraRtcConn, connInfo, reason));
             }
 
             @Override
-            public void onDisconnected(AgoraRtcConn agora_rtc_conn, RtcConnInfo conn_info, int reason) {
-                super.onDisconnected(agora_rtc_conn, conn_info, reason);
-                testTaskExecutorService.execute(() -> onConnDisconnected(agora_rtc_conn, conn_info, reason));
+            public void onDisconnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
+                super.onDisconnected(agoraRtcConn, connInfo, reason);
+                testTaskExecutorService.execute(() -> onConnDisconnected(agoraRtcConn, connInfo, reason));
             }
 
             @Override
-            public void onUserJoined(AgoraRtcConn agora_rtc_conn, String user_id) {
-                super.onUserJoined(agora_rtc_conn, user_id);
-                SampleLogger.log("onUserJoined user_id:" + user_id);
-
-            }
-
-            @Override
-            public void onUserLeft(AgoraRtcConn agora_rtc_conn, String user_id, int reason) {
-                super.onUserLeft(agora_rtc_conn, user_id, reason);
-                SampleLogger.log("onUserLeft user_id:" + user_id + " reason:" + reason);
+            public void onUserJoined(AgoraRtcConn agoraRtcConn, String userId) {
+                super.onUserJoined(agoraRtcConn, userId);
+                SampleLogger.log("onUserJoined userId:" + userId);
 
             }
 
             @Override
-            public void onChangeRoleSuccess(AgoraRtcConn agora_rtc_conn, int old_role, int new_role) {
-                SampleLogger.log("onChangeRoleSuccess old_role:" + old_role + " new_role:" + new_role);
+            public void onUserLeft(AgoraRtcConn agoraRtcConn, String userId, int reason) {
+                super.onUserLeft(agoraRtcConn, userId, reason);
+                SampleLogger.log("onUserLeft userId:" + userId + " reason:" + reason);
+
             }
 
             @Override
-            public void onChangeRoleFailure(AgoraRtcConn agora_rtc_conn) {
+            public void onChangeRoleSuccess(AgoraRtcConn agoraRtcConn, int oldRole, int newRole) {
+                SampleLogger.log("onChangeRoleSuccess oldRole:" + oldRole + " newRole:" + newRole);
+            }
+
+            @Override
+            public void onChangeRoleFailure(AgoraRtcConn agoraRtcConn) {
                 SampleLogger.log("onChangeRoleFailure");
             }
         });
@@ -113,10 +113,10 @@ public class LoopSendDataStreamTest {
 
         conn.getLocalUser().registerObserver(new DefaultLocalUserObserver() {
             @Override
-            public void onStreamMessage(AgoraLocalUser agora_local_user, String user_id, int stream_id, String data,
+            public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data,
                     long length) {
                 SampleLogger
-                        .log("onStreamMessage: userid " + user_id + " stream_id " + stream_id + "  data " + data);
+                        .log("onStreamMessage: userid " + userId + " streamId " + streamId + "  data " + data);
             }
         });
 
@@ -134,14 +134,14 @@ public class LoopSendDataStreamTest {
             }
             Out<Integer> streamId = new Out<Integer>();
 
-            int result = conn.createDataStream(streamId, 1, 1);
+            int result = conn.createDataStream(streamId, 0, 0);
             if (result != 0) {
                 SampleLogger.log("createDataStream failed, result: " + result);
                 return;
             }
             String data = Utils.getCurrentTime() + " hello world from channelId:"
                     + channelId + " userId:" + userId;
-            ret = conn.sendStreamMessage(streamId.get(), data, data.length());
+            ret = conn.sendStreamMessage(streamId.get(), data.getBytes());
             SampleLogger.log("sendStreamMessage index:" + currentIndex + " " + data + " done ret:" + ret);
 
             try {

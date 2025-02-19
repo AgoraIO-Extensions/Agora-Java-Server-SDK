@@ -23,7 +23,8 @@ public class MultipleConnectionH264SendTest extends AgoraTest {
         } else {
             if (singleChannel == 1) {
                 for (int i = 0; i < connectionCount; i++) {
-                    createConnectionAndTest(ccfg, channelId, userId + i, TestTask.SEND_H264, testTime);
+                    String connUserId = userId.equals("0") ? userId : userId + i;
+                    createConnectionAndTest(ccfg, channelId, connUserId, TestTask.SEND_H264, testTime);
                 }
             } else {
                 for (int i = 0; i < connectionCount; i++) {

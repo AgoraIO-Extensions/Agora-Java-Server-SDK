@@ -5,10 +5,9 @@ import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.AgoraParameter;
 import io.agora.rtc.AgoraRtcConn;
-import io.agora.rtc.example.common.AgoraRtcConnPool;
 import io.agora.rtc.example.common.SampleCommon;
 import io.agora.rtc.example.common.SampleLogger;
-import io.agora.rtc.example.common.Utils;
+import io.agora.rtc.example.utils.Utils;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,7 +43,7 @@ public class AgoraTest {
     protected static String APPID;
     protected static String TOKEN;
     protected static volatile AgoraService service;
-    protected static volatile AgoraRtcConnPool connPool;
+    protected static String currentUserId;
 
     protected String token = "";
     protected String userId = "";
@@ -562,8 +561,9 @@ public class AgoraTest {
             AgoraConnectionTask connTask = new AgoraConnectionTask(service, testTime);
             connTask.setCallback(new AgoraConnectionTask.TaskCallback() {
                 @Override
-                public void onConnected() {
+                public void onConnected(String userId) {
                     SampleLogger.log("onConnected for task:" + testTask);
+                    currentUserId = userId;
                     connectedLatch.countDown();
                 }
 
@@ -588,7 +588,7 @@ public class AgoraTest {
                 e.printStackTrace();
             }
 
-            onConnected(connTask.getConn(), channelId, userId);
+            onConnected(connTask.getConn(), channelId, currentUserId);
 
             if (TestTask.SEND_PCM == testTask) {
                 connTask.sendPcmTask(audioFile, 10, numOfChannels, sampleRate, true, enableAudioCache == 1,
@@ -634,30 +634,36 @@ public class AgoraTest {
                 connTask.sendDataStreamTask(1, 50, true);
             } else if (TestTask.RECEIVE_PCM == testTask) {
                 connTask.registerPcmObserverTask(remoteUserId,
-                        ("".equals(audioOutFile)) ? "" : (audioOutFile + "_" + channelId + "_" + userId + ".pcm"),
+                        ("".equals(audioOutFile)) ? ""
+                                : (audioOutFile + "_" + channelId + "_" + currentUserId + ".pcm"),
                         numOfChannels,
                         sampleRate, true, enableSaveFile == 1, enableVad == 1);
             } else if (TestTask.RECEIVE_PCM_H264 == testTask) {
                 connTask.registerPcmObserverTask(remoteUserId,
-                        ("".equals(audioOutFile)) ? "" : (audioOutFile + "_" + channelId + "_" + userId + ".pcm"),
+                        ("".equals(audioOutFile)) ? ""
+                                : (audioOutFile + "_" + channelId + "_" + currentUserId + ".pcm"),
                         numOfChannels,
                         sampleRate, false, enableSaveFile == 1, enableVad == 1);
                 connTask.registerH264ObserverTask(remoteUserId,
-                        ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + "_" + userId + ".h264"),
+                        ("".equals(videoOutFile)) ? ""
+                                : (videoOutFile + "_" + channelId + "_" + currentUserId + ".h264"),
                         streamType, true, enableSaveFile == 1);
             } else if (TestTask.RECEIVE_MIXED_AUDIO == testTask) {
                 connTask.registerMixedAudioObserverTask(remoteUserId,
-                        ("".equals(audioOutFile)) ? "" : (audioOutFile + "_" + channelId + "_" + userId + ".pcm"),
+                        ("".equals(audioOutFile)) ? ""
+                                : (audioOutFile + "_" + channelId + "_" + currentUserId + ".pcm"),
                         numOfChannels,
                         sampleRate, true);
             } else if (TestTask.RECEIVE_YUV == testTask) {
                 connTask.registerYuvObserverTask(remoteUserId,
-                        ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + "_" + userId + ".yuv"),
+                        ("".equals(videoOutFile)) ? ""
+                                : (videoOutFile + "_" + channelId + "_" + currentUserId + ".yuv"),
                         streamType, true,
                         enableSaveFile == 1);
             } else if (TestTask.RECEIVE_H264 == testTask) {
                 connTask.registerH264ObserverTask(remoteUserId,
-                        ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + "_" + userId + ".h264"),
+                        ("".equals(videoOutFile)) ? ""
+                                : (videoOutFile + "_" + channelId + "_" + currentUserId + ".h264"),
                         streamType, true, enableSaveFile == 1);
             } else if (TestTask.RECEIVE_ENCODED_AUDIO == testTask) {
                 connTask.registerEncodedAudioObserverTask("", ("".equals(audioOutFile)) ? "" : audioOutFile, fileType,
@@ -669,11 +675,12 @@ public class AgoraTest {
                         enableSimulcastStream == 1, false, enableAlpha == 1);
                 connTask.registerPcmObserverTask(remoteUserId,
                         ("".equals(audioOutFile)) ? ""
-                                : (audioOutFile + "_" + channelId + "_" + userId + "_" + userId + ".pcm"),
+                                : (audioOutFile + "_" + channelId + "_" + userId + "_" + currentUserId + ".pcm"),
                         numOfChannels,
                         sampleRate, false, enableSaveFile == 1, enableVad == 1);
                 connTask.registerYuvObserverTask(remoteUserId,
-                        ("".equals(videoOutFile)) ? "" : (videoOutFile + "_" + channelId + "_" + userId + ".yuv"),
+                        ("".equals(videoOutFile)) ? ""
+                                : (videoOutFile + "_" + channelId + "_" + currentUserId + ".yuv"),
                         streamType, true,
                         enableSaveFile == 1);
             }
