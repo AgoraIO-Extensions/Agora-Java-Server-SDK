@@ -1,4 +1,4 @@
-# Agora Server Java SDK
+# Agora Linux Server Java SDK
 
 [中文](README.zh.md) | English
 
@@ -37,9 +37,7 @@ Refer to the [official example documentation](https://doc.shengwang.cn/doc/rtc-s
 
 ## SDK Acquisition
 
-### Maven Dependency
-
-Add the following dependency to your project's `pom.xml` file:
+### Maven download
 
 ```xml
 <dependency>
@@ -49,9 +47,11 @@ Add the following dependency to your project's `pom.xml` file:
 </dependency>
 ```
 
-### Download SDK
-
 [linux-java-sdk-4.4.31.2](https://repo1.maven.org/maven2/io/agora/rtc/linux-java-sdk/4.4.31.2/linux-java-sdk-4.4.31.2.jar)
+
+### CDN download
+
+[linux-java-sdk-4.4.31.2](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.31.2-x86_64-491956-ddf43e2662-20250219_102510.jar)
 
 ## API Examples
 
