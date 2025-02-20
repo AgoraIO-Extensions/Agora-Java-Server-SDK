@@ -1,4 +1,4 @@
-# Agora Server Java SDK
+# Agora Linux Server Java SDK
 
 ## 目录
 
@@ -35,9 +35,7 @@
 
 ## SDK 获取
 
-### Maven 依赖
-
-在项目的 pom.xml 文件中添加以下依赖:
+### Maven 下载
 
 ```xml
 <dependency>
@@ -47,9 +45,11 @@
 </dependency>
 ```
 
-### 下载 SDK
-
 [linux-java-sdk-4.4.31.2](https://repo1.maven.org/maven2/io/agora/rtc/linux-java-sdk/4.4.31.2/linux-java-sdk-4.4.31.2.jar)
+
+### CDN 下载
+
+[linux-java-sdk-4.4.31.2](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.31.2-x86_64-491956-ddf43e2662-20250219_102510.jar)
 
 ## API 示例
 
