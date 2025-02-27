@@ -41,15 +41,15 @@
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.31.2</version>
+    <version>4.4.31.3</version>
 </dependency>
 ```
 
-[linux-java-sdk-4.4.31.2](https://repo1.maven.org/maven2/io/agora/rtc/linux-java-sdk/4.4.31.2/linux-java-sdk-4.4.31.2.jar)
+[linux-java-sdk-4.4.31.3](https://repo1.maven.org/maven2/io/agora/rtc/linux-java-sdk/4.4.31.3/linux-java-sdk-4.4.31.3.jar)
 
 ### CDN 下载
 
-[linux-java-sdk-4.4.31.2](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.31.2-x86_64-491956-ddf43e2662-20250219_102510.jar)
+[Agora-Linux-Java-SDK-v4.4.31.3-x86_64-491956-06a9ee5318-20250227_132409](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.31.3-x86_64-491956-06a9ee5318-20250227_132409.jar)
 
 ## API 示例
 
@@ -180,6 +180,10 @@ public class Main {
 ```
 
 ## 更新日志
+
+### v4.4.31.3（2025-02-26）
+
+- 修复了由于内存复用可能导致的异常处理问题。
 
 ### v4.4.31.2（2025-02-19）
 

@@ -1,12 +1,13 @@
 package io.agora.rtc.example.test.parameter;
 
 import io.agora.rtc.AgoraParameter;
-import io.agora.rtc.Constants;
 import io.agora.rtc.AgoraRtcConn;
+import io.agora.rtc.Constants;
 import io.agora.rtc.Out;
 import io.agora.rtc.RtcConnConfig;
-import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.common.AgoraTest;
+import io.agora.rtc.example.common.ArgsConfig;
+import io.agora.rtc.example.common.SampleLogger;
 
 public class AgoraParameterTest extends AgoraTest {
     public static void main(String[] args) {
@@ -23,15 +24,12 @@ public class AgoraParameterTest extends AgoraTest {
         ccfg.setChannelProfile(1);
         ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
 
-        for (int i = 0; i < connectionCount; i++) {
-            createConnectionAndTest(ccfg, channelId + i, userId, TestTask.NONE, testTime);
-        }
-
+        createConnectionAndTest(ccfg, ArgsConfig.channelId, ArgsConfig.userId, TestTask.NONE, ArgsConfig.testTime);
     }
 
     @Override
-    protected void onConnected(AgoraRtcConn conn, String channelId, String userId) {
-        SampleLogger.log("onConnected channelId:" + channelId + " userId:" + userId);
+    protected void onConnected(AgoraRtcConn conn, String channelId, String userId, TestTask testTask) {
+        SampleLogger.log("onConnected channelId:" + channelId + " userId:" + userId + " testTask:" + testTask);
         AgoraParameter parameter = conn.getAgoraParameter();
         if (parameter != null) {
             try {
@@ -51,6 +49,10 @@ public class AgoraParameterTest extends AgoraTest {
 
                 if (ret == 0 && testInt.get() == intValue && !testResultPass) {
                     testResultPass = true;
+                } else {
+                    SampleLogger.error(
+                            "AgoraParameterTest setInt test fail for channelId:" + channelId + " userId:" + userId);
+                    return;
                 }
 
                 key = "rtc.enable_nasa2";
@@ -64,6 +66,10 @@ public class AgoraParameterTest extends AgoraTest {
                         testBool.get());
                 if (ret == 0 && testBool.get() == boolValue && testResultPass) {
                     testResultPass = true;
+                } else {
+                    SampleLogger.error(
+                            "AgoraParameterTest setBool test fail for channelId:" + channelId + " userId:" + userId);
+                    return;
                 }
 
                 key = "rtc.enable_nasa2";
@@ -77,6 +83,10 @@ public class AgoraParameterTest extends AgoraTest {
                         testUInt.get());
                 if (ret == 0 && testUInt.get() == uintValue && testResultPass) {
                     testResultPass = true;
+                } else {
+                    SampleLogger.error(
+                            "AgoraParameterTest setUint test fail for channelId:" + channelId + " userId:" + userId);
+                    return;
                 }
 
                 key = "rtc.enable_nasa2";
@@ -90,6 +100,10 @@ public class AgoraParameterTest extends AgoraTest {
                         testDouble.get());
                 if (ret == 0 && testDouble.get() == numberValue && testResultPass) {
                     testResultPass = true;
+                } else {
+                    SampleLogger.error(
+                            "AgoraParameterTest setNumber test fail for channelId:" + channelId + " userId:" + userId);
+                    return;
                 }
 
                 key = "rtc.enable_nasa2";
@@ -98,10 +112,17 @@ public class AgoraParameterTest extends AgoraTest {
                 SampleLogger.log("setArray with value " + arrayJson + " and ret:" + ret);
                 Thread.sleep(100);
 
-                String parametersJson = "{\"1\":1}";
+                String parametersJson = "{\"che.audio.custom_bitrate\":128000}";
                 ret = parameter.setParameters(parametersJson);
                 SampleLogger.log("setParameters with value " + parametersJson + " and ret:" + ret);
                 Thread.sleep(100);
+                if (ret == 0 && testResultPass) {
+                    testResultPass = true;
+                } else {
+                    SampleLogger.error("AgoraParameterTest setParameters test fail for channelId:" + channelId
+                            + " userId:" + userId);
+                    return;
+                }
 
                 key = "rtc.local_domain";
                 String stringValue = "ap.250425.agora.local";
@@ -112,10 +133,14 @@ public class AgoraParameterTest extends AgoraTest {
                 ret = parameter.getString(key, testString);
                 SampleLogger.log("getString ret:" + ret + " getString Result:" + testString.get());
                 if (ret == 0 && stringValue.equals(testString.get()) && testResultPass) {
-                    SampleLogger.log("AgoraParameterTest test pass for channelId:" + channelId + " userId:" + userId);
+                    testResultPass = true;
                 } else {
-                    SampleLogger.log("AgoraParameterTest test fail for channelId:" + channelId + " userId:" + userId);
+                    SampleLogger.error(
+                            "AgoraParameterTest setString fail for channelId:" + channelId + " userId:" + userId);
+                    return;
                 }
+
+                SampleLogger.log("AgoraParameterTest test pass for channelId:" + channelId + " userId:" + userId);
             } catch (Exception e) {
                 e.printStackTrace();
             }

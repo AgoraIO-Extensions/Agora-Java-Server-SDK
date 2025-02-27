@@ -1,9 +1,9 @@
 package io.agora.rtc.example.test.encoded_audio;
 
-import io.agora.rtc.AudioSubscriptionOptions;
 import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.example.common.AgoraTest;
+import io.agora.rtc.example.common.ArgsConfig;
 
 public class MultipleConnectionReceiveEncodedAudioTest extends AgoraTest {
 
@@ -24,11 +24,13 @@ public class MultipleConnectionReceiveEncodedAudioTest extends AgoraTest {
         ccfg.setAudioRecvEncodedFrame(1);
         ccfg.setChannelProfile(Constants.CHANNEL_PROFILE_LIVE_BROADCASTING);
 
-        if (connectionCount == 1) {
-            createConnectionAndTest(ccfg, channelId, userId, TestTask.RECEIVE_ENCODED_AUDIO, testTime);
+        if (ArgsConfig.connectionCount == 1) {
+            createConnectionAndTest(ccfg, ArgsConfig.channelId, ArgsConfig.userId, TestTask.RECEIVE_ENCODED_AUDIO,
+                    ArgsConfig.testTime);
         } else {
-            for (int i = 0; i < connectionCount; i++) {
-                createConnectionAndTest(ccfg, channelId + i, userId, TestTask.RECEIVE_ENCODED_AUDIO, testTime);
+            for (int i = 0; i < ArgsConfig.connectionCount; i++) {
+                createConnectionAndTest(ccfg, ArgsConfig.channelId + i, ArgsConfig.userId,
+                        TestTask.RECEIVE_ENCODED_AUDIO, ArgsConfig.testTime);
             }
         }
 

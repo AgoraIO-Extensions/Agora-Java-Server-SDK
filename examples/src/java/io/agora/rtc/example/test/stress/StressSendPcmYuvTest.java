@@ -1,13 +1,14 @@
 package io.agora.rtc.example.test.stress;
 
+import java.util.Random;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
 import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
-import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.common.AgoraTest;
-import java.util.Random;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.TimeUnit;
+import io.agora.rtc.example.common.ArgsConfig;
 
 public class StressSendPcmYuvTest extends AgoraTest {
     private long testStartTime;
@@ -38,21 +39,19 @@ public class StressSendPcmYuvTest extends AgoraTest {
 
         Random random = new Random();
 
-        for (int i = 0; i < connectionCount; i++) {
+        for (int i = 0; i < ArgsConfig.connectionCount; i++) {
             final int threadId = i;
             testTaskExecutorService.execute(() -> {
-                int taskCount = 0;
                 while (checkTestTime()) {
-                    int t1 = random.nextInt(sleepTime - 5) + 1;
-                    String channel = connectionCount == 1 ? channelId : channelId + threadId;
-                    String connUserId = userId.equals("0") ? userId : userId + threadId;
+                    int t1 = random.nextInt(ArgsConfig.sleepTime - 5) + 1;
+                    String channel = ArgsConfig.connectionCount == 1 ? ArgsConfig.channelId
+                            : ArgsConfig.channelId + threadId;
+                    String connUserId = ArgsConfig.userId.equals("0") ? ArgsConfig.userId
+                            : ArgsConfig.userId + threadId;
                     createConnectionAndTest(ccfg, channel, connUserId, TestTask.SEND_PCM_YUV, t1);
 
-                    taskCount++;
-                    SampleLogger.log("taskCount: " + taskCount);
-
                     try {
-                        Thread.sleep(sleepTime * 1000);
+                        Thread.sleep(ArgsConfig.sleepTime * 1000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -61,7 +60,7 @@ public class StressSendPcmYuvTest extends AgoraTest {
         }
 
         try {
-            Thread.sleep(testTime * 1000);
+            Thread.sleep(ArgsConfig.testTime * 1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -70,7 +69,7 @@ public class StressSendPcmYuvTest extends AgoraTest {
     private boolean checkTestTime() {
         long currentTime = System.currentTimeMillis();
         long testCostTime = currentTime - testStartTime;
-        if (testCostTime >= testTime * 1000) {
+        if (testCostTime >= ArgsConfig.testTime * 1000) {
             return false;
         }
         return true;
