@@ -37,7 +37,7 @@ public abstract class FileSender extends Thread {
             }
         }
         long lastSendTime = 0;
-        long nextSendTime = 0;
+        long nextSendTime = System.currentTimeMillis();
         long sendPiece = 0;
         sending = true;
         while (sending) {

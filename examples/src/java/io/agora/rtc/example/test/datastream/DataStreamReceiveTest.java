@@ -3,6 +3,7 @@ package io.agora.rtc.example.test.datastream;
 import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.example.common.AgoraTest;
+import io.agora.rtc.example.common.ArgsConfig;
 
 public class DataStreamReceiveTest extends AgoraTest {
     private int receiveCount = 0;
@@ -21,7 +22,7 @@ public class DataStreamReceiveTest extends AgoraTest {
         ccfg.setChannelProfile(1);
         ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
 
-        createConnectionAndTest(ccfg, channelId, userId, TestTask.NONE, testTime);
+        createConnectionAndTest(ccfg, ArgsConfig.channelId, ArgsConfig.userId, TestTask.NONE, ArgsConfig.testTime);
     }
 
     protected void onStreamMessageReceive(String userId, int streamId, String data, long length) {

@@ -1,13 +1,14 @@
 package io.agora.rtc.example.test;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.example.common.AgoraConnectionTask;
-import io.agora.rtc.example.common.AgoraRtcConnPool;
-import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.common.AgoraTest;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import io.agora.rtc.example.common.ArgsConfig;
+import io.agora.rtc.example.common.SampleLogger;
 
 public class FullTest extends AgoraTest {
     protected final ExecutorService executorService = Executors.newCachedThreadPool();
@@ -18,8 +19,6 @@ public class FullTest extends AgoraTest {
 
     public void setup() {
         super.setup();
-
-        AgoraRtcConnPool connPool = new AgoraRtcConnPool(10);
 
         RtcConnConfig ccfg = new RtcConnConfig();
         ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
@@ -49,9 +48,7 @@ public class FullTest extends AgoraTest {
                                 + " data: " + data + " length: " + length);
                     }
                 });
-                connTask.createConnectionAndTest(ccfg, token, channelId, userId,
-                        enableEncryptionMode, encryptionMode,
-                        encryptionKey, enableCloudProxy == 1);
+                connTask.createConnection(ccfg, ArgsConfig.channelId, ArgsConfig.userId);
             }
         });
     }

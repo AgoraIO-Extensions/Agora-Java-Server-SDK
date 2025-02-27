@@ -6,6 +6,7 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+
 import io.agora.rtc.example.utils.Utils;
 
 public class SampleLogger {
@@ -43,6 +44,14 @@ public class SampleLogger {
         if (enableLog) {
             synchronized (logger) {
                 logger.info("[" + Utils.getCurrentTime() + "] " + message);
+            }
+        }
+    }
+
+    public static void error(String message) {
+        if (enableLog) {
+            synchronized (logger) {
+                logger.severe("[" + Utils.getCurrentTime() + "] " + message);
             }
         }
     }

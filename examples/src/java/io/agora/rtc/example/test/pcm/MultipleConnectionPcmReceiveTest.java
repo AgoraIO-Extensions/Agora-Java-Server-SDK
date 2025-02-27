@@ -4,6 +4,7 @@ import io.agora.rtc.AudioSubscriptionOptions;
 import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.example.common.AgoraTest;
+import io.agora.rtc.example.common.ArgsConfig;
 
 public class MultipleConnectionPcmReceiveTest extends AgoraTest {
 
@@ -17,9 +18,9 @@ public class MultipleConnectionPcmReceiveTest extends AgoraTest {
 
         // Create Agora connection
         AudioSubscriptionOptions audioSubOpt = new AudioSubscriptionOptions();
-        audioSubOpt.setBytesPerSample(2 * numOfChannels);
-        audioSubOpt.setNumberOfChannels(numOfChannels);
-        audioSubOpt.setSampleRateHz(sampleRate);
+        audioSubOpt.setBytesPerSample(2 * ArgsConfig.numOfChannels);
+        audioSubOpt.setNumberOfChannels(ArgsConfig.numOfChannels);
+        audioSubOpt.setSampleRateHz(ArgsConfig.sampleRate);
 
         RtcConnConfig ccfg = new RtcConnConfig();
         ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
@@ -29,18 +30,21 @@ public class MultipleConnectionPcmReceiveTest extends AgoraTest {
         ccfg.setEnableAudioRecordingOrPlayout(1);
         ccfg.setChannelProfile(Constants.CHANNEL_PROFILE_LIVE_BROADCASTING);
 
-        if (connectionCount == 1) {
-            createConnectionAndTest(ccfg, channelId, userId, TestTask.RECEIVE_PCM, testTime);
+        if (ArgsConfig.connectionCount == 1) {
+            createConnectionAndTest(ccfg, ArgsConfig.channelId, ArgsConfig.userId, TestTask.RECEIVE_PCM,
+                    ArgsConfig.testTime);
         } else {
-            if (singleChannel == 1) {
-                for (int i = 0; i < connectionCount; i++) {
-                    String connUserId = userId.equals("0") ? userId : userId + i;
-                    createConnectionAndTest(ccfg, channelId, connUserId, TestTask.RECEIVE_PCM, testTime);
+            if (ArgsConfig.singleChannel == 1) {
+                for (int i = 0; i < ArgsConfig.connectionCount; i++) {
+                    String connUserId = ArgsConfig.userId.equals("0") ? ArgsConfig.userId : ArgsConfig.userId + i;
+                    createConnectionAndTest(ccfg, ArgsConfig.channelId, connUserId, TestTask.RECEIVE_PCM,
+                            ArgsConfig.testTime);
                 }
             } else {
-                for (int i = 0; i < connectionCount; i++) {
-                    String connUserId = userId.equals("0") ? userId : userId + i;
-                    createConnectionAndTest(ccfg, channelId + i, connUserId, TestTask.RECEIVE_PCM, testTime);
+                for (int i = 0; i < ArgsConfig.connectionCount; i++) {
+                    String connUserId = ArgsConfig.userId.equals("0") ? ArgsConfig.userId : ArgsConfig.userId + i;
+                    createConnectionAndTest(ccfg, ArgsConfig.channelId + i, connUserId, TestTask.RECEIVE_PCM,
+                            ArgsConfig.testTime);
                 }
             }
         }
