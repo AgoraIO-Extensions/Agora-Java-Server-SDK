@@ -5,7 +5,7 @@
 - [开发环境要求](#开发环境要求)
 - [快速开始](#快速开始)
 - [SDK 获取](#sdk-获取)
-- [API 示例](#api-示例)
+- [API Example](#api-example)
 - [API 参考](#api-参考)
 - [更新日志](#更新日志)
 - [常见问题](#常见问题)
@@ -51,9 +51,145 @@
 
 [Agora-Linux-Java-SDK-v4.4.31.3-x86_64-491956-06a9ee5318-20250227_132409](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.31.3-x86_64-491956-06a9ee5318-20250227_132409.jar)
 
-## API 示例
+## API Example
 
-详细示例请参考 [examples/README.zh.md](examples/README.zh.md)
+### 环境准备
+
+#### 安装 FFmpeg（可选，用于 MP4 相关测试）
+
+1. 更新系统包：
+
+   ```bash
+   sudo apt update
+   ```
+
+2. 安装 FFmpeg（需要 7.0+）：
+
+   ```bash
+   sudo apt install ffmpeg
+   ```
+
+3. 安装 FFmpeg 开发库：
+
+   ```bash
+   sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
+   ```
+
+4. 获取库依赖路径：
+
+   ```bash
+   pkg-config --cflags --libs libavformat libavcodec libavutil libswresample libswscale
+   ```
+
+5. 更新 `build.sh` 中的 `FFMPEG_INCLUDE_DIR` 和 `FFMPEG_LIB_DIR`。
+
+### 项目配置
+
+1. 进入 `examples` 目录：
+
+   ```bash
+   cd examples
+   ```
+
+2. 创建 `.keys` 文件，添加：
+
+   ```
+   APP_ID=your_app_id
+   TOKEN=your_token
+   ```
+
+   _如果未开启证书，TOKEN 值可为空，例如：_
+
+   ```
+   APP_ID=abcd1234
+   TOKEN=
+   ```
+
+3. 准备 SDK 文件：
+
+   - 重命名 JAR 为 `agora-sdk.jar`
+   - 放入 `libs/` 目录
+
+4. 提取 SO 文件：
+
+   ```bash
+   jar xvf agora-sdk.jar
+   mv native/linux/x86_64/*.so libs/
+   ```
+
+   确保目录结构如下：
+
+   ```
+   libs/
+   ├── agora-sdk.jar
+   └── lib***.so
+   ```
+
+### 编译过程
+
+执行编译脚本：
+
+```bash
+./build.sh [-ffmpegUtils] [-mediaUtils]
+```
+
+- 使用 `-ffmpegUtils` 选项编译 FFmpeg 相关库（MP4 测试必需）
+- 使用 `-mediaUtils` 选项编译解码音视频相关库（发送编码音视频测试必须）
+
+### 运行示例
+
+1. 运行测试脚本：
+
+   ```bash
+   ./script/TestCaseName.sh
+   ```
+
+2. 修改测试参数：直接编辑对应的 `.sh` 文件
+
+### 测试 case
+
+- 发送 PCM 音频
+
+  参考 `examples/src/java/io/agora/rtc/example/scenario/SendPcmFileTest.java`,实现循环发送 pcm 文件
+
+  参考 `examples/src/java/io/agora/rtc/example/scenario/SendPcmRealTimeTest.java`,实现发送流式 pcm 数据
+
+- 发送 YUV 视频
+
+  参考 `examples/src/java/io/agora/rtc/example/scenario/SendYuvTest.java`,实现流式发送 yuv 数据
+
+- 发送 H264 视频
+
+  参考 `examples/src/java/io/agora/rtc/example/scenario/SendH264Test.java`,实现流式发送 h264 数据
+
+- 发送 Opus 音频
+
+  参考 `examples/src/java/io/agora/rtc/example/scenario/SendOpusTest.java`,实现流式发送 opus 数据
+
+- 发送 MP4 音视频
+
+  参考 `examples/src/java/io/agora/rtc/example/scenario/SendMp4Test.java`,实现发送 MP4 文件
+
+- 接收 PCM 音频
+
+  参考 `examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmVadTest.java`,实现接收 pcm 数据并携带 VAD 数据
+
+  参考 `examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmDirectSendTest.java`,实现接收 pcm 数据并直接返回发送
+
+- 接收 PCM&H264 音视频
+
+  参考 `examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmH264Test.java`,实现接收 pcm&h264 数据
+
+- 接收 PCM&YUV 音视频
+
+  参考 `examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmYuvTest.java`,实现接收 pcm&yuv 数据
+
+### 常见问题
+
+- 确保 Java 环境正确安装和配置
+- 验证 `agora-sdk.jar` 版本兼容性
+- 运行前检查 `APP_ID` 和 `TOKEN` 配置
+- 按顺序执行步骤，避免依赖问题
 
 ## API 参考
 
