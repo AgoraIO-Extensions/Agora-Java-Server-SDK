@@ -55,7 +55,143 @@ Refer to the [official example documentation](https://doc.shengwang.cn/doc/rtc-s
 
 ## API Examples
 
-For detailed examples, please refer to [examples/README.md](examples/README.md)
+### Environment Setup
+
+#### Install FFmpeg (Optional, for MP4 related tests)
+
+1. Update system packages:
+
+   ```bash
+   sudo apt update
+   ```
+
+2. Install FFmpeg (version 7.0+ required):
+
+   ```bash
+   sudo apt install ffmpeg
+   ```
+
+3. Install FFmpeg development libraries:
+
+   ```bash
+   sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
+   ```
+
+4. Get library dependency paths:
+
+   ```bash
+   pkg-config --cflags --libs libavformat libavcodec libavutil libswresample libswscale
+   ```
+
+5. Update `FFMPEG_INCLUDE_DIR` and `FFMPEG_LIB_DIR` in `build.sh`.
+
+### Project Configuration
+
+1. Enter the `examples` directory:
+
+   ```bash
+   cd examples
+   ```
+
+2. Create `.keys` file and add:
+
+   ```
+   APP_ID=your_app_id
+   TOKEN=your_token
+   ```
+
+   _If certificate is not enabled, TOKEN value can be empty, for example:_
+
+   ```
+   APP_ID=abcd1234
+   TOKEN=
+   ```
+
+3. Prepare SDK files:
+
+   - Rename JAR to `agora-sdk.jar`
+   - Place in `libs/` directory
+
+4. Extract SO files:
+
+   ```bash
+   jar xvf agora-sdk.jar
+   mv native/linux/x86_64/*.so libs/
+   ```
+
+   Ensure directory structure is:
+
+   ```
+   libs/
+   ├── agora-sdk.jar
+   └── lib***.so
+   ```
+
+### Compilation Process
+
+Execute the build script:
+
+```bash
+./build.sh [-ffmpegUtils] [-mediaUtils]
+```
+
+- Use `-ffmpegUtils` option to compile FFmpeg related libraries (required for MP4 testing)
+- Use `-mediaUtils` option to compile audio/video decoding libraries (required for encoded audio/video transmission tests)
+
+### Running Examples
+
+1. Execute test script:
+
+   ```bash
+   ./script/TestCaseName.sh
+   ```
+
+2. Modify test parameters: Directly edit the corresponding `.sh` file
+
+### Test Cases
+
+- Send PCM Audio
+
+  Refer to `examples/src/java/io/agora/rtc/example/scenario/SendPcmFileTest.java` for loop sending PCM files
+
+  Refer to `examples/src/java/io/agora/rtc/example/scenario/SendPcmRealTimeTest.java` for streaming PCM data transmission
+
+- Send YUV Video
+
+  Refer to `examples/src/java/io/agora/rtc/example/scenario/SendYuvTest.java` for streaming YUV data transmission
+
+- Send H264 Video
+
+  Refer to `examples/src/java/io/agora/rtc/example/scenario/SendH264Test.java` for streaming H264 data transmission
+
+- Send Opus Audio
+
+  Refer to `examples/src/java/io/agora/rtc/example/scenario/SendOpusTest.java` for streaming Opus data transmission
+
+- Send MP4 Audio/Video
+
+  Refer to `examples/src/java/io/agora/rtc/example/scenario/SendMp4Test.java` for MP4 file transmission
+
+- Receive PCM Audio
+
+  Refer to `examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmVadTest.java` for receiving PCM data with VAD information
+
+  Refer to `examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmDirectSendTest.java` for receiving and directly resending PCM data
+
+- Receive PCM&H264 Audio/Video
+
+  Refer to `examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmH264Test.java` for receiving PCM&H264 data
+
+- Receive PCM&YUV Audio/Video
+
+  Refer to `examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmYuvTest.java` for receiving PCM&YUV data
+
+### FAQ
+
+- Ensure Java environment is properly installed and configured
+- Verify `agora-sdk.jar` version compatibility
+- Check `APP_ID` and `TOKEN` configuration before running
+- Follow steps in order to avoid dependency issues
 
 ## API Reference
 
