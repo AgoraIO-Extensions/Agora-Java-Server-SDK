@@ -17,10 +17,8 @@ import io.agora.rtc.RemoteVideoTrackStats;
 import io.agora.rtc.VideoTrackInfo;
 
 public class SampleLocalUserObserver extends DefaultLocalUserObserver {
-    private AgoraLocalUser localUser;
 
-    public SampleLocalUserObserver(AgoraLocalUser localUser) {
-        this.localUser = localUser;
+    public SampleLocalUserObserver() {
     }
 
     public void onUserAudioTrackStateChanged(AgoraLocalUser agoraLocalUser, String userId,

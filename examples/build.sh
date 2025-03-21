@@ -69,6 +69,6 @@ cp -f "third_party/libmedia_utils.so" "libs/libmedia_utils.so"
 find src -name "*.java" >build/test_source.txt
 
 # 编译 Java 文件
-javac -g -cp .:third_party/commons-cli-1.5.0.jar:third_party/junit-4.13.2.jar:libs/agora-sdk.jar -encoding utf-8 @build/test_source.txt -d build -XDignore.symbol.file
+javac -g -cp .:third_party/log4j-api-2.24.3.jar:third_party/log4j-core-2.24.3.jar:third_party/commons-cli-1.5.0.jar:third_party/junit-4.13.2.jar:libs/agora-sdk.jar -encoding utf-8 @build/test_source.txt -d build -XDignore.symbol.file
 
 echo "Build completed successfully"

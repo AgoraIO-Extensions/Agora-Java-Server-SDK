@@ -21,7 +21,6 @@ import io.agora.rtc.example.common.SampleLocalUserObserver;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.common.SampleVideFrameObserver;
 import io.agora.rtc.example.utils.Utils;
-import java.io.FileInputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -225,10 +224,12 @@ public class ReceiverPcmYuvTest {
 
     private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
         SampleLogger.log("onConnConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
+        final String currentChannelId = connInfo.getChannelId();
         final String currentUserId = connInfo.getLocalUserId();
+
         // Register local user observer
         if (null == localUserObserver) {
-            localUserObserver = new SampleLocalUserObserver(conn.getLocalUser());
+            localUserObserver = new SampleLocalUserObserver();
         }
         conn.getLocalUser().registerObserver(localUserObserver);
 
@@ -244,7 +245,7 @@ public class ReceiverPcmYuvTest {
         }
 
         audioFrameObserver = new SampleAudioFrameObserver(
-                audioOutFile + "_" + channelId + "_" + currentUserId + ".pcm") {
+                audioOutFile + "_" + currentChannelId + "_" + currentUserId + ".pcm") {
             @Override
             public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser, String channelId,
                     String userId,
@@ -294,7 +295,7 @@ public class ReceiverPcmYuvTest {
         conn.getLocalUser().subscribeAllVideo(subscriptionOptions);
 
         videoFrameObserver = new AgoraVideoFrameObserver2(
-                new SampleVideFrameObserver(videoOutFile + "_" + channelId + "_" + currentUserId + ".yuv") {
+                new SampleVideFrameObserver(videoOutFile + "_" + currentChannelId + "_" + currentUserId + ".yuv") {
                     @Override
                     public void onFrame(AgoraVideoFrameObserver2 agoraVideoFrameObserver2, String channelId,
                             String remoteUserId, VideoFrame frame) {

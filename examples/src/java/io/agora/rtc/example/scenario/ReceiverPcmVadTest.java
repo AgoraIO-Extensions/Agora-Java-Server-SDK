@@ -13,15 +13,11 @@ import io.agora.rtc.IAudioFrameObserver;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
 import io.agora.rtc.VadProcessResult;
-import io.agora.rtc.example.common.FileSender;
 import io.agora.rtc.example.common.SampleAudioFrameObserver;
 import io.agora.rtc.example.common.SampleLocalUserObserver;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.Utils;
 import io.agora.rtc.utils.VadDumpUtils;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -211,10 +207,13 @@ public class ReceiverPcmVadTest {
     private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
         SampleLogger.log("onConnConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
 
+        final String currentChannelId = connInfo.getChannelId();
+        final String currentUserId = connInfo.getLocalUserId();
+
         conn.getLocalUser().subscribeAllAudio();
         // Register local user observer
         if (null == localUserObserver) {
-            localUserObserver = new SampleLocalUserObserver(conn.getLocalUser());
+            localUserObserver = new SampleLocalUserObserver();
         }
         conn.getLocalUser().registerObserver(localUserObserver);
 
@@ -227,8 +226,8 @@ public class ReceiverPcmVadTest {
         }
 
         vadDumpUtils = new VadDumpUtils("test_data_out/vad_dump");
-
-        audioFrameObserver = new SampleAudioFrameObserver(audioOutFile + "_" + channelId + "_" + userId + ".pcm") {
+        audioFrameObserver = new SampleAudioFrameObserver(
+                audioOutFile + "_" + currentChannelId + "_" + currentUserId + ".pcm") {
             @Override
             public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser, String channelId,
                     String userId,

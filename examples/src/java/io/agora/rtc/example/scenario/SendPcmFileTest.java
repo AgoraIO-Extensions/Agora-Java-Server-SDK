@@ -12,9 +12,12 @@ import io.agora.rtc.DefaultLocalUserObserver;
 import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
-import io.agora.rtc.utils.AudioConsumerUtils;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.Utils;
+import io.agora.rtc.utils.AudioConsumerUtils;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,12 +39,43 @@ public class SendPcmFileTest {
 
     private static CountDownLatch exitLatch;
 
+    private static String audioFilePath = "test_data/send_audio_16k_1ch.pcm";
+
     private static int numOfChannels = 1;
     private static int sampleRate = 16000;
 
     private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
 
+    private static void parseArgs(String[] args) {
+        SampleLogger.log("parseArgs args:" + Arrays.toString(args));
+        if (args == null || args.length == 0) {
+            return;
+        }
+
+        Map<String, String> parsedArgs = new HashMap<>();
+        for (int i = 0; i < args.length; i += 2) {
+            if (i + 1 < args.length) {
+                parsedArgs.put(args[i], args[i + 1]);
+            } else {
+                SampleLogger.log("Missing value for argument: " + args[i]);
+            }
+        }
+
+        if (parsedArgs.containsKey("-channelId")) {
+            channelId = parsedArgs.get("-channelId");
+        }
+
+        if (parsedArgs.containsKey("-userId")) {
+            userId = parsedArgs.get("-userId");
+        }
+
+        if (parsedArgs.containsKey("-audioFilePath")) {
+            audioFilePath = parsedArgs.get("-audioFilePath");
+        }
+    }
+
     public static void main(String[] args) {
+        parseArgs(args);
         String[] keys = Utils.readAppIdAndToken(".keys");
         appId = keys[0];
         token = keys[1];
@@ -166,20 +200,26 @@ public class SendPcmFileTest {
 
         AudioConsumerUtils audioConsumerUtils = new AudioConsumerUtils(audioFrameSender, numOfChannels, sampleRate);
 
-        final byte[] pcmData = Utils.readPcmFromFile("test_data/send_audio_16k_1ch.pcm");
+        final byte[] pcmData = Utils.readPcmFromFile(audioFilePath);
 
-        audioConsumerUtils.pushPcmData(pcmData);
-        SampleLogger.log("pushData");
+        testTaskExecutorService.execute(() -> {
+            audioConsumerUtils.pushPcmData(pcmData);
+            SampleLogger.log("pushData");
+        });
 
         while (true) {
             // If the remaining cache duration is less than 60 ms, push data into the cache
             if (audioConsumerUtils.getRemainingCacheDurationInMs() < 60) {
-                audioConsumerUtils.pushPcmData(pcmData);
-                SampleLogger.log("pushData");
+                testTaskExecutorService.execute(() -> {
+                    audioConsumerUtils.pushPcmData(pcmData);
+                    SampleLogger.log("pushData");
+                });
             }
-            int consumeFrameCount = audioConsumerUtils.consume();
-            SampleLogger.log("send pcm " + consumeFrameCount + " frame data to channelId:"
-                    + channelId + " from userId:" + userId);
+            testTaskExecutorService.execute(() -> {
+                int consumeFrameCount = audioConsumerUtils.consume();
+                SampleLogger.log("send pcm " + consumeFrameCount + " frame data to channelId:"
+                        + channelId + " from userId:" + userId);
+            });
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {

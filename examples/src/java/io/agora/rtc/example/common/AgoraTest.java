@@ -1,19 +1,22 @@
 package io.agora.rtc.example.common;
 
+import io.agora.rtc.AgoraMediaNodeFactory;
+import io.agora.rtc.AgoraRtcConn;
+import io.agora.rtc.AgoraService;
+import io.agora.rtc.Constants;
+import io.agora.rtc.RtcConnConfig;
 import java.io.File;
+import java.util.List;
+import java.util.Scanner;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import io.agora.rtc.AgoraRtcConn;
-import io.agora.rtc.AgoraService;
-import io.agora.rtc.Constants;
-import io.agora.rtc.RtcConnConfig;
-import io.agora.rtc.example.utils.Utils;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
 
@@ -27,8 +30,12 @@ public class AgoraTest {
             new SynchronousQueue<>());
 
     protected static volatile AgoraService service;
+    protected static volatile AgoraMediaNodeFactory mediaNodeFactory;
 
     protected AtomicInteger testTaskCount = new AtomicInteger(0);
+    private final Object taskCountLock = new Object();
+    private volatile boolean exitTest = false;
+    private List<AgoraConnectionTask> connTasksList = new CopyOnWriteArrayList<>();
 
     class UserIdHolder {
         private volatile String userId;
@@ -62,7 +69,7 @@ public class AgoraTest {
     }
 
     public AgoraTest() {
-        String[] keys = Utils.readAppIdAndToken(".keys");
+        String[] keys = io.agora.rtc.example.utils.Utils.readAppIdAndToken(".keys");
         ArgsConfig.appId = keys[0];
         ArgsConfig.token = keys[1];
         SampleLogger.log("read APPID: " + ArgsConfig.appId + " TOKEN: " + ArgsConfig.token + " from .keys");
@@ -74,11 +81,31 @@ public class AgoraTest {
     }
 
     public void sdkTest() {
-        SignalFunc handler = new SignalFunc();
+        exitTest = false;
+        SignalFunc handler = new SignalFunc() {
+            public void handle(Signal sig) {
+                SampleLogger.error("Received SIGABRT signal");
+                Thread.dumpStack();
+            }
+        };
         Signal.handle(new Signal("ABRT"), handler);
         Signal.handle(new Signal("INT"), handler);
         setup();
-        while (testTaskCount.get() != 0) {
+        // Start a new thread to listen for console input
+        new Thread(() -> {
+            Scanner scanner = new Scanner(System.in);
+            while (true) {
+                String input = scanner.nextLine();
+                if ("1".equals(input)) {
+                    SampleLogger.log("exit test");
+                    exitTest = true;
+                    break;
+                }
+            }
+            scanner.close();
+        }).start();
+
+        while (testTaskCount.get() != 0 && !exitTest) {
             try {
                 Thread.sleep(300);
             } catch (InterruptedException e) {
@@ -107,6 +134,8 @@ public class AgoraTest {
 
         service = SampleCommon.createAndInitAgoraService(0, 1, 1, ArgsConfig.enableStringUid ? 1 : 0, ArgsConfig.appId);
 
+        mediaNodeFactory = service.createMediaNodeFactory();
+
         // AgoraParameter parameter = service.getAgoraParameter();
         // parameter.setParameters("{\"che.audio.custom_payload_type\":78}");
         // parameter.setParameters("{\"che.audio.aec.enable\":false}");
@@ -122,13 +151,28 @@ public class AgoraTest {
             long testTime) {
         SampleLogger.log("createConnectionAndTest start ccfg:" + ccfg + " channelId:" + channelId + " userId:" + userId
                 + " testTask:" + testTask + " testTime:" + testTime);
-        testTaskCount.incrementAndGet();
-        SampleLogger.log("test start testTaskCount:" + testTaskCount.get());
+        synchronized (taskCountLock) {
+            testTaskCount.incrementAndGet();
+            SampleLogger.log("test start testTaskCount:" + testTaskCount.get());
+
+            if (ArgsConfig.connectionCount != 0 && testTaskCount.get() > ArgsConfig.connectionCount) {
+                testTaskCount.decrementAndGet();
+                SampleLogger.log("testTaskCount:" + testTaskCount.get() + " is more than connectionCount:"
+                        + ArgsConfig.connectionCount);
+                System.exit(1);
+                return false;
+            }
+        }
         testTaskExecutorService.execute(() -> {
             UserIdHolder threadLocalUserId = new UserIdHolder();
+            UserIdHolder remoteUserId = new UserIdHolder();
             final CountDownLatch testFinishLatch = new CountDownLatch(1);
             final CountDownLatch connectedLatch = new CountDownLatch(1);
-            AgoraConnectionTask connTask = new AgoraConnectionTask(service, testTime);
+            final CountDownLatch remoteUserJoinedLatch = new CountDownLatch(1);
+            AtomicInteger leftTestTaskCount = new AtomicInteger(0);
+            AtomicBoolean waitRemoteUserJoined = new AtomicBoolean(false);
+            AgoraConnectionTask connTask = new AgoraConnectionTask(service, mediaNodeFactory, testTime);
+            connTasksList.add(connTask);
             connTask.setCallback(new AgoraConnectionTask.TaskCallback() {
                 @Override
                 public void onConnected(String userId) {
@@ -137,9 +181,24 @@ public class AgoraTest {
                 }
 
                 @Override
+                public void onUserJoined(String userId) {
+                    remoteUserId.set(userId);
+                    if (ArgsConfig.isStressTest == 0 && waitRemoteUserJoined.get()) {
+                        try {
+                            remoteUserJoinedLatch.countDown();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+                @Override
                 public void onTestFinished() {
-                    testTaskCount.decrementAndGet();
-                    testFinishLatch.countDown();
+                    synchronized (taskCountLock) {
+                        int remaining = testTaskCount.decrementAndGet();
+                        leftTestTaskCount.set(remaining);
+                        testFinishLatch.countDown();
+                    }
                 }
 
                 @Override
@@ -147,10 +206,19 @@ public class AgoraTest {
                     onStreamMessageReceive(userId, streamId, data, length);
                 }
             });
-            connTask.createConnection(ccfg, channelId, userId);
+            try {
+                connTask.createConnection(ccfg, channelId, userId);
+            } catch (Exception e) {
+                e.printStackTrace();
+                SampleLogger.log("createConnection failed, exit");
+                System.exit(1);
+            }
 
             try {
-                connectedLatch.await();
+                boolean connected = connectedLatch.await(5, TimeUnit.SECONDS);
+                if (!connected) {
+                    SampleLogger.error("createConnectionAndTest timeout");
+                }
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -199,7 +267,15 @@ public class AgoraTest {
             } else if (TestTask.SEND_DATA_STREAM == testTask) {
                 connTask.sendDataStreamTask(1, 50, true);
             } else if (TestTask.RECEIVE_PCM == testTask) {
-                connTask.registerPcmObserverTask(ArgsConfig.remoteUserId,
+                if (ArgsConfig.isStressTest == 0) {
+                    try {
+                        waitRemoteUserJoined.set(true);
+                        remoteUserJoinedLatch.await();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                connTask.registerPcmObserverTask(remoteUserId.get(),
                         ("".equals(ArgsConfig.audioOutFile)) ? ""
                                 : (ArgsConfig.audioOutFile + "_" + channelId + "_" + threadLocalUserId.get() + ".pcm"),
                         ArgsConfig.numOfChannels,
@@ -215,23 +291,55 @@ public class AgoraTest {
                                 : (ArgsConfig.videoOutFile + "_" + channelId + "_" + threadLocalUserId.get() + ".h264"),
                         ArgsConfig.streamType, true);
             } else if (TestTask.RECEIVE_MIXED_AUDIO == testTask) {
-                connTask.registerMixedAudioObserverTask(ArgsConfig.remoteUserId,
+                if (ArgsConfig.isStressTest == 0) {
+                    try {
+                        waitRemoteUserJoined.set(true);
+                        remoteUserJoinedLatch.await();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                connTask.registerMixedAudioObserverTask(remoteUserId.get(),
                         ("".equals(ArgsConfig.audioOutFile)) ? ""
                                 : (ArgsConfig.audioOutFile + "_" + channelId + "_" + threadLocalUserId.get() + ".pcm"),
                         ArgsConfig.numOfChannels,
                         ArgsConfig.sampleRate, true);
             } else if (TestTask.RECEIVE_YUV == testTask) {
-                connTask.registerYuvObserverTask(ArgsConfig.remoteUserId,
+                if (ArgsConfig.isStressTest == 0) {
+                    try {
+                        waitRemoteUserJoined.set(true);
+                        remoteUserJoinedLatch.await();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                connTask.registerYuvObserverTask(remoteUserId.get(),
                         ("".equals(ArgsConfig.videoOutFile)) ? ""
                                 : (ArgsConfig.videoOutFile + "_" + channelId + "_" + threadLocalUserId.get() + ".yuv"),
                         ArgsConfig.streamType, true);
             } else if (TestTask.RECEIVE_H264 == testTask) {
-                connTask.registerH264ObserverTask(ArgsConfig.remoteUserId,
+                if (ArgsConfig.isStressTest == 0) {
+                    try {
+                        waitRemoteUserJoined.set(true);
+                        remoteUserJoinedLatch.await();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                connTask.registerH264ObserverTask(remoteUserId.get(),
                         ("".equals(ArgsConfig.videoOutFile)) ? ""
                                 : (ArgsConfig.videoOutFile + "_" + channelId + "_" + threadLocalUserId.get() + ".h264"),
                         ArgsConfig.streamType, true);
             } else if (TestTask.RECEIVE_ENCODED_AUDIO == testTask) {
-                connTask.registerEncodedAudioObserverTask("",
+                if (ArgsConfig.isStressTest == 0) {
+                    try {
+                        waitRemoteUserJoined.set(true);
+                        remoteUserJoinedLatch.await();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                connTask.registerEncodedAudioObserverTask(remoteUserId.get(),
                         ("".equals(ArgsConfig.audioOutFile)) ? "" : ArgsConfig.audioOutFile, ArgsConfig.fileType,
                         true);
             } else if (TestTask.SEND_RECEIVE_PCM_YUV == testTask) {
@@ -264,10 +372,15 @@ public class AgoraTest {
                 connTask.releaseConn();
             }
 
+            connTasksList.remove(connTask);
+
             connTask = null;
-            System.gc();
+            if (ArgsConfig.isStressTest == 1) {
+                // stress test force gc
+                System.gc();
+            }
             SampleLogger.log("test finished for connTask:" + testTask + " channelId:" + channelId + " userId:"
-                    + threadLocalUserId.get() + " with left testTaskCount:" + testTaskCount.get() + "\n");
+                    + threadLocalUserId.get() + " with left testTaskCount:" + leftTestTaskCount.get() + "\n");
         });
         return true;
     }
@@ -281,10 +394,19 @@ public class AgoraTest {
 
     public void cleanup() {
         SampleLogger.log("cleanup");
+        for (AgoraConnectionTask connTask : connTasksList) {
+            connTask.releaseConn();
+        }
+        connTasksList.clear();
+
         singleExecutorService.shutdown();
         testTaskExecutorService.shutdown();
         // connPool.releaseAllConn();
         // Destroy Agora Service
+        if (null != mediaNodeFactory) {
+            mediaNodeFactory.destroy();
+            mediaNodeFactory = null;
+        }
         if (null != service) {
             service.destroy();
             service = null;

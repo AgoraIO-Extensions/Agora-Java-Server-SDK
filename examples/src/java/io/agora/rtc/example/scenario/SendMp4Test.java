@@ -12,7 +12,6 @@ import io.agora.rtc.AgoraVideoFrameSender;
 import io.agora.rtc.DefaultLocalUserObserver;
 import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.ExternalVideoFrame;
-import io.agora.rtc.AgoraVideoEncodedFrameObserver;
 import io.agora.rtc.AgoraVideoEncodedImageSender;
 import io.agora.rtc.SenderOptions;
 import io.agora.rtc.EncodedVideoFrameInfo;
@@ -26,6 +25,9 @@ import io.agora.rtc.example.utils.Utils;
 import io.agora.rtc.example.ffmpegutils.MediaDecode;
 import io.agora.rtc.example.ffmpegutils.MediaDecodeUtils;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -59,7 +61,32 @@ public class SendMp4Test {
 
     private static MediaDecodeUtils.DecodedMediaType decodedMediaType = MediaDecodeUtils.DecodedMediaType.PCM_H264;
 
+    private static void parseArgs(String[] args) {
+        SampleLogger.log("parseArgs args:" + Arrays.toString(args));
+        if (args == null || args.length == 0) {
+            return;
+        }
+
+        Map<String, String> parsedArgs = new HashMap<>();
+        for (int i = 0; i < args.length; i += 2) {
+            if (i + 1 < args.length) {
+                parsedArgs.put(args[i], args[i + 1]);
+            } else {
+                SampleLogger.log("Missing value for argument: " + args[i]);
+            }
+        }
+
+        if (parsedArgs.containsKey("-channelId")) {
+            channelId = parsedArgs.get("-channelId");
+        }
+
+        if (parsedArgs.containsKey("-userId")) {
+            userId = parsedArgs.get("-userId");
+        }
+    }
+
     public static void main(String[] args) {
+        parseArgs(args);
         String[] keys = Utils.readAppIdAndToken(".keys");
         appId = keys[0];
         token = keys[1];
@@ -177,6 +204,9 @@ public class SendMp4Test {
     }
 
     private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
+        final String currentChannelId = connInfo.getChannelId();
+        final String currentUserId = connInfo.getLocalUserId();
+
         MediaDecodeUtils mediaDecodeUtils = new MediaDecodeUtils();
 
         boolean initRet = mediaDecodeUtils.init(FILE_PATH, 50, -1, decodedMediaType,
@@ -316,20 +346,6 @@ public class SendMp4Test {
             customVideoTrack.destroy();
         }
 
-        // if (null != audioEncodedFrameSender) {
-        // audioEncodedFrameSender.destroy();
-        // }
-
-        // if (null != customEncodedAudioTrack) {
-        // conn.getLocalUser().unpublishAudio(customEncodedAudioTrack);
-        // customEncodedAudioTrack.destroy();
-        // }
-
-        // if (null != localUserObserver) {
-        // localUserObserver.unregisterAudioFrameObserver();
-        // localUserObserver.unregisterVideoFrameObserver();
-        // }
-
         int ret = conn.disconnect();
         if (ret != 0) {
             SampleLogger.log("conn.disconnect fail ret=" + ret);
@@ -348,9 +364,6 @@ public class SendMp4Test {
         customEncodedVideoTrack = null;
         videoFrameSender = null;
         customVideoTrack = null;
-        // audioEncodedFrameSender = null;
-        // customEncodedAudioTrack = null;
-        // localUserObserver = null;
 
         conn = null;
 

@@ -57,10 +57,8 @@ Java_org_kcg_ctemplate_MainActivity_stringFromJNI(JNIEnv *env, jobject obj /* th
     return env->NewStringUTF(hello.c_str());
 }
 
-extern "C" JNIEXPORT jlong JNICALL Java_io_agora_rtc_example_mediautils_H264Reader_init(JNIEnv *env,
-                                                                                jobject thiz,
-                                                                                jstring path) {
-    // TODO: implement init()
+extern "C" JNIEXPORT jlong JNICALL
+Java_io_agora_rtc_example_mediautils_H264Reader_init(JNIEnv *env, jobject thiz, jstring path) {
     const char *filePath = env->GetStringUTFChars(path, NULL);
     HelperH264FileParser *helperH264FileParser = new HelperH264FileParser(filePath);
     helperH264FileParser->initialize();
@@ -79,9 +77,8 @@ extern "C" JNIEXPORT jlong JNICALL Java_io_agora_rtc_example_mediautils_H264Read
     return reinterpret_cast<long>(helperH264FileParser);
 }
 
-extern "C" JNIEXPORT jobject JNICALL
-Java_io_agora_rtc_example_mediautils_H264Reader_getNextFrame(JNIEnv *env, jobject thiz, jlong cptr) {
-    // TODO: implement getNextFrame()
+extern "C" JNIEXPORT jobject JNICALL Java_io_agora_rtc_example_mediautils_H264Reader_getNextFrame(
+    JNIEnv *env, jobject thiz, jlong cptr) {
     if (cptr == 0L)
         return nullptr;
     HelperH264FileParser *helperH264FileParser = reinterpret_cast<HelperH264FileParser *>(cptr);
@@ -97,30 +94,32 @@ Java_io_agora_rtc_example_mediautils_H264Reader_getNextFrame(JNIEnv *env, jobjec
     return nullptr;
 }
 
-extern "C" JNIEXPORT void JNICALL Java_io_agora_rtc_example_mediautils_H264Reader_release(JNIEnv *env,
-                                                                                  jobject thiz,
-                                                                                  jlong cptr) {
-    // TODO: implement release()
+extern "C" JNIEXPORT void JNICALL Java_io_agora_rtc_example_mediautils_H264Reader_nativeRelease(
+    JNIEnv *env, jobject thiz, jlong cptr) {
     if (cptr == 0L)
         return;
-    HelperH264FileParser *helperH264FileParser = reinterpret_cast<HelperH264FileParser *>(cptr);
-    delete helperH264FileParser;
+    try {
+        HelperH264FileParser *helperH264FileParser = reinterpret_cast<HelperH264FileParser *>(cptr);
+        if (helperH264FileParser != nullptr) {
+            delete helperH264FileParser;
+        }
+    } catch (...) {
+        // Capture all exceptions to prevent JVM crashes
+    }
     return;
 }
 
-extern "C" JNIEXPORT void JNICALL Java_io_agora_rtc_example_mediautils_H264Reader_nativeReset(JNIEnv *env,
-                                                                                      jobject thiz,
-                                                                                      jlong cptr) {
-    // TODO: implement nativeReset()
+extern "C" JNIEXPORT void JNICALL
+Java_io_agora_rtc_example_mediautils_H264Reader_nativeReset(JNIEnv *env, jobject thiz, jlong cptr) {
     HelperH264FileParser *helperH264FileParser = reinterpret_cast<HelperH264FileParser *>(cptr);
-    helperH264FileParser->setFileParseRestart();
+    if (helperH264FileParser != nullptr) {
+        helperH264FileParser->setFileParseRestart();
+    }
     return;
 }
 
-extern "C" JNIEXPORT jlong JNICALL Java_io_agora_rtc_example_mediautils_AacReader_init(JNIEnv *env,
-                                                                               jobject thiz,
-                                                                               jstring path) {
-    // TODO: implement init()
+extern "C" JNIEXPORT jlong JNICALL
+Java_io_agora_rtc_example_mediautils_AacReader_init(JNIEnv *env, jobject thiz, jstring path) {
     if (path == nullptr)
         return 0L;
     const char *cpath = env->GetStringUTFChars(path, NULL);
@@ -144,7 +143,6 @@ extern "C" JNIEXPORT jlong JNICALL Java_io_agora_rtc_example_mediautils_AacReade
 
 extern "C" JNIEXPORT jobject JNICALL Java_io_agora_rtc_example_mediautils_AacReader_getAacFrame(
     JNIEnv *env, jobject thiz, jlong cptr, jint frame_size_duration) {
-    // TODO: implement getAacFrame()
     if (cptr == 0L)
         return nullptr;
     HelperAacFileParser *helperAacFileParser = reinterpret_cast<HelperAacFileParser *>(cptr);
@@ -163,32 +161,30 @@ extern "C" JNIEXPORT jobject JNICALL Java_io_agora_rtc_example_mediautils_AacRea
     return nullptr;
 }
 
-extern "C" JNIEXPORT void JNICALL Java_io_agora_rtc_example_mediautils_AacReader_release(JNIEnv *env,
-                                                                                 jobject thiz,
-                                                                                 jlong cptr) {
-    // TODO: implement release()
+extern "C" JNIEXPORT void JNICALL
+Java_io_agora_rtc_example_mediautils_AacReader_release(JNIEnv *env, jobject thiz, jlong cptr) {
     if (cptr != 0L) {
         HelperAacFileParser *helperAacFileParser = reinterpret_cast<HelperAacFileParser *>(cptr);
-        delete helperAacFileParser;
+        if (helperAacFileParser != nullptr) {
+            delete helperAacFileParser;
+        }
     }
 
     return;
 }
 
-extern "C" JNIEXPORT void JNICALL Java_io_agora_rtc_example_mediautils_AacReader_nativeReset(JNIEnv *env,
-                                                                                     jobject thiz,
-                                                                                     jlong cptr) {
-    // TODO: implement nativeReset()
+extern "C" JNIEXPORT void JNICALL
+Java_io_agora_rtc_example_mediautils_AacReader_nativeReset(JNIEnv *env, jobject thiz, jlong cptr) {
     if (cptr == 0L)
         return;
     HelperAacFileParser *helperAacFileParser = reinterpret_cast<HelperAacFileParser *>(cptr);
-    helperAacFileParser->setFileParseRestart();
+    if (helperAacFileParser != nullptr) {
+        helperAacFileParser->setFileParseRestart();
+    }
 }
 
-extern "C" JNIEXPORT jlong JNICALL Java_io_agora_rtc_example_mediautils_OpusReader_init(JNIEnv *env,
-                                                                                jobject thiz,
-                                                                                jstring path) {
-    // TODO: implement init()
+extern "C" JNIEXPORT jlong JNICALL
+Java_io_agora_rtc_example_mediautils_OpusReader_init(JNIEnv *env, jobject thiz, jstring path) {
     if (path == nullptr)
         return 0L;
     const char *cpath = env->GetStringUTFChars(path, NULL);
@@ -212,7 +208,6 @@ extern "C" JNIEXPORT jlong JNICALL Java_io_agora_rtc_example_mediautils_OpusRead
 
 extern "C" JNIEXPORT jobject JNICALL Java_io_agora_rtc_example_mediautils_OpusReader_getOpusFrame(
     JNIEnv *env, jobject thiz, jlong cptr, jint frame_size_duration) {
-    // TODO: implement getOpusFrame()
     if (cptr == 0L)
         return nullptr;
     HelperOpusFileParser *helperOpusFileParser = reinterpret_cast<HelperOpusFileParser *>(cptr);
@@ -233,7 +228,8 @@ extern "C" JNIEXPORT jobject JNICALL Java_io_agora_rtc_example_mediautils_OpusRe
 }
 
 extern "C" JNIEXPORT jbyteArray JNICALL
-Java_io_agora_rtc_example_mediautils_OpusReader_nativeGetOggSHeader(JNIEnv *env, jobject thiz, jlong cptr) {
+Java_io_agora_rtc_example_mediautils_OpusReader_nativeGetOggSHeader(JNIEnv *env, jobject thiz,
+                                                                    jlong cptr) {
     if (cptr == 0L)
         return nullptr;
     HelperOpusFileParser *parser = reinterpret_cast<HelperOpusFileParser *>(cptr);
@@ -251,7 +247,8 @@ Java_io_agora_rtc_example_mediautils_OpusReader_nativeGetOggSHeader(JNIEnv *env,
 }
 
 extern "C" JNIEXPORT jbyteArray JNICALL
-Java_io_agora_rtc_example_mediautils_OpusReader_nativeGetOpusHeader(JNIEnv *env, jobject thiz, jlong cptr) {
+Java_io_agora_rtc_example_mediautils_OpusReader_nativeGetOpusHeader(JNIEnv *env, jobject thiz,
+                                                                    jlong cptr) {
     if (cptr == 0L)
         return nullptr;
     HelperOpusFileParser *parser = reinterpret_cast<HelperOpusFileParser *>(cptr);
@@ -269,8 +266,9 @@ Java_io_agora_rtc_example_mediautils_OpusReader_nativeGetOpusHeader(JNIEnv *env,
 }
 
 extern "C" JNIEXPORT jbyteArray JNICALL
-Java_io_agora_rtc_example_mediautils_OpusReader_nativeOggGetOpusTagsHeader(JNIEnv *env, jobject thiz,
-                                                                   jlong cptr) {
+Java_io_agora_rtc_example_mediautils_OpusReader_nativeOggGetOpusTagsHeader(JNIEnv *env,
+                                                                           jobject thiz,
+                                                                           jlong cptr) {
     if (cptr == 0L)
         return nullptr;
     HelperOpusFileParser *parser = reinterpret_cast<HelperOpusFileParser *>(cptr);
@@ -290,7 +288,7 @@ Java_io_agora_rtc_example_mediautils_OpusReader_nativeOggGetOpusTagsHeader(JNIEn
 
 extern "C" JNIEXPORT jbyteArray JNICALL
 Java_io_agora_rtc_example_mediautils_OpusReader_nativeGetOpusComments(JNIEnv *env, jobject thiz,
-                                                              jlong cptr) {
+                                                                      jlong cptr) {
     if (cptr == 0L)
         return nullptr;
     HelperOpusFileParser *parser = reinterpret_cast<HelperOpusFileParser *>(cptr);
@@ -309,7 +307,7 @@ Java_io_agora_rtc_example_mediautils_OpusReader_nativeGetOpusComments(JNIEnv *en
 
 extern "C" JNIEXPORT jbyteArray JNICALL
 Java_io_agora_rtc_example_mediautils_OpusReader_nativeGetOggAudioHeader(JNIEnv *env, jobject thiz,
-                                                                jlong cptr) {
+                                                                        jlong cptr) {
     if (cptr == 0L)
         return nullptr;
     HelperOpusFileParser *parser = reinterpret_cast<HelperOpusFileParser *>(cptr);
@@ -327,30 +325,26 @@ Java_io_agora_rtc_example_mediautils_OpusReader_nativeGetOggAudioHeader(JNIEnv *
     return result;
 }
 
-extern "C" JNIEXPORT void JNICALL Java_io_agora_rtc_example_mediautils_OpusReader_nativeReset(JNIEnv *env,
-                                                                                      jobject thiz,
-                                                                                      jlong cptr) {
-    // TODO: implement nativeReset()
+extern "C" JNIEXPORT void JNICALL
+Java_io_agora_rtc_example_mediautils_OpusReader_nativeReset(JNIEnv *env, jobject thiz, jlong cptr) {
     if (cptr == 0L)
         return;
     HelperOpusFileParser *helperOpusFileParser = reinterpret_cast<HelperOpusFileParser *>(cptr);
-    helperOpusFileParser->setFileParseRestart();
+    if (helperOpusFileParser != nullptr) {
+        helperOpusFileParser->setFileParseRestart();
+    }
     return;
 }
 
-extern "C" JNIEXPORT void JNICALL Java_io_agora_rtc_example_mediautils_OpusReader_release(JNIEnv *env,
-                                                                                  jobject thiz,
-                                                                                  jlong cptr) {
-    // TODO: implement release()
+extern "C" JNIEXPORT void JNICALL
+Java_io_agora_rtc_example_mediautils_OpusReader_release(JNIEnv *env, jobject thiz, jlong cptr) {
     if (cptr == 0L)
         return;
     HelperOpusFileParser *helperOpusFileParser = reinterpret_cast<HelperOpusFileParser *>(cptr);
 }
 
-extern "C" JNIEXPORT jlong JNICALL Java_io_agora_rtc_example_mediautils_Vp8Reader_init(JNIEnv *env,
-                                                                               jobject thiz,
-                                                                               jstring path) {
-    // TODO: implement init()
+extern "C" JNIEXPORT jlong JNICALL
+Java_io_agora_rtc_example_mediautils_Vp8Reader_init(JNIEnv *env, jobject thiz, jstring path) {
     const char *filePath = env->GetStringUTFChars(path, NULL);
     HelperVp8FileParser *helperVp8FileParser = new HelperVp8FileParser(filePath);
     helperVp8FileParser->initialize();
@@ -371,7 +365,6 @@ extern "C" JNIEXPORT jlong JNICALL Java_io_agora_rtc_example_mediautils_Vp8Reade
 
 extern "C" JNIEXPORT jobject JNICALL
 Java_io_agora_rtc_example_mediautils_Vp8Reader_getNextFrame(JNIEnv *env, jobject thiz, jlong cptr) {
-    // TODO: implement getNextFrame()
     if (cptr == 0L)
         return nullptr;
     HelperVp8FileParser *helperVp8FileParser = reinterpret_cast<HelperVp8FileParser *>(cptr);
@@ -389,22 +382,22 @@ Java_io_agora_rtc_example_mediautils_Vp8Reader_getNextFrame(JNIEnv *env, jobject
     return nullptr;
 }
 
-extern "C" JNIEXPORT void JNICALL Java_io_agora_rtc_example_mediautils_Vp8Reader_release(JNIEnv *env,
-                                                                                 jobject thiz,
-                                                                                 jlong cptr) {
-    // TODO: implement release()
+extern "C" JNIEXPORT void JNICALL
+Java_io_agora_rtc_example_mediautils_Vp8Reader_release(JNIEnv *env, jobject thiz, jlong cptr) {
     if (cptr == 0L)
         return;
     HelperVp8FileParser *helperVp8FileParser = reinterpret_cast<HelperVp8FileParser *>(cptr);
-    delete helperVp8FileParser;
+    if (helperVp8FileParser != nullptr) {
+        delete helperVp8FileParser;
+    }
     return;
 }
 
-extern "C" JNIEXPORT void JNICALL Java_io_agora_rtc_example_mediautils_Vp8Reader_nativeReset(JNIEnv *env,
-                                                                                     jobject thiz,
-                                                                                     jlong cptr) {
-    // TODO: implement nativeReset()
+extern "C" JNIEXPORT void JNICALL
+Java_io_agora_rtc_example_mediautils_Vp8Reader_nativeReset(JNIEnv *env, jobject thiz, jlong cptr) {
     HelperVp8FileParser *helperVp8FileParser = reinterpret_cast<HelperVp8FileParser *>(cptr);
-    helperVp8FileParser->setFileParseRestart();
+    if (helperVp8FileParser != nullptr) {
+        helperVp8FileParser->setFileParseRestart();
+    }
     return;
 }
