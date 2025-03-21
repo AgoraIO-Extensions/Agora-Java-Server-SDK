@@ -235,7 +235,7 @@ public class SendH264Test {
 
         // Register local user observer
         if (null == localUserObserver) {
-            localUserObserver = new SampleLocalUserObserver(conn.getLocalUser());
+            localUserObserver = new SampleLocalUserObserver();
         }
         conn.getLocalUser().registerObserver(localUserObserver);
 

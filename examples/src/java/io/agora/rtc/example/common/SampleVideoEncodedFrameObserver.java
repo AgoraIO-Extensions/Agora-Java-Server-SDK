@@ -1,12 +1,12 @@
 package io.agora.rtc.example.common;
 
-import io.agora.rtc.AgoraVideoEncodedFrameObserver;
-import io.agora.rtc.EncodedVideoFrameInfo;
-import io.agora.rtc.IVideoEncodedFrameObserver;
-import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import io.agora.rtc.AgoraVideoEncodedFrameObserver;
+import io.agora.rtc.EncodedVideoFrameInfo;
+import io.agora.rtc.IVideoEncodedFrameObserver;
 import io.agora.rtc.example.utils.Utils;
 
 public class SampleVideoEncodedFrameObserver extends FileWriter implements IVideoEncodedFrameObserver {

@@ -21,6 +21,9 @@ import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.common.SampleVideoEncodedFrameObserver;
 import io.agora.rtc.example.utils.Utils;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,8 +36,8 @@ public class ReceiverPcmH264Test {
     private static String channelId = "agaa";
     private static String userId = "0";
 
-    private static String audioOutFile = "test_data_out/receiver_audio_out.pcm";
-    private static String videoOutFile = "test_data_out/receiver_video_out.h264";
+    private static String audioOutFile = "test_data_out/receiver_audio_out";
+    private static String videoOutFile = "test_data_out/receiver_video_out";
 
     private static AgoraService service;
     private static AgoraRtcConn conn;
@@ -51,7 +54,48 @@ public class ReceiverPcmH264Test {
     private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
     private static final ExecutorService logExecutorService = Executors.newCachedThreadPool();
 
+    private static void parseArgs(String[] args) {
+        SampleLogger.log("parseArgs args:" + Arrays.toString(args));
+        if (args == null || args.length == 0) {
+            return;
+        }
+
+        Map<String, String> parsedArgs = new HashMap<>();
+        for (int i = 0; i < args.length; i += 2) {
+            if (i + 1 < args.length) {
+                parsedArgs.put(args[i], args[i + 1]);
+            } else {
+                SampleLogger.log("Missing value for argument: " + args[i]);
+            }
+        }
+
+        if (parsedArgs.containsKey("-channelId")) {
+            channelId = parsedArgs.get("-channelId");
+        }
+
+        if (parsedArgs.containsKey("-userId")) {
+            userId = parsedArgs.get("-userId");
+        }
+
+        if (parsedArgs.containsKey("-audioOutFile")) {
+            audioOutFile = parsedArgs.get("-audioOutFile");
+        }
+
+        if (parsedArgs.containsKey("-numOfChannels")) {
+            numOfChannels = Integer.parseInt(parsedArgs.get("-numOfChannels"));
+        }
+
+        if (parsedArgs.containsKey("-sampleRate")) {
+            sampleRate = Integer.parseInt(parsedArgs.get("-sampleRate"));
+        }
+
+        if (parsedArgs.containsKey("-videoOutFile")) {
+            videoOutFile = parsedArgs.get("-videoOutFile");
+        }
+    }
+
     public static void main(String[] args) {
+        parseArgs(args);
         String[] keys = Utils.readAppIdAndToken(".keys");
         appId = keys[0];
         token = keys[1];
@@ -172,10 +216,13 @@ public class ReceiverPcmH264Test {
     private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
         SampleLogger.log("onConnConnected connInfo :" + connInfo + " reason:" + reason);
 
+        final String currentChannelId = connInfo.getChannelId();
+        final String currentUserId = connInfo.getLocalUserId();
+
         conn.getLocalUser().subscribeAllAudio();
         // Register local user observer
         if (null == localUserObserver) {
-            localUserObserver = new SampleLocalUserObserver(conn.getLocalUser());
+            localUserObserver = new SampleLocalUserObserver();
         }
         conn.getLocalUser().registerObserver(localUserObserver);
 
@@ -187,7 +234,8 @@ public class ReceiverPcmH264Test {
             return;
         }
 
-        audioFrameObserver = new SampleAudioFrameObserver(audioOutFile) {
+        audioFrameObserver = new SampleAudioFrameObserver(
+                audioOutFile + "_" + currentChannelId + "_" + currentUserId + ".pcm") {
             @Override
             public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser, String channelId, String userId,
                     AudioFrame frame, VadProcessResult vadResult) {
@@ -225,7 +273,8 @@ public class ReceiverPcmH264Test {
         conn.getLocalUser().subscribeAllVideo(subscriptionOptions);
 
         videoEncodedFrameObserver = new AgoraVideoEncodedFrameObserver(
-                new SampleVideoEncodedFrameObserver(videoOutFile) {
+                new SampleVideoEncodedFrameObserver(
+                        videoOutFile + "_" + currentChannelId + "_" + currentUserId + ".h264") {
                     @Override
                     public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int userId,
                             ByteBuffer buffer, EncodedVideoFrameInfo info) {

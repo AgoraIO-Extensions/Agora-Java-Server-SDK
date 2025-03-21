@@ -50,6 +50,7 @@ public class ArgsConfig {
     public static int enableSendAudioMetaData = 0;
     public static int singleChannel = 0;
     public static int isStressTest = 0;
+    public static int timeForStressLeave = 5;// seconds
 
     public static void handleOptions(String[] args) {
         SampleLogger.log(Arrays.toString(args));

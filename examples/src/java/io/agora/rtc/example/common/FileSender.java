@@ -70,23 +70,6 @@ public abstract class FileSender extends Thread {
         }
     }
 
-    public void release() {
-        sending = false;
-        try {
-            this.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        if (fos != null) {
-            try {
-                fos.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            fos = null;
-        }
-    }
-
     public void release(boolean withJoin) {
         sending = false;
         if (withJoin) {

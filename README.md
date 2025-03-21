@@ -43,15 +43,15 @@ Refer to the [official example documentation](https://doc.shengwang.cn/doc/rtc-s
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.31.3</version>
+    <version>4.4.31.4</version>
 </dependency>
 ```
 
-[linux-java-sdk-4.4.31.3](https://repo1.maven.org/maven2/io/agora/rtc/linux-java-sdk/4.4.31.3/linux-java-sdk-4.4.31.3.jar)
+[linux-java-sdk-4.4.31.4](https://repo1.maven.org/maven2/io/agora/rtc/linux-java-sdk/4.4.31.4/linux-java-sdk-4.4.31.4.jar)
 
 ### CDN download
 
-[Agora-Linux-Java-SDK-v4.4.31.3-x86_64-491956-06a9ee5318-20250227_132409](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.31.3-x86_64-491956-06a9ee5318-20250227_132409.jar)
+[Agora-Linux-Java-SDK-v4.4.31.4-x86_64-491956-b0f672dd05-20250321_153537](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.31.4-x86_64-491956-b0f672dd05-20250321_153537.jar)
 
 ## API Examples
 
@@ -319,6 +319,11 @@ public class Main {
 ```
 
 ## Changelog
+
+### v4.4.31.4 (2025-03-21)
+
+- Fixed potential crash issues that could occur in multi-threaded environments.
+- Enhanced error handling processes, strengthening recovery capabilities in exceptional situations.
 
 ### v4.4.31.3 (2025-02-26)
 

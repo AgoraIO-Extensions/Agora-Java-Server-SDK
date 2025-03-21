@@ -19,7 +19,6 @@ import io.agora.rtc.example.common.SampleAudioFrameObserver;
 import io.agora.rtc.example.common.SampleLocalUserObserver;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.Utils;
-import java.io.FileInputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -215,6 +214,9 @@ public class ReceiverPcmDirectSendTest {
     private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
         SampleLogger.log("onConnConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
 
+        final String currentChannelId = connInfo.getChannelId();
+        final String currentUserId = connInfo.getLocalUserId();
+
         audioFrameSender = mediaNodeFactory.createAudioPcmDataSender();
         // Create audio track
         customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
@@ -223,7 +225,7 @@ public class ReceiverPcmDirectSendTest {
         conn.getLocalUser().subscribeAllAudio();
         // Register local user observer
         if (null == localUserObserver) {
-            localUserObserver = new SampleLocalUserObserver(conn.getLocalUser());
+            localUserObserver = new SampleLocalUserObserver();
         }
         conn.getLocalUser().registerObserver(localUserObserver);
 
@@ -235,7 +237,8 @@ public class ReceiverPcmDirectSendTest {
             return;
         }
 
-        audioFrameObserver = new SampleAudioFrameObserver(audioOutFile + "_" + channelId + "_" + userId + ".pcm") {
+        audioFrameObserver = new SampleAudioFrameObserver(
+                audioOutFile + "_" + currentChannelId + "_" + currentUserId + ".pcm") {
             @Override
             public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser, String channelId,
                     String userId,

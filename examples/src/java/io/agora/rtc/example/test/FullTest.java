@@ -29,7 +29,7 @@ public class FullTest extends AgoraTest {
         executorService.execute(new Runnable() {
             @Override
             public void run() {
-                AgoraConnectionTask connTask = new AgoraConnectionTask(service, 0);
+                AgoraConnectionTask connTask = new AgoraConnectionTask(service, mediaNodeFactory, 0);
                 connTask.setCallback(new AgoraConnectionTask.TaskCallback() {
                     @Override
                     public void onConnected(String userId) {

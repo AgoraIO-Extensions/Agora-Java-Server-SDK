@@ -18,6 +18,9 @@ import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.Utils;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,9 +30,9 @@ public class SendPcmRealTimeTest {
     private static String token;
     private static final String DEFAULT_LOG_PATH = "agora_logs/agorasdk.log";
     private static final int DEFAULT_LOG_SIZE = 512 * 1024; // default log size is 512 kb
-    private static final String channelId = "agaa";
-    private static final String userId = "0";
-    private static final String filePath = "test_data/send_audio_16k_1ch.pcm";
+    private static String channelId = "agaa";
+    private static String userId = "0";
+    private static String audioFilePath = "test_data/send_audio_16k_1ch.pcm";
 
     private static AgoraService service;
     private static AgoraRtcConn conn;
@@ -45,7 +48,36 @@ public class SendPcmRealTimeTest {
 
     private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
 
+    private static void parseArgs(String[] args) {
+        SampleLogger.log("parseArgs args:" + Arrays.toString(args));
+        if (args == null || args.length == 0) {
+            return;
+        }
+
+        Map<String, String> parsedArgs = new HashMap<>();
+        for (int i = 0; i < args.length; i += 2) {
+            if (i + 1 < args.length) {
+                parsedArgs.put(args[i], args[i + 1]);
+            } else {
+                SampleLogger.log("Missing value for argument: " + args[i]);
+            }
+        }
+
+        if (parsedArgs.containsKey("-channelId")) {
+            channelId = parsedArgs.get("-channelId");
+        }
+
+        if (parsedArgs.containsKey("-userId")) {
+            userId = parsedArgs.get("-userId");
+        }
+
+        if (parsedArgs.containsKey("-audioFilePath")) {
+            audioFilePath = parsedArgs.get("-audioFilePath");
+        }
+    }
+
     public static void main(String[] args) {
+        parseArgs(args);
         String[] keys = Utils.readAppIdAndToken(".keys");
         appId = keys[0];
         token = keys[1];
@@ -173,7 +205,7 @@ public class SendPcmRealTimeTest {
         int bufferSize = numOfChannels * (sampleRate / 1000) * interval * 2;
         byte[] buffer = new byte[bufferSize];
 
-        FileSender pcmSendThread = new FileSender(filePath, interval) {
+        FileSender pcmSendThread = new FileSender(audioFilePath, interval) {
             private AudioConsumerUtils audioConsumerUtils = null;
 
             @Override
