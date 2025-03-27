@@ -155,10 +155,10 @@ public class AgoraTest {
             testTaskCount.incrementAndGet();
             SampleLogger.log("test start testTaskCount:" + testTaskCount.get());
 
-            if (ArgsConfig.connectionCount != 0 && testTaskCount.get() > ArgsConfig.connectionCount) {
+            if (ArgsConfig.maxTestTaskCount != 0 && testTaskCount.get() > ArgsConfig.maxTestTaskCount) {
                 testTaskCount.decrementAndGet();
-                SampleLogger.log("testTaskCount:" + testTaskCount.get() + " is more than connectionCount:"
-                        + ArgsConfig.connectionCount);
+                SampleLogger.log("testTaskCount:" + testTaskCount.get() + " is more than maxTestTaskCount:"
+                        + ArgsConfig.maxTestTaskCount);
                 System.exit(1);
                 return false;
             }

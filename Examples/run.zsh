@@ -17,7 +17,7 @@ done
 # Define common Java runtime parameters
 DEBUG_OPTS="-XX:+UnlockDiagnosticVMOptions -XX:+PreserveFramePointer -Xcheck:jni -XX:NativeMemoryTracking=detail -XX:+PrintCommandLineFlags"
 CRASH_OPTS="-XX:ErrorFile=./logs/hs_err_pid%p.log -XX:LogFile=./logs/jvm.log -XX:+CreateMinidumpOnCrash -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./logs/"
-JAVA_OPTS="$DEBUG_OPTS $CRASH_OPTS  -Xcomp"
+JAVA_OPTS="$DEBUG_OPTS $CRASH_OPTS"
 
 # Set core dump related configuration
 ulimit -c unlimited

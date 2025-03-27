@@ -87,10 +87,10 @@ Refer to the [official example documentation](https://doc.shengwang.cn/doc/rtc-s
 
 ### Project Configuration
 
-1. Enter the `examples` directory:
+1. Enter the `Examples` directory:
 
    ```bash
-   cd examples
+   cd Examples
    ```
 
 2. Create `.keys` file and add:
@@ -152,39 +152,39 @@ Execute the build script:
 
 - Send PCM Audio
 
-  Refer to `examples/src/java/io/agora/rtc/example/scenario/SendPcmFileTest.java` for loop sending PCM files
+  Refer to `Examples/src/java/io/agora/rtc/example/scenario/SendPcmFileTest.java` for loop sending PCM files
 
-  Refer to `examples/src/java/io/agora/rtc/example/scenario/SendPcmRealTimeTest.java` for streaming PCM data transmission
+  Refer to `Examples/src/java/io/agora/rtc/example/scenario/SendPcmRealTimeTest.java` for streaming PCM data transmission
 
 - Send YUV Video
 
-  Refer to `examples/src/java/io/agora/rtc/example/scenario/SendYuvTest.java` for streaming YUV data transmission
+  Refer to `Examples/src/java/io/agora/rtc/example/scenario/SendYuvTest.java` for streaming YUV data transmission
 
 - Send H264 Video
 
-  Refer to `examples/src/java/io/agora/rtc/example/scenario/SendH264Test.java` for streaming H264 data transmission
+  Refer to `Examples/src/java/io/agora/rtc/example/scenario/SendH264Test.java` for streaming H264 data transmission
 
 - Send Opus Audio
 
-  Refer to `examples/src/java/io/agora/rtc/example/scenario/SendOpusTest.java` for streaming Opus data transmission
+  Refer to `Examples/src/java/io/agora/rtc/example/scenario/SendOpusTest.java` for streaming Opus data transmission
 
 - Send MP4 Audio/Video
 
-  Refer to `examples/src/java/io/agora/rtc/example/scenario/SendMp4Test.java` for MP4 file transmission
+  Refer to `Examples/src/java/io/agora/rtc/example/scenario/SendMp4Test.java` for MP4 file transmission
 
 - Receive PCM Audio
 
-  Refer to `examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmVadTest.java` for receiving PCM data with VAD information
+  Refer to `Examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmVadTest.java` for receiving PCM data with VAD information
 
-  Refer to `examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmDirectSendTest.java` for receiving and directly resending PCM data
+  Refer to `Examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmDirectSendTest.java` for receiving and directly resending PCM data
 
 - Receive PCM&H264 Audio/Video
 
-  Refer to `examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmH264Test.java` for receiving PCM&H264 data
+  Refer to `Examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmH264Test.java` for receiving PCM&H264 data
 
 - Receive PCM&YUV Audio/Video
 
-  Refer to `examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmYuvTest.java` for receiving PCM&YUV data
+  Refer to `Examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmYuvTest.java` for receiving PCM&YUV data
 
 ### FAQ
 

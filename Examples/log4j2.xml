@@ -21,6 +21,26 @@
             <PatternLayout pattern="%d{HH:mm:ss.SSS}[%t]%-5level:%msg%n" />
             <Policies>
                 <SizeBasedTriggeringPolicy size="10 MB" />
+                <DeleteAction basePath="logs" maxDepth="1">
+                    <IfFileName glob="*.gz">
+                        <IfLastModified age="5d">
+                            <Delete />
+                        </IfLastModified>
+                    </IfFileName>
+                </DeleteAction>
+                <DeleteAction basePath="logs" maxDepth="1">
+                    <IfFileName glob="*.gz">
+                        <IfAccumulatedFileCount exceeds="100">
+                            <Delete basePath="logs" maxDepth="1">
+                                <IfFileName glob="*.gz">
+                                    <IfLastModified age="1d">
+                                        <Delete />
+                                    </IfLastModified>
+                                </IfFileName>
+                            </Delete>
+                        </IfAccumulatedFileCount>
+                    </IfFileName>
+                </DeleteAction>
             </Policies>
             <DefaultRolloverStrategy max="10" />
         </RollingFile>

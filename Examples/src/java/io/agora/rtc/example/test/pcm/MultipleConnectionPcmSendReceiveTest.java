@@ -30,6 +30,8 @@ public class MultipleConnectionPcmSendReceiveTest extends AgoraTest {
         ccfg.setEnableAudioRecordingOrPlayout(1); // Subscribe audio but without playback
         ccfg.setChannelProfile(Constants.CHANNEL_PROFILE_LIVE_BROADCASTING);
 
+        ArgsConfig.maxTestTaskCount = ArgsConfig.connectionCount * 2;
+
         if (ArgsConfig.connectionCount == 1) {
             createConnectionAndTest(ccfg, ArgsConfig.channelId, ArgsConfig.userId, TestTask.SEND_PCM,
                     ArgsConfig.testTime);
