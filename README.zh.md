@@ -85,10 +85,10 @@
 
 ### 项目配置
 
-1. 进入 `examples` 目录：
+1. 进入 `Examples` 目录：
 
    ```bash
-   cd examples
+   cd Examples
    ```
 
 2. 创建 `.keys` 文件，添加：
@@ -150,39 +150,39 @@
 
 - 发送 PCM 音频
 
-  参考 `examples/src/java/io/agora/rtc/example/scenario/SendPcmFileTest.java`,实现循环发送 pcm 文件
+  参考 `Examples/src/java/io/agora/rtc/example/scenario/SendPcmFileTest.java`,实现循环发送 pcm 文件
 
-  参考 `examples/src/java/io/agora/rtc/example/scenario/SendPcmRealTimeTest.java`,实现发送流式 pcm 数据
+  参考 `Examples/src/java/io/agora/rtc/example/scenario/SendPcmRealTimeTest.java`,实现发送流式 pcm 数据
 
 - 发送 YUV 视频
 
-  参考 `examples/src/java/io/agora/rtc/example/scenario/SendYuvTest.java`,实现流式发送 yuv 数据
+  参考 `Examples/src/java/io/agora/rtc/example/scenario/SendYuvTest.java`,实现流式发送 yuv 数据
 
 - 发送 H264 视频
 
-  参考 `examples/src/java/io/agora/rtc/example/scenario/SendH264Test.java`,实现流式发送 h264 数据
+  参考 `Examples/src/java/io/agora/rtc/example/scenario/SendH264Test.java`,实现流式发送 h264 数据
 
 - 发送 Opus 音频
 
-  参考 `examples/src/java/io/agora/rtc/example/scenario/SendOpusTest.java`,实现流式发送 opus 数据
+  参考 `Examples/src/java/io/agora/rtc/example/scenario/SendOpusTest.java`,实现流式发送 opus 数据
 
 - 发送 MP4 音视频
 
-  参考 `examples/src/java/io/agora/rtc/example/scenario/SendMp4Test.java`,实现发送 MP4 文件
+  参考 `Examples/src/java/io/agora/rtc/example/scenario/SendMp4Test.java`,实现发送 MP4 文件
 
 - 接收 PCM 音频
 
-  参考 `examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmVadTest.java`,实现接收 pcm 数据并携带 VAD 数据
+  参考 `Examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmVadTest.java`,实现接收 pcm 数据并携带 VAD 数据
 
-  参考 `examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmDirectSendTest.java`,实现接收 pcm 数据并直接返回发送
+  参考 `Examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmDirectSendTest.java`,实现接收 pcm 数据并直接返回发送
 
 - 接收 PCM&H264 音视频
 
-  参考 `examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmH264Test.java`,实现接收 pcm&h264 数据
+  参考 `Examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmH264Test.java`,实现接收 pcm&h264 数据
 
 - 接收 PCM&YUV 音视频
 
-  参考 `examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmYuvTest.java`,实现接收 pcm&yuv 数据
+  参考 `Examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmYuvTest.java`,实现接收 pcm&yuv 数据
 
 ### 常见问题
 

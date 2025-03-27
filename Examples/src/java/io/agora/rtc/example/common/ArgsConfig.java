@@ -51,6 +51,7 @@ public class ArgsConfig {
     public static int singleChannel = 0;
     public static int isStressTest = 0;
     public static int timeForStressLeave = 5;// seconds
+    public static int maxTestTaskCount = 1;
 
     public static void handleOptions(String[] args) {
         SampleLogger.log(Arrays.toString(args));
@@ -296,6 +297,7 @@ public class ArgsConfig {
         if (commandLine.hasOption(optConnectionCount)) {
             try {
                 connectionCount = Integer.parseInt(commandLine.getOptionValue("connectionCount"));
+                maxTestTaskCount = connectionCount;
             } catch (Exception e) {
                 e.printStackTrace();
             }
