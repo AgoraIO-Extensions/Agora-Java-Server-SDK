@@ -8,16 +8,42 @@ echo "$LD_LIBRARY_PATH"
 CLASS=$1
 shift 1
 
-echo "Parameters passed to run.zsh: $@"
+echo "Parameters passed to run.zsh:$CLASS $@"
 
-for arg in "$@"; do
-    last_arg="$arg"
-done
+# Read configuration file
+CONFIG_FILE="run_config"
+# Default: JNI checks are disabled (enable_jni_check=false)
+ENABLE_JNI_CHECK=false
+# Default: ASAN is disabled
+ENABLE_ASAN=false
+
+if [ -f "$CONFIG_FILE" ]; then
+    echo "Reading configuration from $CONFIG_FILE"
+    # Read settings from the configuration file
+    while IFS='=' read -r key value; do
+        if [ "$key" = "enable_jni_check" ]; then
+            ENABLE_JNI_CHECK=$value
+        elif [ "$key" = "enable_asan" ]; then
+            ENABLE_ASAN=$value
+        fi
+        # You can read more configuration items here
+    done <"$CONFIG_FILE"
+fi
+
+# Set JNI check options
+if [ "$ENABLE_JNI_CHECK" = "false" ]; then
+    echo "JNI checks are disabled (default mode)"
+    JNI_OPTS="-XX:-CheckJNICalls"
+else
+    echo "JNI checks are enabled (debug/dev mode)"
+    JNI_OPTS=""
+fi
 
 # Define common Java runtime parameters
 DEBUG_OPTS="-XX:+UnlockDiagnosticVMOptions -XX:+PreserveFramePointer -Xcheck:jni -XX:NativeMemoryTracking=detail -XX:+PrintCommandLineFlags"
 CRASH_OPTS="-XX:ErrorFile=./logs/hs_err_pid%p.log -XX:LogFile=./logs/jvm.log -XX:+CreateMinidumpOnCrash -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./logs/"
-JAVA_OPTS="$DEBUG_OPTS $CRASH_OPTS"
+
+JAVA_OPTS="$DEBUG_OPTS $CRASH_OPTS $JNI_OPTS"
 
 # Set core dump related configuration
 ulimit -c unlimited
@@ -49,8 +75,9 @@ ulimit -s unlimited # Set stack size to unlimited
 
 CLASSPATH=".:third_party/commons-cli-1.5.0.jar:third_party/junit-4.13.2.jar:third_party/log4j-api-2.24.3.jar:third_party/log4j-core-2.24.3.jar:./libs/agora-sdk.jar:./build"
 
-# Check if ASAN is enabled
-if [ "$last_arg" = "-asan" ]; then
+# Check if ASAN is enabled either from config or command line
+if [ "$ENABLE_ASAN" = "true" ]; then
+    echo "ASAN is enabled"
     # Set ASAN related environment variables
     export LD_PRELOAD=/usr/lib/gcc/x86_64-linux-gnu/13/libasan.so
     export ASAN_OPTIONS=detect_container_overflow=0
