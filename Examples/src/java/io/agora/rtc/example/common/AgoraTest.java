@@ -217,7 +217,10 @@ public class AgoraTest {
             try {
                 boolean connected = connectedLatch.await(5, TimeUnit.SECONDS);
                 if (!connected) {
-                    SampleLogger.error("createConnectionAndTest timeout");
+                    SampleLogger.error("createConnectionAndTest connect timeout for testTask:" + testTask + " channelId:" + channelId + " userId:" + userId + " and exit current test");
+                    connTasksList.remove(connTask);
+                    connTask = null;
+                    return;
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();

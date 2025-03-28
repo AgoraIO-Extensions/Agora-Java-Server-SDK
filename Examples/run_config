@@ -1,0 +1,2 @@
+enable_jni_check=false
+enable_asan=false
