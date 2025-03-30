@@ -111,6 +111,8 @@ public class AgoraConnectionTask {
     private final ReentrantLock aacLock = new ReentrantLock();
     private final ReentrantLock opusLock = new ReentrantLock();
 
+    private static final ThreadLocal<H264Reader> threadLocalH264Reader = new ThreadLocal<>();
+
     public interface TaskCallback {
         default void onConnected(String userId) {
 
@@ -1089,15 +1091,13 @@ public class AgoraConnectionTask {
             int ret = conn.getLocalUser().publishVideo(customEncodedVideoTrack);
             SampleLogger.log("sendH264Task publishVideo ret:" + ret);
         }
-
-        H264Reader h264Reader = new H264Reader(filePath);
-
         boolean isLoopSend = testTime > 0;
         FileSender h264SendThread = new FileSender(filePath, interval) {
             int lastFrameType = 0;
             int frameIndex = 0;
             private boolean canLog = true;
             private EncodedVideoFrameInfo info = new EncodedVideoFrameInfo();
+            private H264Reader localH264Reader;
 
             @Override
             public void sendOneFrame(byte[] data, long timestamp) {
@@ -1141,10 +1141,15 @@ public class AgoraConnectionTask {
 
             @Override
             public byte[] readOneFrame(FileInputStream fos) {
-                H264Reader.H264Frame frame = h264Reader.readNextFrame();
+                if (localH264Reader == null) {
+                    localH264Reader = new H264Reader(filePath);
+                    threadLocalH264Reader.set(localH264Reader);
+                }
+                
+                H264Reader.H264Frame frame = localH264Reader.readNextFrame();
                 if (frame == null) {
                     if (isLoopSend) {
-                        h264Reader.reset();
+                        localH264Reader.reset();
                         reset();
                     } else {
                         if (null != taskFinishLatch) {
@@ -1163,8 +1168,10 @@ public class AgoraConnectionTask {
                 super.release(withJoin);
                 h264Lock.lock();
                 try {
-                    if (null != h264Reader) {
-                        h264Reader.close();
+                    if (localH264Reader != null) {
+                        localH264Reader.close();
+                        threadLocalH264Reader.remove();
+                        localH264Reader = null;
                     }
                     info = null;
                 } finally {

@@ -76,6 +76,7 @@ public class AgoraTest {
     }
 
     protected static void startTest(String[] args, AgoraTest test) {
+        SampleLogger.log("startTest:" + test.getClass().getName());
         ArgsConfig.handleOptions(args);
         test.sdkTest();
     }
