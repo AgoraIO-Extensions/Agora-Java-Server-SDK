@@ -3,7 +3,9 @@
 #include "helper_opus_parser.h"
 #include "helper_vp8_parser.h"
 #include <jni.h>
+#include <mutex>
 #include <string>
+
 static jclass clsH264Frame;
 static jmethodID constructorH264Frame;
 
@@ -56,41 +58,65 @@ Java_org_kcg_ctemplate_MainActivity_stringFromJNI(JNIEnv *env, jobject obj /* th
     jobject name = env->CallObjectMethod(obj, getNameMid);
     return env->NewStringUTF(hello.c_str());
 }
+static std::mutex init_mutex;
 
 extern "C" JNIEXPORT jlong JNICALL
 Java_io_agora_rtc_example_mediautils_H264Reader_init(JNIEnv *env, jobject thiz, jstring path) {
+    std::lock_guard<std::mutex> lock(init_mutex);
     const char *filePath = env->GetStringUTFChars(path, NULL);
     HelperH264FileParser *helperH264FileParser = new HelperH264FileParser(filePath);
     helperH264FileParser->initialize();
-    jclass cls = env->FindClass("io/agora/rtc/example/mediautils/H264Reader$H264Frame");
-    if (cls != nullptr) {
-        clsH264Frame = (jclass)env->NewGlobalRef(cls);
-        constructorH264Frame = env->GetMethodID(cls, "<init>", "([BI)V");
-        if (constructorH264Frame == nullptr) {
+    if (clsH264Frame == nullptr) {
+        jclass cls = env->FindClass("io/agora/rtc/example/mediautils/H264Reader$H264Frame");
+        if (cls != nullptr) {
+            clsH264Frame = (jclass)env->NewGlobalRef(cls);
+            constructorH264Frame = env->GetMethodID(cls, "<init>", "([BI)V");
+        } else {
             abort();
         }
         env->DeleteLocalRef(cls);
-    } else {
+    }
+    if (constructorH264Frame == nullptr) {
         abort();
     }
+
     env->ReleaseStringUTFChars(path, filePath);
     return reinterpret_cast<long>(helperH264FileParser);
 }
 
 extern "C" JNIEXPORT jobject JNICALL Java_io_agora_rtc_example_mediautils_H264Reader_getNextFrame(
     JNIEnv *env, jobject thiz, jlong cptr) {
-    if (cptr == 0L)
+    if (cptr == 0L) {
         return nullptr;
-    HelperH264FileParser *helperH264FileParser = reinterpret_cast<HelperH264FileParser *>(cptr);
-    std::unique_ptr<HelperH264Frame> frame = helperH264FileParser->getH264Frame();
-    if (frame != nullptr && nullptr != clsH264Frame) {
-        jbyteArray arrys = env->NewByteArray(frame.get()->bufferLen);
-        env->SetByteArrayRegion(arrys, 0, frame.get()->bufferLen,
-                                (const jbyte *)frame.get()->buffer.get());
-        jobject data = env->NewObject(clsH264Frame, constructorH264Frame, arrys,
-                                      frame.get()->isKeyFrame ? 3 : 4);
-        return data;
     }
+
+    try {
+        HelperH264FileParser *helperH264FileParser = reinterpret_cast<HelperH264FileParser *>(cptr);
+        if (helperH264FileParser == nullptr) {
+            return nullptr;
+        }
+
+        std::unique_ptr<HelperH264Frame> frame = helperH264FileParser->getH264Frame();
+        if (frame != nullptr && frame->buffer.get() != nullptr && frame->bufferLen > 0 &&
+            nullptr != clsH264Frame) {
+            jbyteArray arrys = env->NewByteArray(frame->bufferLen);
+            if (arrys == nullptr) {
+                return nullptr;
+            }
+
+            env->SetByteArrayRegion(arrys, 0, frame->bufferLen, (const jbyte *)frame->buffer.get());
+
+            jobject data = env->NewObject(clsH264Frame, constructorH264Frame, arrys,
+                                          frame->isKeyFrame ? 3 : 4);
+            return data;
+        }
+    } catch (const std::exception &e) {
+        const char *msg = e.what();
+        if (msg != nullptr) {
+        }
+    } catch (...) {
+    }
+
     return nullptr;
 }
 

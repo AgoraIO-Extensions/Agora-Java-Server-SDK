@@ -1,5 +1,6 @@
 #include <memory>
 #include <string>
+#include <mutex>
 
 struct HelperH264Frame {
   bool isKeyFrame;
@@ -24,4 +25,5 @@ class HelperH264FileParser {
   int data_offset_;
   int data_size_;
   uint8_t* data_buffer_;
+  std::mutex frame_mutex_;
 };

@@ -3,11 +3,13 @@ package io.agora.rtc.example.mediautils;
 import io.agora.rtc.Constants;
 import io.agora.rtc.example.common.SampleLogger;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class H264Reader {
     private String path;
     private long cptr = 0L;
     private final AtomicBoolean isReleased = new AtomicBoolean(false);
+    private final ReentrantLock operationLock = new ReentrantLock();
 
     public static class H264Frame {
         public byte[] data;
@@ -33,25 +35,50 @@ public class H264Reader {
     }
 
     public H264Frame readNextFrame() {
-        return getNextFrame(cptr);
+        operationLock.lock();
+        try {
+            if (cptr == 0L || isReleased.get()) {
+                return null;
+            }
+            return getNextFrame(cptr);
+        } finally {
+            operationLock.unlock();
+        }
     }
 
     public void close() {
-        release(cptr);
-        cptr = 0L;
+        operationLock.lock();
+        try {
+            release(cptr);
+            cptr = 0L;
+        } finally {
+            operationLock.unlock();
+        }
     }
 
     public void reset() {
-        nativeReset(cptr);
+        operationLock.lock();
+        try {
+            if (cptr != 0L && !isReleased.get()) {
+                nativeReset(cptr);
+            }
+        } finally {
+            operationLock.unlock();
+        }
     }
 
     public void release(long cptr) {
-        if (cptr != 0L && isReleased.compareAndSet(false, true)) {
-            try {
-                nativeRelease(cptr);
-            } catch (Exception e) {
-                SampleLogger.error("Error releasing H264Reader: " + e.getMessage());
+        operationLock.lock();
+        try {
+            if (cptr != 0L && isReleased.compareAndSet(false, true)) {
+                try {
+                    nativeRelease(cptr);
+                } catch (Exception e) {
+                    SampleLogger.error("Error releasing H264Reader: " + e.getMessage());
+                }
             }
+        } finally {
+            operationLock.unlock();
         }
     }
 
