@@ -287,6 +287,9 @@ public class SendMp4Test {
                             if (null == byteBuffer) {
                                 byteBuffer = ByteBuffer.allocateDirect(frame.buffer.length);
                             }
+                            if (byteBuffer == null || byteBuffer.limit() < frame.buffer.length) {
+                                return;
+                            }
                             byteBuffer.put(frame.buffer);
                             byteBuffer.flip();
                             externalVideoFrame.setBuffer(byteBuffer);

@@ -280,6 +280,9 @@ public class SendYuvTest {
                 if (null == byteBuffer) {
                     byteBuffer = ByteBuffer.allocateDirect(data.length);
                 }
+                if (byteBuffer == null || byteBuffer.limit() < data.length) {
+                    return;
+                }
                 byteBuffer.put(data);
                 byteBuffer.flip();
 
@@ -294,6 +297,9 @@ public class SendYuvTest {
                 if (null == matedataByteBuffer) {
                     matedataByteBuffer = ByteBuffer.allocateDirect(testMetaData.getBytes().length);
                 }
+                if (matedataByteBuffer == null || matedataByteBuffer.limit() < testMetaData.getBytes().length) {
+                    return;
+                }
                 matedataByteBuffer.put(testMetaData.getBytes());
                 matedataByteBuffer.flip();
                 externalVideoFrame.setMetadataBuffer(matedataByteBuffer);
@@ -301,6 +307,9 @@ public class SendYuvTest {
                 if (enableAlpha) {
                     if (null == alphaByteBuffer) {
                         alphaByteBuffer = ByteBuffer.allocateDirect(data.length);
+                    }
+                    if (alphaByteBuffer == null || alphaByteBuffer.limit() < data.length) {
+                        return;
                     }
                     alphaByteBuffer.put(data);
                     alphaByteBuffer.flip();
