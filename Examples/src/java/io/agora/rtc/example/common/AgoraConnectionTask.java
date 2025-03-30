@@ -626,9 +626,14 @@ public class AgoraConnectionTask {
             @Override
             public void release(boolean withJoin) {
                 super.release(withJoin);
-                if (null != audioConsumerUtils) {
-                    audioConsumerUtils.release();
-                    audioConsumerUtils = null;
+                pcmLock.lock();
+                try {
+                    if (null != audioConsumerUtils) {
+                        audioConsumerUtils.release();
+                        audioConsumerUtils = null;
+                    }
+                } finally {
+                    pcmLock.unlock();
                 }
             }
 
@@ -727,10 +732,15 @@ public class AgoraConnectionTask {
             @Override
             public void release(boolean withJoin) {
                 super.release(withJoin);
-                if (null != aacReader) {
-                    aacReader.close();
+                aacLock.lock();
+                try {
+                    if (null != aacReader) {
+                        aacReader.close();
+                    }
+                    encodedInfo = null;
+                } finally {
+                    aacLock.unlock();
                 }
-                encodedInfo = null;
             }
         };
 
@@ -834,10 +844,15 @@ public class AgoraConnectionTask {
             @Override
             public void release(boolean withJoin) {
                 super.release(withJoin);
-                if (null != opusReader) {
-                    opusReader.close();
+                opusLock.lock();
+                try {
+                    if (null != opusReader) {
+                        opusReader.close();
+                    }
+                    encodedInfo = null;
+                } finally {
+                    opusLock.unlock();
                 }
-                encodedInfo = null;
             }
         };
         opusSendThread.start();
@@ -927,6 +942,9 @@ public class AgoraConnectionTask {
                     if (null == byteBuffer) {
                         byteBuffer = ByteBuffer.allocateDirect(data.length);
                     }
+                    if (byteBuffer == null || byteBuffer.limit() < data.length) {
+                        return;
+                    }
                     byteBuffer.put(data);
                     byteBuffer.flip();
 
@@ -941,6 +959,9 @@ public class AgoraConnectionTask {
                     if (null == matedataByteBuffer) {
                         matedataByteBuffer = ByteBuffer.allocateDirect(testMetaData.getBytes().length);
                     }
+                    if (matedataByteBuffer == null || matedataByteBuffer.limit() < testMetaData.getBytes().length) {
+                        return;
+                    }
                     matedataByteBuffer.put(testMetaData.getBytes());
                     matedataByteBuffer.flip();
                     externalVideoFrame.setMetadataBuffer(matedataByteBuffer);
@@ -948,6 +969,9 @@ public class AgoraConnectionTask {
                     if (enableAlpha) {
                         if (null == alphaByteBuffer) {
                             alphaByteBuffer = ByteBuffer.allocateDirect(data.length);
+                        }
+                        if (alphaByteBuffer == null || alphaByteBuffer.limit() < data.length) {
+                            return;
                         }
                         alphaByteBuffer.put(data);
                         alphaByteBuffer.flip();
@@ -1000,10 +1024,15 @@ public class AgoraConnectionTask {
             @Override
             public void release(boolean withJoin) {
                 super.release(withJoin);
-                DirectBufferCleaner.release(byteBuffer);
-                DirectBufferCleaner.release(matedataByteBuffer);
-                DirectBufferCleaner.release(alphaByteBuffer);
-                externalVideoFrame = null;
+                yuvLock.lock();
+                try {
+                    DirectBufferCleaner.release(byteBuffer);
+                    DirectBufferCleaner.release(matedataByteBuffer);
+                    DirectBufferCleaner.release(alphaByteBuffer);
+                    externalVideoFrame = null;
+                } finally {
+                    yuvLock.unlock();
+                }
             }
 
         };
@@ -1132,10 +1161,15 @@ public class AgoraConnectionTask {
             @Override
             public void release(boolean withJoin) {
                 super.release(withJoin);
-                if (null != h264Reader) {
-                    h264Reader.close();
+                h264Lock.lock();
+                try {
+                    if (null != h264Reader) {
+                        h264Reader.close();
+                    }
+                    info = null;
+                } finally {
+                    h264Lock.unlock();
                 }
-                info = null;
             }
         };
 
@@ -1222,6 +1256,9 @@ public class AgoraConnectionTask {
                     if (byteBuffer == null) {
                         byteBuffer = ByteBuffer.allocateDirect(data.length);
                     }
+                    if (byteBuffer == null || byteBuffer.limit() < data.length) {
+                        return;
+                    }
                     byteBuffer.put(data);
                     byteBuffer.flip(); // 重置position,以便Agora SDK能从头开始读取数据
 
@@ -1295,9 +1332,14 @@ public class AgoraConnectionTask {
             @Override
             public void release(boolean withJoin) {
                 super.release(withJoin);
-                DirectBufferCleaner.release(byteBuffer);
-                DirectBufferCleaner.release(alphaBuffer);
-                externalVideoFrame = null;
+                rgbaLock.lock();
+                try {
+                    DirectBufferCleaner.release(byteBuffer);
+                    DirectBufferCleaner.release(alphaBuffer);
+                    externalVideoFrame = null;
+                } finally {
+                    rgbaLock.unlock();
+                }
             }
         };
         rgbaSender.start();
@@ -1447,10 +1489,15 @@ public class AgoraConnectionTask {
             @Override
             public void release(boolean withJoin) {
                 super.release(withJoin);
-                if (null != vp8Reader) {
-                    vp8Reader.close();
+                vp8Lock.lock();
+                try {
+                    if (null != vp8Reader) {
+                        vp8Reader.close();
+                    }
+                    info = null;
+                } finally {
+                    vp8Lock.unlock();
                 }
-                info = null;
             }
         };
 
@@ -1525,6 +1572,9 @@ public class AgoraConnectionTask {
                         ExternalVideoFrame externalVideoFrame = new ExternalVideoFrame();
                         if (null == byteBuffer) {
                             byteBuffer = ByteBuffer.allocateDirect(frame.buffer.length);
+                        }
+                        if (byteBuffer == null || byteBuffer.limit() < frame.buffer.length) {
+                            return;
                         }
                         byteBuffer.put(frame.buffer);
                         byteBuffer.flip();
