@@ -4,16 +4,10 @@ import io.agora.rtc.AgoraLocalUser;
 import io.agora.rtc.AudioFrame;
 import io.agora.rtc.IAudioFrameObserver;
 import io.agora.rtc.VadProcessResult;
-import java.io.File;
 import java.io.FileOutputStream;
-import java.nio.ByteBuffer;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import io.agora.rtc.example.utils.Utils;
 
 public class SampleAudioFrameObserver extends FileWriter implements IAudioFrameObserver {
-    protected final ExecutorService writeFileExecutorService = Executors.newSingleThreadExecutor();
-    protected final ExecutorService writeVadFileExecutorService = Executors.newSingleThreadExecutor();
 
     private String outputFilePath = "";
 
@@ -110,47 +104,28 @@ public class SampleAudioFrameObserver extends FileWriter implements IAudioFrameO
         return 15;
     }
 
-    public void writeAudioFrameToFile(ByteBuffer buffer) {
-        if ("".equals(outputFilePath.trim())) {
-            return;
-        }
-        byte[] byteArray = io.agora.rtc.utils.Utils.getBytes(buffer);
-
-        writeFileExecutorService.execute(() -> {
-            try {
-                writeData(byteArray, byteArray.length);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
-    }
-
     public void writeAudioFrameToFile(byte[] buffer) {
         if ("".equals(outputFilePath.trim()) || buffer == null || buffer.length == 0) {
             return;
         }
 
-        writeFileExecutorService.execute(() -> {
-            try {
-                writeData(buffer, buffer.length);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
+        try {
+            writeData(buffer, buffer.length);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    public void writeVadAudioToFile(byte[] byteArray, String file) {
-        if (byteArray == null || byteArray.length == 0) {
+    public void writeAudioFrameToFile(byte[] buffer, String file) {
+        if (buffer == null || buffer.length == 0) {
             return;
         }
 
-        writeVadFileExecutorService.execute(() -> {
-            try (FileOutputStream fos = new FileOutputStream(file, true)) {
-                fos.write(byteArray);
-                fos.flush();
-            } catch (Exception e) {
-                SampleLogger.log("Open file fail");
-            }
-        });
+        try (FileOutputStream fos = new FileOutputStream(file, true)) {
+            fos.write(buffer);
+            fos.flush();
+        } catch (Exception e) {
+            SampleLogger.log("Open file fail");
+        }
     }
 }

@@ -2,25 +2,21 @@ package io.agora.rtc.example.scenario;
 
 import io.agora.rtc.AgoraAudioEncodedFrameSender;
 import io.agora.rtc.AgoraLocalAudioTrack;
-import io.agora.rtc.AgoraLocalUser;
 import io.agora.rtc.AgoraMediaNodeFactory;
 import io.agora.rtc.AgoraRtcConn;
 import io.agora.rtc.AgoraService;
 import io.agora.rtc.AgoraServiceConfig;
 import io.agora.rtc.Constants;
-import io.agora.rtc.DefaultLocalUserObserver;
 import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
-import io.agora.rtc.example.utils.AudioSenderHelper;
 import io.agora.rtc.example.common.SampleLogger;
+import io.agora.rtc.example.utils.AudioSenderHelper;
 import io.agora.rtc.example.utils.Utils;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SendOpusTest {
     static {
@@ -31,9 +27,6 @@ public class SendOpusTest {
     private static String token;
     private final static String DEFAULT_LOG_PATH = "logs/agora_logs/agorasdk.log";
     private final static int DEFAULT_LOG_SIZE = 5 * 1024 * 1024; // default log size is 5 mb
-    private static String channelId = "agaa";
-    private static String userId = "0";
-    private static String audioFilePath = "test_data/send_audio.opus";
 
     private static AgoraService service;
     private static AgoraRtcConn conn;
@@ -44,9 +37,12 @@ public class SendOpusTest {
 
     private static AudioSenderHelper audioSenderHelper;
 
-    private static CountDownLatch exitLatch;
+    private static String channelId = "agaa";
+    private static String userId = "0";
+    private static String audioFilePath = "test_data/send_audio.opus";
+    private static long testTime = 60 * 1000;
 
-    private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
+    private final static AtomicBoolean connConnected = new AtomicBoolean(false);
 
     private static void parseArgs(String[] args) {
         SampleLogger.log("parseArgs args:" + Arrays.toString(args));
@@ -74,6 +70,10 @@ public class SendOpusTest {
         if (parsedArgs.containsKey("-audioFilePath")) {
             audioFilePath = parsedArgs.get("-audioFilePath");
         }
+
+        if (parsedArgs.containsKey("-testTime")) {
+            testTime = Long.parseLong(parsedArgs.get("-testTime"));
+        }
     }
 
     public static void main(String[] args) {
@@ -96,6 +96,7 @@ public class SendOpusTest {
         int ret = service.initialize(config);
         if (ret != 0) {
             SampleLogger.log("createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
+            releaseAgoraService();
             return;
         }
 
@@ -103,6 +104,7 @@ public class SendOpusTest {
         service.setLogFilter(Constants.LOG_FILTER_DEBUG);
         if (ret != 0) {
             SampleLogger.log("createAndInitAgoraService AgoraService.setLogFile fail ret:" + ret);
+            releaseAgoraService();
             return;
         }
 
@@ -116,6 +118,7 @@ public class SendOpusTest {
         conn = service.agoraRtcConnCreate(ccfg);
         if (conn == null) {
             SampleLogger.log("AgoraService.agoraRtcConnCreate fail\n");
+            releaseAgoraService();
             return;
         }
 
@@ -125,7 +128,8 @@ public class SendOpusTest {
                 super.onConnected(agoraRtcConn, connInfo, reason);
                 SampleLogger.log(
                         "onConnected chennalId:" + connInfo.getChannelId() + " userId:" + connInfo.getLocalUserId());
-                testTaskExecutorService.execute(() -> onConnConnected(agoraRtcConn, connInfo, reason));
+                connConnected.set(true);
+                userId = connInfo.getLocalUserId();
             }
 
             @Override
@@ -141,61 +145,21 @@ public class SendOpusTest {
                 SampleLogger.log("onUserLeft userId:" + userId + " reason:" + reason);
 
             }
-
-            @Override
-            public void onChangeRoleSuccess(AgoraRtcConn agoraRtcConn, int oldRole, int newRole) {
-                SampleLogger.log("onChangeRoleSuccess oldRole:" + oldRole + " newRole:" + newRole);
-            }
-
-            @Override
-            public void onChangeRoleFailure(AgoraRtcConn agoraRtcConn) {
-                SampleLogger.log("onChangeRoleFailure");
-            }
         });
         SampleLogger.log("registerObserver ret:" + ret);
 
         ret = conn.connect(token, channelId, userId);
         SampleLogger.log("Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
 
-        conn.getLocalUser().registerObserver(new DefaultLocalUserObserver() {
-            @Override
-            public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data,
-                    long length) {
-                SampleLogger.log("onStreamMessage: userid " + userId + " streamId " + streamId + "  data " + data);
-            }
-
-            @Override
-            public void onAudioPublishStateChanged(AgoraLocalUser agoraLocalUser, String channel, int oldState,
-                    int newState, int elapseSinceLastState) {
-                SampleLogger
-                        .log("onAudioPublishStateChanged channel:" + channel + " oldState:" + oldState + " newState:"
-                                + newState + " userRole:" + agoraLocalUser.getUserRole());
-            }
-
-            @Override
-            public void onVideoPublishStateChanged(AgoraLocalUser agoraLocalUser, String channel, int oldState,
-                    int newState, int elapseSinceLastState) {
-                SampleLogger
-                        .log("onVideoPublishStateChanged channel:" + channel + " oldState:" + oldState + " newState:"
-                                + newState + " userRole:" + agoraLocalUser.getUserRole());
-            }
-        });
+        if (ret != 0) {
+            SampleLogger.log("conn.connect fail ret=" + ret);
+            releaseConn();
+            releaseAgoraService();
+            return;
+        }
 
         mediaNodeFactory = service.createMediaNodeFactory();
 
-        exitLatch = new CountDownLatch(1);
-        try {
-            exitLatch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        releaseConn();
-        releaseAgoraService();
-    }
-
-    private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
-        // Create audio track
         audioEncodedFrameSender = mediaNodeFactory.createAudioEncodedFrameSender();
         customEncodedAudioTrack = service.createCustomAudioTrackEncoded(audioEncodedFrameSender,
                 Constants.TMixMode.MIX_DISABLED.value);
@@ -219,6 +183,13 @@ public class SendOpusTest {
                 SampleLogger.log("onTaskCancel for task:" + task);
             }
         });
+        while (!connConnected.get()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
 
         audioSenderHelper.send(
                 new AudioSenderHelper.TaskInfo(
@@ -245,6 +216,19 @@ public class SendOpusTest {
                         1),
                 true);
 
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime < testTime) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        audioSenderHelper.cleanupAllTask();
+
+        releaseConn();
+        releaseAgoraService();
+        System.exit(0);
     }
 
     private static void releaseConn() {
@@ -253,21 +237,27 @@ public class SendOpusTest {
             return;
         }
 
+        connConnected.set(false);
+
         if (null != audioSenderHelper) {
             audioSenderHelper.destroy();
+            audioSenderHelper = null;
         }
 
         if (null != mediaNodeFactory) {
             mediaNodeFactory.destroy();
+            mediaNodeFactory = null;
         }
 
         if (null != audioEncodedFrameSender) {
             audioEncodedFrameSender.destroy();
+            audioEncodedFrameSender = null;
         }
 
         if (null != customEncodedAudioTrack) {
             conn.getLocalUser().unpublishAudio(customEncodedAudioTrack);
             customEncodedAudioTrack.destroy();
+            customEncodedAudioTrack = null;
         }
 
         int ret = conn.disconnect();
@@ -280,14 +270,7 @@ public class SendOpusTest {
         conn.getLocalUser().unregisterObserver();
 
         conn.destroy();
-
-        mediaNodeFactory = null;
-        audioEncodedFrameSender = null;
-        customEncodedAudioTrack = null;
-
         conn = null;
-
-        testTaskExecutorService.shutdown();
 
         SampleLogger.log("Disconnected from Agora channel successfully");
     }
@@ -297,6 +280,7 @@ public class SendOpusTest {
             service.destroy();
             service = null;
         }
+        SampleLogger.log("releaseAgoraService");
     }
 
 }

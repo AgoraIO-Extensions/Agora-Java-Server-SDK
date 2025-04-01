@@ -2,13 +2,11 @@ package io.agora.rtc.example.scenario;
 
 import io.agora.rtc.AgoraAudioPcmDataSender;
 import io.agora.rtc.AgoraLocalAudioTrack;
-import io.agora.rtc.AgoraLocalUser;
 import io.agora.rtc.AgoraMediaNodeFactory;
 import io.agora.rtc.AgoraRtcConn;
 import io.agora.rtc.AgoraService;
 import io.agora.rtc.AgoraServiceConfig;
 import io.agora.rtc.Constants;
-import io.agora.rtc.DefaultLocalUserObserver;
 import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
@@ -18,9 +16,9 @@ import io.agora.rtc.utils.AudioConsumerUtils;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SendPcmFileTest {
     private static String appId;
@@ -39,12 +37,12 @@ public class SendPcmFileTest {
 
     private static AudioConsumerUtils audioConsumerUtils;
 
-    private static CountDownLatch exitLatch;
-
     private static String audioFilePath = "test_data/send_audio_16k_1ch.pcm";
-
     private static int numOfChannels = 1;
     private static int sampleRate = 16000;
+    private static long testTime = 60 * 1000;
+
+    private final static AtomicBoolean connConnected = new AtomicBoolean(false);
 
     private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
 
@@ -74,6 +72,10 @@ public class SendPcmFileTest {
         if (parsedArgs.containsKey("-audioFilePath")) {
             audioFilePath = parsedArgs.get("-audioFilePath");
         }
+
+        if (parsedArgs.containsKey("-testTime")) {
+            testTime = Long.parseLong(parsedArgs.get("-testTime"));
+        }
     }
 
     public static void main(String[] args) {
@@ -96,6 +98,7 @@ public class SendPcmFileTest {
         int ret = service.initialize(config);
         if (ret != 0) {
             SampleLogger.log("createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
+            releaseAgoraService();
             return;
         }
 
@@ -103,6 +106,7 @@ public class SendPcmFileTest {
         service.setLogFilter(Constants.LOG_FILTER_DEBUG);
         if (ret != 0) {
             SampleLogger.log("createAndInitAgoraService AgoraService.setLogFile fail ret:" + ret);
+            releaseAgoraService();
             return;
         }
 
@@ -116,6 +120,7 @@ public class SendPcmFileTest {
         conn = service.agoraRtcConnCreate(ccfg);
         if (conn == null) {
             SampleLogger.log("AgoraService.agoraRtcConnCreate fail\n");
+            releaseAgoraService();
             return;
         }
 
@@ -125,7 +130,8 @@ public class SendPcmFileTest {
                 super.onConnected(agoraRtcConn, connInfo, reason);
                 SampleLogger.log(
                         "onConnected chennalId:" + connInfo.getChannelId() + " userId:" + connInfo.getLocalUserId());
-                testTaskExecutorService.execute(() -> onConnConnected(agoraRtcConn, connInfo, reason));
+                connConnected.set(true);
+                userId = connInfo.getLocalUserId();
             }
 
             @Override
@@ -157,45 +163,14 @@ public class SendPcmFileTest {
         ret = conn.connect(token, channelId, userId);
         SampleLogger.log("Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
 
-        conn.getLocalUser().registerObserver(new DefaultLocalUserObserver() {
-            @Override
-            public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data,
-                    long length) {
-                SampleLogger.log("onStreamMessage: userid " + userId + " streamId " + streamId + "  data " + data);
-            }
-
-            @Override
-            public void onAudioPublishStateChanged(AgoraLocalUser agoraLocalUser, String channel, int oldState,
-                    int newState, int elapseSinceLastState) {
-                SampleLogger
-                        .log("onAudioPublishStateChanged channel:" + channel + " oldState:" + oldState + " newState:"
-                                + newState + " userRole:" + agoraLocalUser.getUserRole());
-            }
-
-            @Override
-            public void onVideoPublishStateChanged(AgoraLocalUser agoraLocalUser, String channel, int oldState,
-                    int newState, int elapseSinceLastState) {
-                // TODO Auto-generated method stub
-                SampleLogger
-                        .log("onVideoPublishStateChanged channel:" + channel + " oldState:" + oldState + " newState:"
-                                + newState + " userRole:" + agoraLocalUser.getUserRole());
-            }
-        });
-
-        mediaNodeFactory = service.createMediaNodeFactory();
-
-        exitLatch = new CountDownLatch(1);
-        try {
-            exitLatch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        if (ret != 0) {
+            SampleLogger.log("conn.connect fail ret=" + ret);
+            releaseConn();
+            releaseAgoraService();
+            return;
         }
 
-        releaseConn();
-        releaseAgoraService();
-    }
-
-    private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
+        mediaNodeFactory = service.createMediaNodeFactory();
         audioFrameSender = mediaNodeFactory.createAudioPcmDataSender();
         // Create audio track
         customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
@@ -212,7 +187,16 @@ public class SendPcmFileTest {
             SampleLogger.log("pushData");
         });
 
-        while (true) {
+        while (!connConnected.get()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime < testTime) {
             // If the remaining cache duration is less than 60 ms, push data into the cache
             if (audioConsumerUtils.getRemainingCacheDurationInMs() < 60) {
                 testTaskExecutorService.execute(() -> {
@@ -231,6 +215,10 @@ public class SendPcmFileTest {
                 e.printStackTrace();
             }
         }
+
+        releaseConn();
+        releaseAgoraService();
+        System.exit(0);
     }
 
     private static void releaseConn() {
@@ -238,6 +226,8 @@ public class SendPcmFileTest {
         if (conn == null) {
             return;
         }
+
+        connConnected.set(false);
 
         if (audioConsumerUtils != null) {
             audioConsumerUtils.release();
@@ -283,6 +273,7 @@ public class SendPcmFileTest {
             service.destroy();
             service = null;
         }
+        SampleLogger.log("releaseAgoraService");
     }
 
 }

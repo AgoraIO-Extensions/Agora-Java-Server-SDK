@@ -186,6 +186,10 @@ Execute the build script:
 
   Refer to `Examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmYuvTest.java` for receiving PCM&YUV data
 
+- Send Receiver Stream Message
+
+  Refer to `Examples/src/java/io/agora/rtc/example/scenario/SendReceiverStreamMessageTest.java` for sending and receiving stream messages
+
 ### FAQ
 
 - Ensure Java environment is properly installed and configured

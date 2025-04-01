@@ -15,7 +15,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
@@ -35,7 +34,7 @@ public class AgoraTest {
     protected AtomicInteger testTaskCount = new AtomicInteger(0);
     private final Object taskCountLock = new Object();
     private volatile boolean exitTest = false;
-    private List<AgoraConnectionTask> connTasksList = new CopyOnWriteArrayList<>();
+    private final List<AgoraConnectionTask> connTasksList = new CopyOnWriteArrayList<>();
 
     class UserIdHolder {
         private volatile String userId;
@@ -166,12 +165,9 @@ public class AgoraTest {
         }
         testTaskExecutorService.execute(() -> {
             UserIdHolder threadLocalUserId = new UserIdHolder();
-            UserIdHolder remoteUserId = new UserIdHolder();
             final CountDownLatch testFinishLatch = new CountDownLatch(1);
             final CountDownLatch connectedLatch = new CountDownLatch(1);
-            final CountDownLatch remoteUserJoinedLatch = new CountDownLatch(1);
             AtomicInteger leftTestTaskCount = new AtomicInteger(0);
-            AtomicBoolean waitRemoteUserJoined = new AtomicBoolean(false);
             AgoraConnectionTask connTask = new AgoraConnectionTask(service, mediaNodeFactory, testTime);
             connTasksList.add(connTask);
             connTask.setCallback(new AgoraConnectionTask.TaskCallback() {
@@ -183,14 +179,6 @@ public class AgoraTest {
 
                 @Override
                 public void onUserJoined(String userId) {
-                    remoteUserId.set(userId);
-                    if (ArgsConfig.isStressTest == 0 && waitRemoteUserJoined.get()) {
-                        try {
-                            remoteUserJoinedLatch.countDown();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
                 }
 
                 @Override
@@ -218,7 +206,9 @@ public class AgoraTest {
             try {
                 boolean connected = connectedLatch.await(5, TimeUnit.SECONDS);
                 if (!connected) {
-                    SampleLogger.error("createConnectionAndTest connect timeout for testTask:" + testTask + " channelId:" + channelId + " userId:" + userId + " and exit current test");
+                    SampleLogger.error("createConnectionAndTest connect timeout for testTask:" + testTask
+                            + " channelId:" + channelId + " userId:" + userId + " and exit current test");
+                    connTask.releaseConn();
                     connTasksList.remove(connTask);
                     connTask = null;
                     return;
@@ -229,136 +219,141 @@ public class AgoraTest {
 
             onConnected(connTask.getConn(), channelId, threadLocalUserId.get(), testTask);
 
-            if (TestTask.SEND_PCM == testTask) {
-                connTask.sendPcmTask(ArgsConfig.audioFile, 10, ArgsConfig.numOfChannels, ArgsConfig.sampleRate, true);
-            } else if (TestTask.SEND_PCM_YUV == testTask) {
-                connTask.sendPcmTask(ArgsConfig.audioFile, 10, ArgsConfig.numOfChannels, ArgsConfig.sampleRate, false);
-                connTask.sendYuvTask(ArgsConfig.videoFile, 1000 / ArgsConfig.fps, ArgsConfig.height, ArgsConfig.width,
-                        ArgsConfig.fps, Constants.VIDEO_STREAM_HIGH, true);
-            } else if (TestTask.SEND_PCM_H264 == testTask) {
-                connTask.sendPcmTask(ArgsConfig.audioFile, 10, ArgsConfig.numOfChannels, ArgsConfig.sampleRate, false);
-                connTask.sendH264Task(ArgsConfig.videoFile, 1000 / ArgsConfig.fps, 0, 0,
-                        Constants.VIDEO_STREAM_HIGH, true);
-            } else if (TestTask.SEND_AAC == testTask) {
-                connTask.sendAacTask(ArgsConfig.audioFile, 20, ArgsConfig.numOfChannels, ArgsConfig.sampleRate, true);
-            } else if (TestTask.SEND_OPUS == testTask) {
-                connTask.sendOpusTask(ArgsConfig.audioFile, 20, true);
-            } else if (TestTask.SEND_YUV == testTask) {
-                connTask.sendYuvTask(ArgsConfig.videoFile, 1000 / ArgsConfig.fps, ArgsConfig.height, ArgsConfig.width,
-                        ArgsConfig.fps, Constants.VIDEO_STREAM_HIGH,
-                        true);
-            } else if (TestTask.SEND_YUV_DUAL_STREAM == testTask) {
-                connTask.sendYuvTask(ArgsConfig.videoFile, 1000 / ArgsConfig.fps, ArgsConfig.height, ArgsConfig.width,
-                        ArgsConfig.fps, Constants.VIDEO_STREAM_HIGH, true);
-            } else if (TestTask.SEND_H264 == testTask) {
-                connTask.sendH264Task(ArgsConfig.videoFile, 1000 / ArgsConfig.fps, 0, 0,
-                        Constants.VIDEO_STREAM_HIGH, true);
-            } else if (TestTask.SEND_H264_DUAL_STREAM == testTask) {
-                connTask.sendH264Task(ArgsConfig.highVideoFile, 1000 / ArgsConfig.fps, 0, 0,
-                        Constants.VIDEO_STREAM_HIGH, false);
-                connTask.sendH264Task(ArgsConfig.lowVideoFile, 1000 / ArgsConfig.fps, 0, 0,
-                        Constants.VIDEO_STREAM_LOW, true);
-            } else if (TestTask.SEND_RGBA_PCM == testTask) {
-                connTask.sendPcmTask(ArgsConfig.audioFile, 10, ArgsConfig.numOfChannels, ArgsConfig.sampleRate, false);
-                connTask.sendRgbaTask(ArgsConfig.videoFile, 1000 / ArgsConfig.fps, ArgsConfig.height, ArgsConfig.width,
-                        ArgsConfig.fps, true);
-            } else if (TestTask.SEND_VP8_PCM == testTask) {
-                connTask.sendPcmTask(ArgsConfig.audioFile, 10, ArgsConfig.numOfChannels, ArgsConfig.sampleRate, false);
-                connTask.sendVp8Task(ArgsConfig.videoFile, 1000 / ArgsConfig.fps, ArgsConfig.height, ArgsConfig.width,
-                        ArgsConfig.fps, Constants.VIDEO_STREAM_HIGH, true);
-            } else if (TestTask.SEND_MP4 == testTask) {
-                connTask.sendAvMediaTask(ArgsConfig.audioFile, 50);
-            } else if (TestTask.SEND_DATA_STREAM == testTask) {
-                connTask.sendDataStreamTask(1, 50, true);
-            } else if (TestTask.RECEIVE_PCM == testTask) {
-                if (ArgsConfig.isStressTest == 0) {
-                    try {
-                        waitRemoteUserJoined.set(true);
-                        remoteUserJoinedLatch.await();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                connTask.registerPcmObserverTask(remoteUserId.get(),
-                        ("".equals(ArgsConfig.audioOutFile)) ? ""
-                                : (ArgsConfig.audioOutFile + "_" + channelId + "_" + threadLocalUserId.get() + ".pcm"),
-                        ArgsConfig.numOfChannels,
-                        ArgsConfig.sampleRate, true);
-            } else if (TestTask.RECEIVE_PCM_H264 == testTask) {
-                connTask.registerPcmObserverTask(ArgsConfig.remoteUserId,
-                        ("".equals(ArgsConfig.audioOutFile)) ? ""
-                                : (ArgsConfig.audioOutFile + "_" + channelId + "_" + threadLocalUserId.get() + ".pcm"),
-                        ArgsConfig.numOfChannels,
-                        ArgsConfig.sampleRate, false);
-                connTask.registerH264ObserverTask(ArgsConfig.remoteUserId,
-                        ("".equals(ArgsConfig.videoOutFile)) ? ""
-                                : (ArgsConfig.videoOutFile + "_" + channelId + "_" + threadLocalUserId.get() + ".h264"),
-                        ArgsConfig.streamType, true);
-            } else if (TestTask.RECEIVE_MIXED_AUDIO == testTask) {
-                if (ArgsConfig.isStressTest == 0) {
-                    try {
-                        waitRemoteUserJoined.set(true);
-                        remoteUserJoinedLatch.await();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                connTask.registerMixedAudioObserverTask(remoteUserId.get(),
-                        ("".equals(ArgsConfig.audioOutFile)) ? ""
-                                : (ArgsConfig.audioOutFile + "_" + channelId + "_" + threadLocalUserId.get() + ".pcm"),
-                        ArgsConfig.numOfChannels,
-                        ArgsConfig.sampleRate, true);
-            } else if (TestTask.RECEIVE_YUV == testTask) {
-                if (ArgsConfig.isStressTest == 0) {
-                    try {
-                        waitRemoteUserJoined.set(true);
-                        remoteUserJoinedLatch.await();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                connTask.registerYuvObserverTask(remoteUserId.get(),
-                        ("".equals(ArgsConfig.videoOutFile)) ? ""
-                                : (ArgsConfig.videoOutFile + "_" + channelId + "_" + threadLocalUserId.get() + ".yuv"),
-                        ArgsConfig.streamType, true);
-            } else if (TestTask.RECEIVE_H264 == testTask) {
-                if (ArgsConfig.isStressTest == 0) {
-                    try {
-                        waitRemoteUserJoined.set(true);
-                        remoteUserJoinedLatch.await();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                connTask.registerH264ObserverTask(remoteUserId.get(),
-                        ("".equals(ArgsConfig.videoOutFile)) ? ""
-                                : (ArgsConfig.videoOutFile + "_" + channelId + "_" + threadLocalUserId.get() + ".h264"),
-                        ArgsConfig.streamType, true);
-            } else if (TestTask.RECEIVE_ENCODED_AUDIO == testTask) {
-                if (ArgsConfig.isStressTest == 0) {
-                    try {
-                        waitRemoteUserJoined.set(true);
-                        remoteUserJoinedLatch.await();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                connTask.registerEncodedAudioObserverTask(remoteUserId.get(),
-                        ("".equals(ArgsConfig.audioOutFile)) ? "" : ArgsConfig.audioOutFile, ArgsConfig.fileType,
-                        true);
-            } else if (TestTask.SEND_RECEIVE_PCM_YUV == testTask) {
-                connTask.sendPcmTask(ArgsConfig.audioFile, 10, ArgsConfig.numOfChannels, ArgsConfig.sampleRate, false);
-                connTask.sendYuvTask(ArgsConfig.videoFile, 1000 / ArgsConfig.fps, ArgsConfig.height, ArgsConfig.width,
-                        ArgsConfig.fps, Constants.VIDEO_STREAM_HIGH, false);
-                connTask.registerPcmObserverTask(ArgsConfig.remoteUserId,
-                        ("".equals(ArgsConfig.audioOutFile)) ? ""
-                                : (ArgsConfig.audioOutFile + "_" + channelId + "_" + threadLocalUserId.get() + ".pcm"),
-                        ArgsConfig.numOfChannels,
-                        ArgsConfig.sampleRate, false);
-                connTask.registerYuvObserverTask(ArgsConfig.remoteUserId,
-                        ("".equals(ArgsConfig.videoOutFile)) ? ""
-                                : (ArgsConfig.videoOutFile + "_" + channelId + "_" + threadLocalUserId.get() + ".yuv"),
-                        ArgsConfig.streamType, true);
+            switch (testTask) {
+                case SEND_PCM:
+                    connTask.sendPcmTask(ArgsConfig.audioFile, 10, ArgsConfig.numOfChannels, ArgsConfig.sampleRate,
+                            true);
+                    break;
+                case SEND_PCM_YUV:
+                    connTask.sendPcmTask(ArgsConfig.audioFile, 10, ArgsConfig.numOfChannels, ArgsConfig.sampleRate,
+                            false);
+                    connTask.sendYuvTask(ArgsConfig.videoFile, 1000 / ArgsConfig.fps, ArgsConfig.height,
+                            ArgsConfig.width,
+                            ArgsConfig.fps, Constants.VIDEO_STREAM_HIGH, true);
+                    break;
+                case SEND_PCM_H264:
+                    connTask.sendPcmTask(ArgsConfig.audioFile, 10, ArgsConfig.numOfChannels, ArgsConfig.sampleRate,
+                            false);
+                    connTask.sendH264Task(ArgsConfig.videoFile, 1000 / ArgsConfig.fps, 0, 0,
+                            Constants.VIDEO_STREAM_HIGH, true);
+                    break;
+                case SEND_AAC:
+                    connTask.sendAacTask(ArgsConfig.audioFile, 20, ArgsConfig.numOfChannels, ArgsConfig.sampleRate,
+                            true);
+                    break;
+                case SEND_OPUS:
+                    connTask.sendOpusTask(ArgsConfig.audioFile, 20, true);
+                    break;
+                case SEND_YUV:
+                    connTask.sendYuvTask(ArgsConfig.videoFile, 1000 / ArgsConfig.fps, ArgsConfig.height,
+                            ArgsConfig.width,
+                            ArgsConfig.fps, Constants.VIDEO_STREAM_HIGH, true);
+                    break;
+                case SEND_YUV_DUAL_STREAM:
+                    connTask.sendYuvTask(ArgsConfig.videoFile, 1000 / ArgsConfig.fps, ArgsConfig.height,
+                            ArgsConfig.width,
+                            ArgsConfig.fps, Constants.VIDEO_STREAM_HIGH, true);
+                    break;
+                case SEND_H264:
+                    connTask.sendH264Task(ArgsConfig.videoFile, 1000 / ArgsConfig.fps, 0, 0,
+                            Constants.VIDEO_STREAM_HIGH, true);
+                    break;
+                case SEND_H264_DUAL_STREAM:
+                    connTask.sendH264Task(ArgsConfig.highVideoFile, 1000 / ArgsConfig.fps, 0, 0,
+                            Constants.VIDEO_STREAM_HIGH, false);
+                    connTask.sendH264Task(ArgsConfig.lowVideoFile, 1000 / ArgsConfig.fps, 0, 0,
+                            Constants.VIDEO_STREAM_LOW, true);
+                    break;
+                case SEND_RGBA_PCM:
+                    connTask.sendPcmTask(ArgsConfig.audioFile, 10, ArgsConfig.numOfChannels, ArgsConfig.sampleRate,
+                            false);
+                    connTask.sendRgbaTask(ArgsConfig.videoFile, 1000 / ArgsConfig.fps, ArgsConfig.height,
+                            ArgsConfig.width,
+                            ArgsConfig.fps, true);
+                    break;
+                case SEND_VP8_PCM:
+                    connTask.sendPcmTask(ArgsConfig.audioFile, 10, ArgsConfig.numOfChannels, ArgsConfig.sampleRate,
+                            false);
+                    connTask.sendVp8Task(ArgsConfig.videoFile, 1000 / ArgsConfig.fps, ArgsConfig.height,
+                            ArgsConfig.width,
+                            ArgsConfig.fps, Constants.VIDEO_STREAM_HIGH, true);
+                    break;
+                case SEND_MP4:
+                    connTask.sendAvMediaTask(ArgsConfig.audioFile, 50);
+                    break;
+                case SEND_DATA_STREAM:
+                    connTask.sendDataStreamTask(1, 50, true);
+                    break;
+                case RECEIVE_PCM:
+                    connTask.registerPcmObserverTask(ArgsConfig.remoteUserId,
+                            ("".equals(ArgsConfig.audioOutFile)) ? ""
+                                    : (ArgsConfig.audioOutFile + "_" + channelId + "_" + threadLocalUserId.get()
+                                            + ".pcm"),
+                            ArgsConfig.numOfChannels,
+                            ArgsConfig.sampleRate, true);
+                    break;
+                case RECEIVE_PCM_H264:
+                    connTask.registerPcmObserverTask(ArgsConfig.remoteUserId,
+                            ("".equals(ArgsConfig.audioOutFile)) ? ""
+                                    : (ArgsConfig.audioOutFile + "_" + channelId + "_" + threadLocalUserId.get()
+                                            + ".pcm"),
+                            ArgsConfig.numOfChannels,
+                            ArgsConfig.sampleRate, false);
+                    connTask.registerH264ObserverTask(ArgsConfig.remoteUserId,
+                            ("".equals(ArgsConfig.videoOutFile)) ? ""
+                                    : (ArgsConfig.videoOutFile + "_" + channelId + "_" + threadLocalUserId.get()
+                                            + ".h264"),
+                            ArgsConfig.streamType, true);
+                    break;
+                case RECEIVE_MIXED_AUDIO:
+                    connTask.registerMixedAudioObserverTask(ArgsConfig.remoteUserId,
+                            ("".equals(ArgsConfig.audioOutFile)) ? ""
+                                    : (ArgsConfig.audioOutFile + "_" + channelId + "_" + threadLocalUserId.get()
+                                            + ".pcm"),
+                            ArgsConfig.numOfChannels,
+                            ArgsConfig.sampleRate, true);
+                    break;
+                case RECEIVE_YUV:
+                    connTask.registerYuvObserverTask(ArgsConfig.remoteUserId,
+                            ("".equals(ArgsConfig.videoOutFile)) ? ""
+                                    : (ArgsConfig.videoOutFile + "_" + channelId + "_" + threadLocalUserId.get()
+                                            + ".yuv"),
+                            ArgsConfig.streamType, true);
+                    break;
+                case RECEIVE_H264:
+                    connTask.registerH264ObserverTask(ArgsConfig.remoteUserId,
+                            ("".equals(ArgsConfig.videoOutFile)) ? ""
+                                    : (ArgsConfig.videoOutFile + "_" + channelId + "_" + threadLocalUserId.get()
+                                            + ".h264"),
+                            ArgsConfig.streamType, true);
+                    break;
+                case RECEIVE_ENCODED_AUDIO:
+                    connTask.registerEncodedAudioObserverTask(ArgsConfig.remoteUserId,
+                            ("".equals(ArgsConfig.audioOutFile)) ? "" : ArgsConfig.audioOutFile, ArgsConfig.fileType,
+                            true);
+                    break;
+                case SEND_RECEIVE_PCM_YUV:
+                    connTask.sendPcmTask(ArgsConfig.audioFile, 10, ArgsConfig.numOfChannels, ArgsConfig.sampleRate,
+                            false);
+                    connTask.sendYuvTask(ArgsConfig.videoFile, 1000 / ArgsConfig.fps, ArgsConfig.height,
+                            ArgsConfig.width,
+                            ArgsConfig.fps, Constants.VIDEO_STREAM_HIGH, false);
+                    connTask.registerPcmObserverTask(ArgsConfig.remoteUserId,
+                            ("".equals(ArgsConfig.audioOutFile)) ? ""
+                                    : (ArgsConfig.audioOutFile + "_" + channelId + "_" + threadLocalUserId.get()
+                                            + ".pcm"),
+                            ArgsConfig.numOfChannels,
+                            ArgsConfig.sampleRate, false);
+                    connTask.registerYuvObserverTask(ArgsConfig.remoteUserId,
+                            ("".equals(ArgsConfig.videoOutFile)) ? ""
+                                    : (ArgsConfig.videoOutFile + "_" + channelId + "_" + threadLocalUserId.get()
+                                            + ".yuv"),
+                            ArgsConfig.streamType, true);
+                    break;
+                case NONE:
+                default:
+                    // No specific task
+                    break;
             }
 
             if (TestTask.NONE != testTask) {
@@ -415,5 +410,7 @@ public class AgoraTest {
             service.destroy();
             service = null;
         }
+
+        SampleLogger.release();
     }
 }

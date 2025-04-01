@@ -7,7 +7,6 @@ import io.agora.rtc.AgoraServiceConfig;
 import io.agora.rtc.AgoraVideoEncodedFrameObserver;
 import io.agora.rtc.AudioFrame;
 import io.agora.rtc.Constants;
-import io.agora.rtc.DefaultLocalUserObserver;
 import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.EncodedVideoFrameInfo;
 import io.agora.rtc.IAudioFrameObserver;
@@ -23,7 +22,6 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -32,11 +30,6 @@ public class ReceiverPcmH264Test {
     private static String token;
     private final static String DEFAULT_LOG_PATH = "logs/agora_logs/agorasdk.log";
     private final static int DEFAULT_LOG_SIZE = 5 * 1024 * 1024; // default log size is 5 mb
-    private static String channelId = "agaa";
-    private static String userId = "0";
-
-    private static String audioOutFile = "test_data_out/receiver_audio_out";
-    private static String videoOutFile = "test_data_out/receiver_video_out";
 
     private static AgoraService service;
     private static AgoraRtcConn conn;
@@ -44,13 +37,16 @@ public class ReceiverPcmH264Test {
     private static IAudioFrameObserver audioFrameObserver;
     private static AgoraVideoEncodedFrameObserver videoEncodedFrameObserver;
 
-    private static CountDownLatch exitLatch;
-
+    private static String channelId = "agaa";
+    private static String userId = "0";
+    private static String audioOutFile = "test_data_out/receiver_audio_out";
+    private static String videoOutFile = "test_data_out/receiver_video_out";
     private static int numOfChannels = 1;
     private static int sampleRate = 16000;
+    private static String remoteUserId = "";
+    private static long testTime = 60 * 1000;
 
-    private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
-    private static final ExecutorService logExecutorService = Executors.newCachedThreadPool();
+    private static final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
 
     private static void parseArgs(String[] args) {
         SampleLogger.log("parseArgs args:" + Arrays.toString(args));
@@ -89,6 +85,14 @@ public class ReceiverPcmH264Test {
 
         if (parsedArgs.containsKey("-videoOutFile")) {
             videoOutFile = parsedArgs.get("-videoOutFile");
+        }
+
+        if (parsedArgs.containsKey("-remoteUserId")) {
+            remoteUserId = parsedArgs.get("-remoteUserId");
+        }
+
+        if (parsedArgs.containsKey("-testTime")) {
+            testTime = Long.parseLong(parsedArgs.get("-testTime"));
         }
     }
 
@@ -131,7 +135,8 @@ public class ReceiverPcmH264Test {
 
         conn = service.agoraRtcConnCreate(ccfg);
         if (conn == null) {
-            SampleLogger.log("AgoraService.agoraRtcConnCreate fail\n");
+            SampleLogger.log("AgoraService.agoraRtcConnCreate fail");
+            releaseAgoraService();
             return;
         }
 
@@ -139,7 +144,8 @@ public class ReceiverPcmH264Test {
             @Override
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
                 super.onConnected(agoraRtcConn, connInfo, reason);
-                testTaskExecutorService.execute(() -> onConnConnected(agoraRtcConn, connInfo, reason));
+                SampleLogger.log("onConnected connInfo :" + connInfo + " reason:" + reason);
+                userId = connInfo.getLocalUserId();
             }
 
             @Override
@@ -155,81 +161,27 @@ public class ReceiverPcmH264Test {
                 SampleLogger.log("onUserLeft userId:" + userId + " reason:" + reason);
 
             }
-
-            @Override
-            public void onChangeRoleSuccess(AgoraRtcConn agoraRtcConn, int oldRole, int newRole) {
-                SampleLogger.log("onChangeRoleSuccess oldRole:" + oldRole + " newRole:" + newRole);
-            }
-
-            @Override
-            public void onChangeRoleFailure(AgoraRtcConn agoraRtcConn) {
-                SampleLogger.log("onChangeRoleFailure");
-            }
         });
         SampleLogger.log("registerObserver ret:" + ret);
 
-        ret = conn.connect(token, channelId, userId);
-        SampleLogger.log("Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
-
-        conn.getLocalUser().registerObserver(new DefaultLocalUserObserver() {
-            @Override
-            public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data,
-                    long length) {
-                SampleLogger.log("onStreamMessage: userid " + userId + " streamId " + streamId + "  data " + data);
-            }
-
-            @Override
-            public void onAudioPublishStateChanged(AgoraLocalUser agoraLocalUser, String channel, int oldState,
-                    int newState, int elapseSinceLastState) {
-                SampleLogger
-                        .log("onAudioPublishStateChanged channel:" + channel + " oldState:" + oldState + " newState:"
-                                + newState + " userRole:" + agoraLocalUser.getUserRole());
-            }
-
-            @Override
-            public void onVideoPublishStateChanged(AgoraLocalUser agoraLocalUser, String channel, int oldState,
-                    int newState, int elapseSinceLastState) {
-                SampleLogger
-                        .log("onVideoPublishStateChanged channel:" + channel + " oldState:" + oldState + " newState:"
-                                + newState + " userRole:" + agoraLocalUser.getUserRole());
-            }
-
-            public void onUserVideoTrackStateChanged(AgoraLocalUser agoraLocalUser, String userId,
-                    io.agora.rtc.AgoraRemoteVideoTrack agoraRemoteVideoTrack, int state, int reason, int elapsed) {
-                SampleLogger.log("onUserVideoTrackStateChanged userId:" + userId + " state:" + state + " reason:"
-                        + reason + " elapsed:" + elapsed);
-            };
-        });
-
-        exitLatch = new CountDownLatch(1);
-        try {
-            exitLatch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        if (!remoteUserId.isEmpty()) {
+            conn.getLocalUser().subscribeAudio(remoteUserId);
+        } else {
+            conn.getLocalUser().subscribeAllAudio();
         }
 
-        releaseConn();
-        releaseAgoraService();
-    }
-
-    private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
-        SampleLogger.log("onConnConnected connInfo :" + connInfo + " reason:" + reason);
-
-        final String currentChannelId = connInfo.getChannelId();
-        final String currentUserId = connInfo.getLocalUserId();
-
-        conn.getLocalUser().subscribeAllAudio();
-
-        int ret = conn.getLocalUser().setPlaybackAudioFrameBeforeMixingParameters(numOfChannels, sampleRate);
+        ret = conn.getLocalUser().setPlaybackAudioFrameBeforeMixingParameters(numOfChannels, sampleRate);
         SampleLogger.log("setPlaybackAudioFrameBeforeMixingParameters numOfChannels:" + numOfChannels + " sampleRate:"
                 + sampleRate);
         if (ret > 0) {
             SampleLogger.log("setPlaybackAudioFrameBeforeMixingParameters fail ret=" + ret);
+            releaseConn();
+            releaseAgoraService();
             return;
         }
 
         audioFrameObserver = new SampleAudioFrameObserver(
-                audioOutFile + "_" + currentChannelId + "_" + currentUserId + ".pcm") {
+                audioOutFile + "_" + channelId + "_" + userId + ".pcm") {
             @Override
             public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser, String channelId, String userId,
                     AudioFrame frame, VadProcessResult vadResult) {
@@ -246,14 +198,12 @@ public class ReceiverPcmH264Test {
                     return 0;
                 }
 
-                logExecutorService.execute(() -> {
-                    SampleLogger.log("onPlaybackAudioFrameBeforeMixing frame:" + frame);
-                    SampleLogger.log("onPlaybackAudioFrameBeforeMixing audioFrame size " + byteArray.length
-                            + " channelId:"
-                            + channelId + " userId:" + userId);
+                singleExecutorService.execute(() -> {
+                    SampleLogger.log("onPlaybackAudioFrameBeforeMixing frame:" + frame + " audioFrame size "
+                            + byteArray.length + " channelId:" + channelId + " userId:" + userId);
+                    writeAudioFrameToFile(byteArray);
                 });
 
-                writeAudioFrameToFile(byteArray);
                 return 1;
             }
 
@@ -264,11 +214,15 @@ public class ReceiverPcmH264Test {
         subscriptionOptions.setEncodedFrameOnly(1);
         subscriptionOptions.setType(Constants.VIDEO_STREAM_HIGH);
 
-        conn.getLocalUser().subscribeAllVideo(subscriptionOptions);
+        if (!remoteUserId.isEmpty()) {
+            conn.getLocalUser().subscribeVideo(remoteUserId, subscriptionOptions);
+        } else {
+            conn.getLocalUser().subscribeAllVideo(subscriptionOptions);
+        }
 
         videoEncodedFrameObserver = new AgoraVideoEncodedFrameObserver(
                 new SampleVideoEncodedFrameObserver(
-                        videoOutFile + "_" + currentChannelId + "_" + currentUserId + ".h264") {
+                        videoOutFile + "_" + channelId + "_" + userId + ".h264") {
                     @Override
                     public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int userId,
                             ByteBuffer buffer, EncodedVideoFrameInfo info) {
@@ -284,17 +238,39 @@ public class ReceiverPcmH264Test {
                         if (byteArray == null) {
                             return 0;
                         }
-                        logExecutorService.execute(() -> {
+                        singleExecutorService.execute(() -> {
                             SampleLogger.log("onEncodedVideoFrame userId:" + userId + " length " + byteArray.length
                                     + " with current channelId:"
                                     + channelId
                                     + "  userId:" + userId + " info:" + info);
+                            writeVideoDataToFile(byteArray);
                         });
-                        writeVideoDataToFile(byteArray);
                         return 1;
                     }
                 });
         conn.getLocalUser().registerVideoEncodedFrameObserver(videoEncodedFrameObserver);
+
+        ret = conn.connect(token, channelId, userId);
+        SampleLogger.log("Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
+        if (ret != 0) {
+            SampleLogger.log("conn.connect fail ret=" + ret);
+            releaseConn();
+            releaseAgoraService();
+            return;
+        }
+
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime < testTime) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        releaseConn();
+        releaseAgoraService();
+        System.exit(0);
     }
 
     private static void releaseConn() {
@@ -324,11 +300,9 @@ public class ReceiverPcmH264Test {
         conn.getLocalUser().unregisterObserver();
 
         conn.destroy();
-
         conn = null;
 
-        testTaskExecutorService.shutdown();
-        logExecutorService.shutdown();
+        singleExecutorService.shutdown();
 
         SampleLogger.log("Disconnected from Agora channel successfully");
     }
@@ -338,6 +312,7 @@ public class ReceiverPcmH264Test {
             service.destroy();
             service = null;
         }
+        SampleLogger.log("releaseAgoraService");
     }
 
 }

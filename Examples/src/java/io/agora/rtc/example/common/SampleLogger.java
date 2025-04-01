@@ -4,6 +4,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.logging.log4j.ThreadContext;
 import org.apache.logging.log4j.Logger;
@@ -25,6 +27,8 @@ public class SampleLogger {
     // Default log sampling rate and interval
     private static final int DEFAULT_LOG_SAMPLE_RATE = 100;
     private static final long DEFAULT_LOG_INTERVAL_MS = 1000;
+
+    private final static ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
 
     // Log counter class
     private static class LogCounter {
@@ -57,12 +61,18 @@ public class SampleLogger {
         enableLog = enable;
     }
 
+    public static void release() {
+        singleExecutorService.shutdown();
+    }
+
     /**
      * Normal log output
      */
     public static void log(String message) {
         if (enableLog) {
-            logger.info(message);
+            singleExecutorService.execute(() -> {
+                logger.info(message);
+            });
         }
     }
 
@@ -71,7 +81,9 @@ public class SampleLogger {
      */
     public static void info(String message) {
         if (enableLog) {
-            logger.info(message);
+            singleExecutorService.execute(() -> {
+                logger.info(message);
+            });
         }
     }
 
@@ -80,7 +92,9 @@ public class SampleLogger {
      */
     public static void error(String message) {
         if (enableLog) {
-            logger.error(message);
+            singleExecutorService.execute(() -> {
+                logger.error(message);
+            });
         }
     }
 
@@ -89,7 +103,9 @@ public class SampleLogger {
      */
     public static void warn(String message) {
         if (enableLog) {
-            logger.warn(message);
+            singleExecutorService.execute(() -> {
+                logger.warn(message);
+            });
         }
     }
 
@@ -98,7 +114,9 @@ public class SampleLogger {
      */
     public static void debug(String message) {
         if (enableLog) {
-            logger.debug(message);
+            singleExecutorService.execute(() -> {
+                logger.debug(message);
+            });
         }
     }
 
