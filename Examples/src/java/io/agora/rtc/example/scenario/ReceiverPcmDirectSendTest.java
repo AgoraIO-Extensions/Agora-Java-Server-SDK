@@ -16,7 +16,6 @@ import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
 import io.agora.rtc.VadProcessResult;
 import io.agora.rtc.example.common.SampleAudioFrameObserver;
-import io.agora.rtc.example.common.SampleLocalUserObserver;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.Utils;
 import java.util.Arrays;
@@ -29,12 +28,11 @@ import java.util.concurrent.Executors;
 public class ReceiverPcmDirectSendTest {
     private static String appId;
     private static String token;
-    private static String DEFAULT_LOG_PATH = "agora_logs/agorasdk.log";
-    private static int DEFAULT_LOG_SIZE = 512 * 1024; // default log size is 512 kb
+    private final static String DEFAULT_LOG_PATH = "logs/agora_logs/agorasdk.log";
+    private final static int DEFAULT_LOG_SIZE = 5 * 1024 * 1024; // default log size is 5 mb
 
     private static AgoraService service;
     private static AgoraRtcConn conn;
-    private static SampleLocalUserObserver localUserObserver;
     private static AgoraMediaNodeFactory mediaNodeFactory;
 
     private static AgoraAudioPcmDataSender audioFrameSender;
@@ -97,6 +95,7 @@ public class ReceiverPcmDirectSendTest {
         token = keys[1];
         SampleLogger.log("read appId: " + appId + " token: " + token + " from .keys");
 
+        // Initialize Agora service globally once
         service = new AgoraService();
         AgoraServiceConfig config = new AgoraServiceConfig();
         config.setAppId(appId);
@@ -119,6 +118,7 @@ public class ReceiverPcmDirectSendTest {
             return;
         }
 
+        // Create a connection for each channel
         RtcConnConfig ccfg = new RtcConnConfig();
         ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
         ccfg.setAutoSubscribeAudio(0);
@@ -197,8 +197,6 @@ public class ReceiverPcmDirectSendTest {
             };
         });
 
-        conn.getLocalUser().setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
-
         mediaNodeFactory = service.createMediaNodeFactory();
 
         exitLatch = new CountDownLatch(1);
@@ -209,6 +207,8 @@ public class ReceiverPcmDirectSendTest {
         }
 
         releaseConn();
+
+        releaseAgoraService();
     }
 
     private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
@@ -223,11 +223,6 @@ public class ReceiverPcmDirectSendTest {
         conn.getLocalUser().publishAudio(customAudioTrack);
 
         conn.getLocalUser().subscribeAllAudio();
-        // Register local user observer
-        if (null == localUserObserver) {
-            localUserObserver = new SampleLocalUserObserver();
-        }
-        conn.getLocalUser().registerObserver(localUserObserver);
 
         int ret = conn.getLocalUser().setPlaybackAudioFrameBeforeMixingParameters(numOfChannels, sampleRate);
         SampleLogger.log("setPlaybackAudioFrameBeforeMixingParameters numOfChannels:" + numOfChannels + " sampleRate:"
@@ -278,10 +273,6 @@ public class ReceiverPcmDirectSendTest {
         };
 
         conn.getLocalUser().registerAudioFrameObserver(audioFrameObserver, false, null);
-
-        // if (null != exitLatch) {
-        // exitLatch.countDown();
-        // }
     }
 
     private static void releaseConn() {
@@ -320,8 +311,6 @@ public class ReceiverPcmDirectSendTest {
 
         conn.destroy();
 
-        localUserObserver = null;
-
         conn = null;
 
         testTaskExecutorService.shutdown();
@@ -329,6 +318,13 @@ public class ReceiverPcmDirectSendTest {
         senderExecutorService.shutdown();
 
         SampleLogger.log("Disconnected from Agora channel successfully");
+    }
+
+    private static void releaseAgoraService() {
+        if (service != null) {
+            service.destroy();
+            service = null;
+        }
     }
 
 }

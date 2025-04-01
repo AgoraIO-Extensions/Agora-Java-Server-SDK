@@ -26,7 +26,6 @@ import io.agora.rtc.SimulcastStreamConfig;
 import io.agora.rtc.VideoDimensions;
 import io.agora.rtc.VideoEncoderConfig;
 import io.agora.rtc.example.common.FileSender;
-import io.agora.rtc.example.common.SampleLocalUserObserver;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.DirectBufferCleaner;
 import io.agora.rtc.example.utils.Utils;
@@ -34,12 +33,11 @@ import io.agora.rtc.example.utils.Utils;
 public class SendYuvTest {
     private static String appId;
     private static String token;
-    private static String DEFAULT_LOG_PATH = "agora_logs/agorasdk.log";
-    private static int DEFAULT_LOG_SIZE = 512 * 1024; // default log size is 512 kb
+    private final static String DEFAULT_LOG_PATH = "logs/agora_logs/agorasdk.log";
+    private final static int DEFAULT_LOG_SIZE = 5 * 1024 * 1024; // default log size is 5 mb
 
     private static AgoraService service;
     private static AgoraRtcConn conn;
-    private static SampleLocalUserObserver localUserObserver;
     private static AgoraMediaNodeFactory mediaNodeFactory;
 
     private static AgoraVideoFrameSender videoFrameSender;
@@ -102,6 +100,10 @@ public class SendYuvTest {
         if (parsedArgs.containsKey("-enableSimulcastStream")) {
             enableSimulcastStream = Boolean.parseBoolean(parsedArgs.get("-enableSimulcastStream"));
         }
+
+        if (parsedArgs.containsKey("-videoFile")) {
+            videoFile = parsedArgs.get("-videoFile");
+        }
     }
 
     public static void main(String[] args) {
@@ -111,6 +113,7 @@ public class SendYuvTest {
         token = keys[1];
         SampleLogger.log("read appId: " + appId + " token: " + token + " from .keys");
 
+        // Initialize Agora service globally once
         service = new AgoraService();
         AgoraServiceConfig config = new AgoraServiceConfig();
         config.setAppId(appId);
@@ -133,6 +136,7 @@ public class SendYuvTest {
             return;
         }
 
+        // Create a connection for each channel
         RtcConnConfig ccfg = new RtcConnConfig();
         ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
         ccfg.setAutoSubscribeAudio(0);
@@ -211,8 +215,6 @@ public class SendYuvTest {
             };
         });
 
-        conn.getLocalUser().setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
-
         mediaNodeFactory = service.createMediaNodeFactory();
 
         exitLatch = new CountDownLatch(1);
@@ -223,18 +225,13 @@ public class SendYuvTest {
         }
 
         releaseConn();
+        releaseAgoraService();
     }
 
     private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
         SampleLogger.log("onConnConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
         final String currentUserId = connInfo.getLocalUserId();
         final String currentChannelId = connInfo.getChannelId();
-
-        // Register local user observer
-        if (null == localUserObserver) {
-            localUserObserver = new SampleLocalUserObserver();
-        }
-        conn.getLocalUser().registerObserver(localUserObserver);
 
         videoFrameSender = mediaNodeFactory.createVideoFrameSender();
 
@@ -357,10 +354,6 @@ public class SendYuvTest {
         };
 
         senderExecutorService.execute(yuvSender);
-
-        // if (null != exitLatch) {
-        // exitLatch.countDown();
-        // }
     }
 
     private static void releaseConn() {
@@ -371,6 +364,7 @@ public class SendYuvTest {
 
         if (null != mediaNodeFactory) {
             mediaNodeFactory.destroy();
+            mediaNodeFactory = null;
         }
 
         if (null != customVideoTrack) {
@@ -395,9 +389,6 @@ public class SendYuvTest {
         conn.getLocalUser().unregisterObserver();
 
         conn.destroy();
-
-        localUserObserver = null;
-
         conn = null;
 
         testTaskExecutorService.shutdown();
@@ -405,6 +396,13 @@ public class SendYuvTest {
         senderExecutorService.shutdown();
 
         SampleLogger.log("Disconnected from Agora channel successfully");
+    }
+
+    private static void releaseAgoraService() {
+        if (service != null) {
+            service.destroy();
+            service = null;
+        }
     }
 
 }
