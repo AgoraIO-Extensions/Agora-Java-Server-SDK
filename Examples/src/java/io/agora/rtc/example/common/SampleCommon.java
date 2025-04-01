@@ -7,7 +7,7 @@ import io.agora.rtc.Constants;
 public class SampleCommon {
 
     public static String DEFAULT_LOG_PATH = "logs/agora_logs/agorasdk.log";
-    public static int DEFAULT_LOG_SIZE = 512 * 1024; // default log size is 512 kb
+    public static int DEFAULT_LOG_SIZE = 5 * 1024 * 1024; // default log size is 5 mb
 
     public static AgoraService createAndInitAgoraService(int enableAudioDevice, int enableAudioProcessor,
             int enableVideo,

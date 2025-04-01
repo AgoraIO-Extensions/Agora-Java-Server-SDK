@@ -99,7 +99,7 @@ public class AgoraConnectionTask {
     private final ThreadPoolExecutor testTaskExecutorService;
     private CountDownLatch taskFinishLatch;
     private CountDownLatch connDisconnectedLatch;
-    private AtomicBoolean taskStarted = new AtomicBoolean(false);
+    private final AtomicBoolean taskStarted = new AtomicBoolean(false);
 
     private final AtomicBoolean isReleasing = new AtomicBoolean(false);
 
@@ -112,6 +112,9 @@ public class AgoraConnectionTask {
     private final ReentrantLock opusLock = new ReentrantLock();
 
     private static final ThreadLocal<H264Reader> threadLocalH264Reader = new ThreadLocal<>();
+    private static final ThreadLocal<Vp8Reader> threadLocalVp8Reader = new ThreadLocal<>();
+    private static final ThreadLocal<OpusReader> threadLocalOpusReader = new ThreadLocal<>();
+    private static final ThreadLocal<AacReader> threadLocalAacReader = new ThreadLocal<>();
 
     public interface TaskCallback {
         default void onConnected(String userId) {
@@ -675,11 +678,11 @@ public class AgoraConnectionTask {
                 Constants.TMixMode.MIX_DISABLED.value);
         conn.getLocalUser().publishAudio(customEncodedAudioTrack);
 
-        AacReader aacReader = new AacReader(filePath);
         boolean isLoopSend = testTime > 0;
         FileSender aacSendThread = new FileSender(filePath, interval) {
             private boolean canLog = true;
             private EncodedAudioFrameInfo encodedInfo = new EncodedAudioFrameInfo();
+            private AacReader aacReader;
 
             @Override
             public void sendOneFrame(byte[] data, long timestamp) {
@@ -712,6 +715,13 @@ public class AgoraConnectionTask {
 
             @Override
             public byte[] readOneFrame(FileInputStream fos) {
+                if (aacReader == null) {
+                    aacReader = threadLocalAacReader.get();
+                    if (aacReader == null) {
+                        aacReader = new AacReader(filePath);
+                        threadLocalAacReader.set(aacReader);
+                    }
+                }
                 AacReader.AacFrame aacFrame = aacReader.getAudioFrame(interval);
                 if (aacFrame == null) {
                     if (isLoopSend) {
@@ -739,6 +749,8 @@ public class AgoraConnectionTask {
                     if (null != aacReader) {
                         aacReader.close();
                     }
+                    threadLocalAacReader.remove();
+                    aacReader = null;
                     encodedInfo = null;
                 } finally {
                     aacLock.unlock();
@@ -781,11 +793,11 @@ public class AgoraConnectionTask {
                 Constants.TMixMode.MIX_DISABLED.value);
         conn.getLocalUser().publishAudio(customEncodedAudioTrack);
 
-        OpusReader opusReader = new OpusReader(filePath);
         boolean isLoopSend = testTime > 0;
         FileSender opusSendThread = new FileSender(filePath, interval) {
             private boolean canLog = true;
             private EncodedAudioFrameInfo encodedInfo = new EncodedAudioFrameInfo();
+            private OpusReader opusReader;
 
             @Override
             public void sendOneFrame(byte[] data, long timestamp) {
@@ -824,6 +836,13 @@ public class AgoraConnectionTask {
 
             @Override
             public byte[] readOneFrame(FileInputStream fos) {
+                if (opusReader == null) {
+                    opusReader = threadLocalOpusReader.get();
+                    if (opusReader == null) {
+                        opusReader = new OpusReader(filePath);
+                        threadLocalOpusReader.set(opusReader);
+                    }
+                }
                 io.agora.rtc.example.mediautils.AudioFrame opusFrame = opusReader.getAudioFrame(interval);
                 if (opusFrame == null) {
                     if (isLoopSend) {
@@ -851,6 +870,8 @@ public class AgoraConnectionTask {
                     if (null != opusReader) {
                         opusReader.close();
                     }
+                    threadLocalOpusReader.remove();
+                    opusReader = null;
                     encodedInfo = null;
                 } finally {
                     opusLock.unlock();
@@ -1142,10 +1163,13 @@ public class AgoraConnectionTask {
             @Override
             public byte[] readOneFrame(FileInputStream fos) {
                 if (localH264Reader == null) {
-                    localH264Reader = new H264Reader(filePath);
-                    threadLocalH264Reader.set(localH264Reader);
+                    localH264Reader = threadLocalH264Reader.get();
+                    if (localH264Reader == null) {
+                        localH264Reader = new H264Reader(filePath);
+                        threadLocalH264Reader.set(localH264Reader);
+                    }
                 }
-                
+
                 H264Reader.H264Frame frame = localH264Reader.readNextFrame();
                 if (frame == null) {
                     if (isLoopSend) {
@@ -1411,8 +1435,6 @@ public class AgoraConnectionTask {
             SampleLogger.log("sendVp8Task publishVideo ret:" + ret);
         }
 
-        Vp8Reader vp8Reader = new Vp8Reader(filePath);
-
         boolean isLoopSend = testTime > 0;
         FileSender vp8SendThread = new FileSender(filePath, interval, false) {
             private int lastFrameType = 0;
@@ -1421,6 +1443,7 @@ public class AgoraConnectionTask {
             private int width;
             private boolean canLog = true;
             private EncodedVideoFrameInfo info = new EncodedVideoFrameInfo();
+            private Vp8Reader vp8Reader;
 
             @Override
             public void sendOneFrame(byte[] data, long timestamp) {
@@ -1468,6 +1491,13 @@ public class AgoraConnectionTask {
 
             @Override
             public byte[] readOneFrame(FileInputStream fos) {
+                if (vp8Reader == null) {
+                    vp8Reader = threadLocalVp8Reader.get();
+                    if (vp8Reader == null) {
+                        vp8Reader = new Vp8Reader(filePath);
+                        threadLocalVp8Reader.set(vp8Reader);
+                    }
+                }
                 io.agora.rtc.example.mediautils.VideoFrame frame = vp8Reader.readNextFrame();
                 int retry = 0;
                 while (frame == null && retry < 4) {
@@ -1500,6 +1530,8 @@ public class AgoraConnectionTask {
                 try {
                     if (null != vp8Reader) {
                         vp8Reader.close();
+                        threadLocalVp8Reader.remove();
+                        vp8Reader = null;
                     }
                     info = null;
                 } finally {

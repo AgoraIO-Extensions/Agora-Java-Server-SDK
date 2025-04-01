@@ -25,7 +25,6 @@ import io.agora.rtc.SenderOptions;
 import io.agora.rtc.SimulcastStreamConfig;
 import io.agora.rtc.VideoDimensions;
 import io.agora.rtc.example.common.FileSender;
-import io.agora.rtc.example.common.SampleLocalUserObserver;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.mediautils.H264Reader;
 import io.agora.rtc.example.utils.Utils;
@@ -37,12 +36,11 @@ public class SendH264Test {
 
     private static String appId;
     private static String token;
-    private static String DEFAULT_LOG_PATH = "agora_logs/agorasdk.log";
-    private static int DEFAULT_LOG_SIZE = 512 * 1024; // default log size is 512 kb
+    private final static String DEFAULT_LOG_PATH = "logs/agora_logs/agorasdk.log";
+    private final static int DEFAULT_LOG_SIZE = 5 * 1024 * 1024; // default log size is 5 mb
 
     private static AgoraService service;
     private static AgoraRtcConn conn;
-    private static SampleLocalUserObserver localUserObserver;
     private static AgoraMediaNodeFactory mediaNodeFactory;
 
     private static AgoraVideoEncodedImageSender customEncodedImageSender;
@@ -61,7 +59,6 @@ public class SendH264Test {
 
     private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
     private static final ExecutorService logExecutorService = Executors.newCachedThreadPool();
-    private static final ExecutorService senderExecutorService = Executors.newSingleThreadExecutor();
 
     private static void parseArgs(String[] args) {
         SampleLogger.log("parseArgs args:" + Arrays.toString(args));
@@ -105,6 +102,10 @@ public class SendH264Test {
         if (parsedArgs.containsKey("-enableSimulcastStream")) {
             enableSimulcastStream = Boolean.parseBoolean(parsedArgs.get("-enableSimulcastStream"));
         }
+
+        if (parsedArgs.containsKey("-videoFile")) {
+            videoFile = parsedArgs.get("-videoFile");
+        }
     }
 
     public static void main(String[] args) {
@@ -114,6 +115,7 @@ public class SendH264Test {
         token = keys[1];
         SampleLogger.log("read appId: " + appId + " token: " + token + " from .keys");
 
+        // Initialize Agora service globally once
         service = new AgoraService();
         AgoraServiceConfig config = new AgoraServiceConfig();
         config.setAppId(appId);
@@ -136,6 +138,7 @@ public class SendH264Test {
             return;
         }
 
+        // Create a connection for each channel
         RtcConnConfig ccfg = new RtcConnConfig();
         ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
         ccfg.setAutoSubscribeAudio(0);
@@ -214,8 +217,6 @@ public class SendH264Test {
             };
         });
 
-        conn.getLocalUser().setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
-
         mediaNodeFactory = service.createMediaNodeFactory();
 
         exitLatch = new CountDownLatch(1);
@@ -226,18 +227,13 @@ public class SendH264Test {
         }
 
         releaseConn();
+        releaseAgoraService();
     }
 
     private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
         SampleLogger.log("onConnConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
         final String currentUserId = connInfo.getLocalUserId();
         final String currentChannelId = connInfo.getChannelId();
-
-        // Register local user observer
-        if (null == localUserObserver) {
-            localUserObserver = new SampleLocalUserObserver();
-        }
-        conn.getLocalUser().registerObserver(localUserObserver);
 
         customEncodedImageSender = mediaNodeFactory.createVideoEncodedImageSender();
         // Create video track
@@ -315,10 +311,6 @@ public class SendH264Test {
         };
 
         h264SendThread.start();
-
-        // if (null != exitLatch) {
-        // exitLatch.countDown();
-        // }
     }
 
     private static void releaseConn() {
@@ -354,15 +346,19 @@ public class SendH264Test {
 
         conn.destroy();
 
-        localUserObserver = null;
-
         conn = null;
 
         testTaskExecutorService.shutdown();
         logExecutorService.shutdown();
-        senderExecutorService.shutdown();
 
         SampleLogger.log("Disconnected from Agora channel successfully");
+    }
+
+    private static void releaseAgoraService() {
+        if (service != null) {
+            service.destroy();
+            service = null;
+        }
     }
 
 }

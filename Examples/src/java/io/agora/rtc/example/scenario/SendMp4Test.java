@@ -35,12 +35,12 @@ import java.util.concurrent.Executors;
 public class SendMp4Test {
     private static String appId;
     private static String token;
-    private static String DEFAULT_LOG_PATH = "agora_logs/agorasdk.log";
-    private static int DEFAULT_LOG_SIZE = 512 * 1024; // default log size is 512 kb
+    private final static String DEFAULT_LOG_PATH = "logs/agora_logs/agorasdk.log";
+    private final static int DEFAULT_LOG_SIZE = 5 * 1024 * 1024; // default log size is 5 mb
     private static String channelId = "agaa";
     private static String userId = "0";
 
-    private final static String FILE_PATH = "test_data/test_avsync.mp4";
+    private static String filePath = "test_data/test_avsync.mp4";
 
     private static AgoraService service;
     private static AgoraRtcConn conn;
@@ -59,7 +59,7 @@ public class SendMp4Test {
 
     private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
 
-    private static MediaDecodeUtils.DecodedMediaType decodedMediaType = MediaDecodeUtils.DecodedMediaType.PCM_H264;
+    private final static MediaDecodeUtils.DecodedMediaType decodedMediaType = MediaDecodeUtils.DecodedMediaType.PCM_H264;
 
     private static void parseArgs(String[] args) {
         SampleLogger.log("parseArgs args:" + Arrays.toString(args));
@@ -83,6 +83,10 @@ public class SendMp4Test {
         if (parsedArgs.containsKey("-userId")) {
             userId = parsedArgs.get("-userId");
         }
+
+        if (parsedArgs.containsKey("-filePath")) {
+            filePath = parsedArgs.get("-filePath");
+        }
     }
 
     public static void main(String[] args) {
@@ -92,6 +96,7 @@ public class SendMp4Test {
         token = keys[1];
         SampleLogger.log("read appId: " + appId + " token: " + token + " from .keys");
 
+        // Initialize Agora service globally once
         service = new AgoraService();
         AgoraServiceConfig config = new AgoraServiceConfig();
         config.setAppId(appId);
@@ -114,6 +119,7 @@ public class SendMp4Test {
             return;
         }
 
+        // Create a connection for each channel
         RtcConnConfig ccfg = new RtcConnConfig();
         ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
         ccfg.setAutoSubscribeAudio(0);
@@ -189,8 +195,6 @@ public class SendMp4Test {
             }
         });
 
-        conn.getLocalUser().setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
-
         mediaNodeFactory = service.createMediaNodeFactory();
 
         exitLatch = new CountDownLatch(1);
@@ -201,15 +205,17 @@ public class SendMp4Test {
         }
 
         releaseConn();
+        releaseAgoraService();
     }
 
     private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
         final String currentChannelId = connInfo.getChannelId();
         final String currentUserId = connInfo.getLocalUserId();
+        SampleLogger.log("onConnConnected channelId:" + currentChannelId + " userId:" + currentUserId);
 
         MediaDecodeUtils mediaDecodeUtils = new MediaDecodeUtils();
 
-        boolean initRet = mediaDecodeUtils.init(FILE_PATH, 50, -1, decodedMediaType,
+        boolean initRet = mediaDecodeUtils.init(filePath, 50, -1, decodedMediaType,
                 new MediaDecodeUtils.MediaDecodeCallback() {
                     private ByteBuffer byteBuffer;
 
@@ -370,6 +376,15 @@ public class SendMp4Test {
 
         conn = null;
 
+        testTaskExecutorService.shutdown();
+
         SampleLogger.log("Disconnected from Agora channel successfully");
+    }
+
+    private static void releaseAgoraService() {
+        if (service != null) {
+            service.destroy();
+            service = null;
+        }
     }
 }

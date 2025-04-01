@@ -29,8 +29,8 @@ public class SendOpusTest {
 
     private static String appId;
     private static String token;
-    private static final String DEFAULT_LOG_PATH = "agora_logs/agorasdk.log";
-    private static final int DEFAULT_LOG_SIZE = 512 * 1024; // default log size is 512 kb
+    private final static String DEFAULT_LOG_PATH = "logs/agora_logs/agorasdk.log";
+    private final static int DEFAULT_LOG_SIZE = 5 * 1024 * 1024; // default log size is 5 mb
     private static String channelId = "agaa";
     private static String userId = "0";
     private static String audioFilePath = "test_data/send_audio.opus";
@@ -83,6 +83,7 @@ public class SendOpusTest {
         token = keys[1];
         SampleLogger.log("read appId: " + appId + " token: " + token + " from .keys");
 
+        // Initialize Agora service globally once
         service = new AgoraService();
         AgoraServiceConfig config = new AgoraServiceConfig();
         config.setAppId(appId);
@@ -105,6 +106,7 @@ public class SendOpusTest {
             return;
         }
 
+        // Create a connection for each channel
         RtcConnConfig ccfg = new RtcConnConfig();
         ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
         ccfg.setAutoSubscribeAudio(0);
@@ -179,8 +181,6 @@ public class SendOpusTest {
             }
         });
 
-        conn.getLocalUser().setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
-
         mediaNodeFactory = service.createMediaNodeFactory();
 
         exitLatch = new CountDownLatch(1);
@@ -191,6 +191,7 @@ public class SendOpusTest {
         }
 
         releaseConn();
+        releaseAgoraService();
     }
 
     private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
@@ -286,7 +287,16 @@ public class SendOpusTest {
 
         conn = null;
 
+        testTaskExecutorService.shutdown();
+
         SampleLogger.log("Disconnected from Agora channel successfully");
+    }
+
+    private static void releaseAgoraService() {
+        if (service != null) {
+            service.destroy();
+            service = null;
+        }
     }
 
 }
