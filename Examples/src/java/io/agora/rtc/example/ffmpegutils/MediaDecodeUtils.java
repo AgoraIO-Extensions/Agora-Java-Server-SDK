@@ -1,13 +1,13 @@
 package io.agora.rtc.example.ffmpegutils;
 
 import io.agora.rtc.example.common.SampleLogger;
-
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MediaDecodeUtils {
-    private boolean started = false;
-    private MediaDecode mediaDecode;
+    private final AtomicBoolean started = new AtomicBoolean(false);
+    private final MediaDecode mediaDecode;
     private int interval;
     private String filePath;
     private int repeatCount;
@@ -60,12 +60,14 @@ public class MediaDecodeUtils {
     }
 
     public void start() {
-        started = true;
-        if (decodedMediaType == DecodedMediaType.PCM_YUV) {
-            handleDecodedPcmYuv();
-        } else if (decodedMediaType == DecodedMediaType.PCM_H264) {
-            handleDecodedPcmH264();
-        }
+        started.set(true);
+        new Thread(() -> {
+            if (decodedMediaType == DecodedMediaType.PCM_YUV) {
+                handleDecodedPcmYuv();
+            } else if (decodedMediaType == DecodedMediaType.PCM_H264) {
+                handleDecodedPcmH264();
+            }
+        }).start();
     }
 
     private void handleDecodedPcmYuv() {
@@ -76,7 +78,7 @@ public class MediaDecodeUtils {
             SampleLogger.log("handleDecodedPcmYuv start duration:" + mediaDecode.getDuration());
             long basePts = 0;
             final long duration = mediaDecode.getDuration();
-            while (started) {
+            while (started.get()) {
                 long totalSendTime = Duration.between(firstSendTime, Instant.now()).toMillis();
                 MediaDecode.MediaFrame frame = mediaDecode.getFrame();
                 SampleLogger.log("frame:" + frame);
@@ -158,7 +160,7 @@ public class MediaDecodeUtils {
         Instant firstSendTime = Instant.now();
         try {
             SampleLogger.log("handleDecodedPcmH264 start duration:" + mediaDecode.getDuration());
-            while (started) {
+            while (started.get()) {
                 long totalSendTime = Duration.between(firstSendTime, Instant.now()).toMillis();
                 MediaDecode.MediaPacket packet = mediaDecode.getPacket();
                 SampleLogger.log("packet:" + packet);
@@ -246,6 +248,10 @@ public class MediaDecodeUtils {
             mediaDecode.close();
         }
         SampleLogger.log("handleDecodedPcmH264 end");
+    }
+
+    public void stop() {
+        started.set(false);
     }
 
     public interface MediaDecodeCallback {

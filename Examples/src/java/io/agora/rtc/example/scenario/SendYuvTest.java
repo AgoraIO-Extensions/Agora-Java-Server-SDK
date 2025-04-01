@@ -1,15 +1,5 @@
 package io.agora.rtc.example.scenario;
 
-import java.io.FileInputStream;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import io.agora.rtc.AgoraLocalUser;
 import io.agora.rtc.AgoraLocalVideoTrack;
 import io.agora.rtc.AgoraMediaNodeFactory;
 import io.agora.rtc.AgoraRtcConn;
@@ -17,7 +7,6 @@ import io.agora.rtc.AgoraService;
 import io.agora.rtc.AgoraServiceConfig;
 import io.agora.rtc.AgoraVideoFrameSender;
 import io.agora.rtc.Constants;
-import io.agora.rtc.DefaultLocalUserObserver;
 import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.ExternalVideoFrame;
 import io.agora.rtc.RtcConnConfig;
@@ -29,6 +18,12 @@ import io.agora.rtc.example.common.FileSender;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.DirectBufferCleaner;
 import io.agora.rtc.example.utils.Utils;
+import java.io.FileInputStream;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SendYuvTest {
     private static String appId;
@@ -43,8 +38,6 @@ public class SendYuvTest {
     private static AgoraVideoFrameSender videoFrameSender;
     private static AgoraLocalVideoTrack customVideoTrack;
 
-    private static CountDownLatch exitLatch;
-
     private static String channelId = "agaa";
     private static String userId = "0";
     private static int width = 360;
@@ -53,10 +46,9 @@ public class SendYuvTest {
     private static boolean enableAlpha = false;
     private static boolean enableSimulcastStream = false;
     private static String videoFile = "test_data/360p_I420.yuv";
+    private static long testTime = 60 * 1000;
 
-    private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
-    private static final ExecutorService logExecutorService = Executors.newCachedThreadPool();
-    private static final ExecutorService senderExecutorService = Executors.newSingleThreadExecutor();
+    private final static AtomicBoolean connConnected = new AtomicBoolean(false);
 
     private static void parseArgs(String[] args) {
         SampleLogger.log("parseArgs args:" + Arrays.toString(args));
@@ -104,6 +96,10 @@ public class SendYuvTest {
         if (parsedArgs.containsKey("-videoFile")) {
             videoFile = parsedArgs.get("-videoFile");
         }
+
+        if (parsedArgs.containsKey("-testTime")) {
+            testTime = Long.parseLong(parsedArgs.get("-testTime"));
+        }
     }
 
     public static void main(String[] args) {
@@ -126,6 +122,7 @@ public class SendYuvTest {
         int ret = service.initialize(config);
         if (ret != 0) {
             SampleLogger.log("createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
+            releaseAgoraService();
             return;
         }
 
@@ -133,6 +130,7 @@ public class SendYuvTest {
         service.setLogFilter(Constants.LOG_FILTER_DEBUG);
         if (ret != 0) {
             SampleLogger.log("createAndInitAgoraService AgoraService.setLogFile fail ret:" + ret);
+            releaseAgoraService();
             return;
         }
 
@@ -146,6 +144,7 @@ public class SendYuvTest {
         conn = service.agoraRtcConnCreate(ccfg);
         if (conn == null) {
             SampleLogger.log("AgoraService.agoraRtcConnCreate fail\n");
+            releaseAgoraService();
             return;
         }
 
@@ -153,7 +152,8 @@ public class SendYuvTest {
             @Override
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
                 super.onConnected(agoraRtcConn, connInfo, reason);
-                testTaskExecutorService.execute(() -> onConnConnected(agoraRtcConn, connInfo, reason));
+                connConnected.set(true);
+                userId = connInfo.getLocalUserId();
             }
 
             @Override
@@ -169,87 +169,37 @@ public class SendYuvTest {
                 SampleLogger.log("onUserLeft userId:" + userId + " reason:" + reason);
 
             }
-
-            @Override
-            public void onChangeRoleSuccess(AgoraRtcConn agoraRtcConn, int oldRole, int newRole) {
-                SampleLogger.log("onChangeRoleSuccess oldRole:" + oldRole + " newRole:" + newRole);
-            }
-
-            @Override
-            public void onChangeRoleFailure(AgoraRtcConn agoraRtcConn) {
-                SampleLogger.log("onChangeRoleFailure");
-            }
         });
         SampleLogger.log("registerObserver ret:" + ret);
 
         ret = conn.connect(token, channelId, userId);
         SampleLogger.log("Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
-
-        conn.getLocalUser().registerObserver(new DefaultLocalUserObserver() {
-            @Override
-            public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data,
-                    long length) {
-                SampleLogger.log("onStreamMessage: userid " + userId + " streamId " + streamId + "  data " + data);
-            }
-
-            @Override
-            public void onAudioPublishStateChanged(AgoraLocalUser agoraLocalUser, String channel, int oldState,
-                    int newState, int elapseSinceLastState) {
-                SampleLogger
-                        .log("onAudioPublishStateChanged channel:" + channel + " oldState:" + oldState + " newState:"
-                                + newState + " userRole:" + agoraLocalUser.getUserRole());
-            }
-
-            @Override
-            public void onVideoPublishStateChanged(AgoraLocalUser agoraLocalUser, String channel, int oldState,
-                    int newState, int elapseSinceLastState) {
-                SampleLogger
-                        .log("onVideoPublishStateChanged channel:" + channel + " oldState:" + oldState + " newState:"
-                                + newState + " userRole:" + agoraLocalUser.getUserRole());
-            }
-
-            public void onUserVideoTrackStateChanged(AgoraLocalUser agoraLocalUser, String userId,
-                    io.agora.rtc.AgoraRemoteVideoTrack agoraRemoteVideoTrack, int state, int reason, int elapsed) {
-                SampleLogger.log("onUserVideoTrackStateChanged userId:" + userId + " state:" + state + " reason:"
-                        + reason + " elapsed:" + elapsed);
-            };
-        });
-
-        mediaNodeFactory = service.createMediaNodeFactory();
-
-        exitLatch = new CountDownLatch(1);
-        try {
-            exitLatch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        if (ret != 0) {
+            SampleLogger.log("conn.connect fail ret=" + ret);
+            releaseConn();
+            releaseAgoraService();
+            return;
         }
 
-        releaseConn();
-        releaseAgoraService();
-    }
-
-    private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
-        SampleLogger.log("onConnConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
-        final String currentUserId = connInfo.getLocalUserId();
-        final String currentChannelId = connInfo.getChannelId();
+        mediaNodeFactory = service.createMediaNodeFactory();
 
         videoFrameSender = mediaNodeFactory.createVideoFrameSender();
 
         // Create video track
         customVideoTrack = service.createCustomVideoTrackFrame(videoFrameSender);
-        VideoEncoderConfig config = new VideoEncoderConfig();
-        config.setCodecType(Constants.VIDEO_CODEC_H264);
-        config.setDimensions(new VideoDimensions(width, height));
-        config.setFrameRate(fps);
-        config.setEncodeAlpha(enableAlpha ? 1 : 0);
-        customVideoTrack.setVideoEncoderConfig(config);
+        VideoEncoderConfig VideoEncoderConfig = new VideoEncoderConfig();
+        VideoEncoderConfig.setCodecType(Constants.VIDEO_CODEC_H264);
+        VideoEncoderConfig.setDimensions(new VideoDimensions(width, height));
+        VideoEncoderConfig.setFrameRate(fps);
+        VideoEncoderConfig.setEncodeAlpha(enableAlpha ? 1 : 0);
+        customVideoTrack.setVideoEncoderConfig(VideoEncoderConfig);
 
         if (enableSimulcastStream) {
             VideoDimensions lowDimensions = new VideoDimensions(width / 2, height / 2);
             SimulcastStreamConfig lowStreamConfig = new SimulcastStreamConfig();
             lowStreamConfig.setDimensions(lowDimensions);
             // lowStreamConfig.setBitrate(targetBitrate/2);
-            int ret = customVideoTrack.enableSimulcastStream(1, lowStreamConfig);
+            ret = customVideoTrack.enableSimulcastStream(1, lowStreamConfig);
             SampleLogger.log("sendYuvTask enableSimulcastStream ret:" + ret);
         }
 
@@ -317,11 +267,9 @@ public class SendYuvTest {
                 int ret = videoFrameSender.send(externalVideoFrame);
                 frameIndex++;
 
-                logExecutorService.execute(() -> {
-                    SampleLogger.log("send yuv frame data size:" + data.length + " ret:" + ret +
-                            " timestamp:" + timestamp + " frameIndex:" + frameIndex
-                            + " from channelId:" + currentChannelId + " userId:" + currentUserId);
-                });
+                SampleLogger.log("send yuv frame data size:" + data.length + " ret:" + ret +
+                        " timestamp:" + timestamp + " frameIndex:" + frameIndex
+                        + " from channelId:" + channelId + " userId:" + userId);
 
             }
 
@@ -353,7 +301,35 @@ public class SendYuvTest {
 
         };
 
-        senderExecutorService.execute(yuvSender);
+        while (!connConnected.get()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        yuvSender.start();
+
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime < testTime) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        releaseConn();
+        releaseAgoraService();
+        System.exit(0);
+    }
+
+    private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
+        SampleLogger.log("onConnConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
+        final String currentUserId = connInfo.getLocalUserId();
+        final String currentChannelId = connInfo.getChannelId();
+
     }
 
     private static void releaseConn() {
@@ -361,6 +337,8 @@ public class SendYuvTest {
         if (conn == null) {
             return;
         }
+
+        connConnected.set(false);
 
         if (null != mediaNodeFactory) {
             mediaNodeFactory.destroy();
@@ -391,10 +369,6 @@ public class SendYuvTest {
         conn.destroy();
         conn = null;
 
-        testTaskExecutorService.shutdown();
-        logExecutorService.shutdown();
-        senderExecutorService.shutdown();
-
         SampleLogger.log("Disconnected from Agora channel successfully");
     }
 
@@ -403,6 +377,7 @@ public class SendYuvTest {
             service.destroy();
             service = null;
         }
+        SampleLogger.log("releaseAgoraService");
     }
 
 }

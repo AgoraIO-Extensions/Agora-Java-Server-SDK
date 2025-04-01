@@ -7,7 +7,6 @@ import io.agora.rtc.AgoraServiceConfig;
 import io.agora.rtc.AgoraVideoFrameObserver2;
 import io.agora.rtc.AudioFrame;
 import io.agora.rtc.Constants;
-import io.agora.rtc.DefaultLocalUserObserver;
 import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.IAudioFrameObserver;
 import io.agora.rtc.RtcConnConfig;
@@ -23,7 +22,6 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -39,8 +37,6 @@ public class ReceiverPcmYuvTest {
     private static IAudioFrameObserver audioFrameObserver;
     private static AgoraVideoFrameObserver2 videoFrameObserver;
 
-    private static CountDownLatch exitLatch;
-
     private static String channelId = "agaa";
     private static String userId = "0";
     private static String audioOutFile = "test_data_out/receiver_audio_out";
@@ -48,10 +44,10 @@ public class ReceiverPcmYuvTest {
     private static int numOfChannels = 1;
     private static int sampleRate = 16000;
     private static String streamType = "high";
+    private static String remoteUserId = "";
+    private static long testTime = 60 * 1000;
 
-    private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
-    private static final ExecutorService logExecutorService = Executors.newCachedThreadPool();
-    private static final ExecutorService senderExecutorService = Executors.newSingleThreadExecutor();
+    private static final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
 
     private static void parseArgs(String[] args) {
         SampleLogger.log("parseArgs args:" + Arrays.toString(args));
@@ -95,6 +91,14 @@ public class ReceiverPcmYuvTest {
         if (parsedArgs.containsKey("-streamType")) {
             streamType = parsedArgs.get("-streamType");
         }
+
+        if (parsedArgs.containsKey("-remoteUserId")) {
+            remoteUserId = parsedArgs.get("-remoteUserId");
+        }
+
+        if (parsedArgs.containsKey("-testTime")) {
+            testTime = Long.parseLong(parsedArgs.get("-testTime"));
+        }
     }
 
     public static void main(String[] args) {
@@ -137,6 +141,7 @@ public class ReceiverPcmYuvTest {
         conn = service.agoraRtcConnCreate(ccfg);
         if (conn == null) {
             SampleLogger.log("AgoraService.agoraRtcConnCreate fail\n");
+            releaseAgoraService();
             return;
         }
 
@@ -144,7 +149,8 @@ public class ReceiverPcmYuvTest {
             @Override
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
                 super.onConnected(agoraRtcConn, connInfo, reason);
-                testTaskExecutorService.execute(() -> onConnConnected(agoraRtcConn, connInfo, reason));
+                SampleLogger.log("onConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
+                userId = connInfo.getLocalUserId();
             }
 
             @Override
@@ -160,81 +166,28 @@ public class ReceiverPcmYuvTest {
                 SampleLogger.log("onUserLeft userId:" + userId + " reason:" + reason);
 
             }
-
-            @Override
-            public void onChangeRoleSuccess(AgoraRtcConn agoraRtcConn, int oldRole, int newRole) {
-                SampleLogger.log("onChangeRoleSuccess oldRole:" + oldRole + " newRole:" + newRole);
-            }
-
-            @Override
-            public void onChangeRoleFailure(AgoraRtcConn agoraRtcConn) {
-                SampleLogger.log("onChangeRoleFailure");
-            }
         });
         SampleLogger.log("registerObserver ret:" + ret);
 
-        ret = conn.connect(token, channelId, userId);
-        SampleLogger.log("Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
-
-        conn.getLocalUser().registerObserver(new DefaultLocalUserObserver() {
-            @Override
-            public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data,
-                    long length) {
-                SampleLogger.log("onStreamMessage: userid " + userId + " streamId " + streamId + "  data " + data);
-            }
-
-            @Override
-            public void onAudioPublishStateChanged(AgoraLocalUser agoraLocalUser, String channel, int oldState,
-                    int newState, int elapseSinceLastState) {
-                SampleLogger
-                        .log("onAudioPublishStateChanged channel:" + channel + " oldState:" + oldState + " newState:"
-                                + newState + " userRole:" + agoraLocalUser.getUserRole());
-            }
-
-            @Override
-            public void onVideoPublishStateChanged(AgoraLocalUser agoraLocalUser, String channel, int oldState,
-                    int newState, int elapseSinceLastState) {
-                SampleLogger
-                        .log("onVideoPublishStateChanged channel:" + channel + " oldState:" + oldState + " newState:"
-                                + newState + " userRole:" + agoraLocalUser.getUserRole());
-            }
-
-            public void onUserVideoTrackStateChanged(AgoraLocalUser agoraLocalUser, String userId,
-                    io.agora.rtc.AgoraRemoteVideoTrack agoraRemoteVideoTrack, int state, int reason, int elapsed) {
-                SampleLogger.log("onUserVideoTrackStateChanged userId:" + userId + " state:" + state + " reason:"
-                        + reason + " elapsed:" + elapsed);
-            };
-        });
-
-        exitLatch = new CountDownLatch(1);
-        try {
-            exitLatch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        // receiver pcm
+        if (remoteUserId != null && !remoteUserId.isEmpty()) {
+            conn.getLocalUser().subscribeAudio(remoteUserId);
+        } else {
+            conn.getLocalUser().subscribeAllAudio();
         }
 
-        releaseConn();
-        releaseAgoraService();
-    }
-
-    private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
-        SampleLogger.log("onConnConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
-        final String currentChannelId = connInfo.getChannelId();
-        final String currentUserId = connInfo.getLocalUserId();
-
-        // receiver pcm
-        conn.getLocalUser().subscribeAllAudio();
-
-        int ret = conn.getLocalUser().setPlaybackAudioFrameBeforeMixingParameters(numOfChannels, sampleRate);
+        ret = conn.getLocalUser().setPlaybackAudioFrameBeforeMixingParameters(numOfChannels, sampleRate);
         SampleLogger.log("setPlaybackAudioFrameBeforeMixingParameters numOfChannels:" + numOfChannels + " sampleRate:"
                 + sampleRate);
-        if (ret > 0) {
+        if (ret != 0) {
             SampleLogger.log("setPlaybackAudioFrameBeforeMixingParameters fail ret=" + ret);
+            releaseConn();
+            releaseAgoraService();
             return;
         }
 
         audioFrameObserver = new SampleAudioFrameObserver(
-                audioOutFile + "_" + currentChannelId + "_" + currentUserId + ".pcm") {
+                audioOutFile + "_" + channelId + "_" + userId + ".pcm") {
             @Override
             public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser, String channelId,
                     String userId,
@@ -252,15 +205,13 @@ public class ReceiverPcmYuvTest {
                     return 0;
                 }
 
-                logExecutorService.execute(() -> {
-                    SampleLogger.log("onPlaybackAudioFrameBeforeMixing frame:" + frame);
+                singleExecutorService.execute(() -> {
                     SampleLogger.log(
-                            "onPlaybackAudioFrameBeforeMixing audioFrame size " + byteArray.length
+                            "onPlaybackAudioFrameBeforeMixing frame:" + frame + " audioFrame size " + byteArray.length
                                     + " channelId:"
                                     + channelId + " userId:" + userId);
+                    writeAudioFrameToFile(byteArray);
                 });
-
-                writeAudioFrameToFile(byteArray);
 
                 return 1;
             }
@@ -281,10 +232,14 @@ public class ReceiverPcmYuvTest {
             default:
                 return;
         }
-        conn.getLocalUser().subscribeAllVideo(subscriptionOptions);
+        if (remoteUserId != null && !remoteUserId.isEmpty()) {
+            conn.getLocalUser().subscribeVideo(remoteUserId, subscriptionOptions);
+        } else {
+            conn.getLocalUser().subscribeAllVideo(subscriptionOptions);
+        }
 
         videoFrameObserver = new AgoraVideoFrameObserver2(
-                new SampleVideFrameObserver(videoOutFile + "_" + currentChannelId + "_" + currentUserId + ".yuv") {
+                new SampleVideFrameObserver(videoOutFile + "_" + channelId + "_" + userId + ".yuv") {
                     @Override
                     public void onFrame(AgoraVideoFrameObserver2 agoraVideoFrameObserver2, String channelId,
                             String remoteUserId, VideoFrame frame) {
@@ -299,12 +254,11 @@ public class ReceiverPcmYuvTest {
                         byte[] data = new byte[ylength + ulength + vlength];
                         ByteBuffer buffer = ByteBuffer.wrap(data);
                         buffer.put(frame.getYBuffer()).put(frame.getUBuffer()).put(frame.getVBuffer());
-                        writeVideoFrameToFile(data);
 
                         final byte[] metaDataBufferData = io.agora.rtc.utils.Utils.getBytes(frame.getMetadataBuffer());
                         final byte[] alphaBufferData = io.agora.rtc.utils.Utils.getBytes(frame.getAlphaBuffer());
 
-                        logExecutorService.execute(() -> {
+                        singleExecutorService.execute(() -> {
                             SampleLogger.log(String.format(
                                     "onFrame width:%d height:%d channelId:%s remoteUserId:%s frame size:%d %d %d with  channelId:%s userId:%s",
                                     frame.getWidth(), frame.getHeight(), channelId, remoteUserId, ylength, ulength,
@@ -319,10 +273,34 @@ public class ReceiverPcmYuvTest {
                                 SampleLogger.log("onFrame getAlphaBuffer size:" + alphaBufferData.length + " mode:"
                                         + frame.getAlphaMode());
                             }
+
+                            writeVideoFrameToFile(data);
                         });
                     }
                 });
         conn.getLocalUser().registerVideoFrameObserver(videoFrameObserver);
+
+        ret = conn.connect(token, channelId, userId);
+        SampleLogger.log("Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
+        if (ret != 0) {
+            SampleLogger.log("conn.connect fail ret=" + ret);
+            releaseConn();
+            releaseAgoraService();
+            return;
+        }
+
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime < testTime) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        releaseConn();
+        releaseAgoraService();
+        System.exit(0);
     }
 
     private static void releaseConn() {
@@ -355,9 +333,7 @@ public class ReceiverPcmYuvTest {
 
         conn = null;
 
-        testTaskExecutorService.shutdown();
-        logExecutorService.shutdown();
-        senderExecutorService.shutdown();
+        singleExecutorService.shutdown();
 
         SampleLogger.log("Disconnected from Agora channel successfully");
     }
@@ -367,6 +343,7 @@ public class ReceiverPcmYuvTest {
             service.destroy();
             service = null;
         }
+        SampleLogger.log("releaseAgoraService");
     }
 
 }

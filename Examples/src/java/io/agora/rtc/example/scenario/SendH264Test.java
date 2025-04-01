@@ -1,14 +1,5 @@
 package io.agora.rtc.example.scenario;
 
-import java.io.FileInputStream;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import io.agora.rtc.AgoraLocalUser;
 import io.agora.rtc.AgoraLocalVideoTrack;
 import io.agora.rtc.AgoraMediaNodeFactory;
 import io.agora.rtc.AgoraRtcConn;
@@ -16,7 +7,6 @@ import io.agora.rtc.AgoraService;
 import io.agora.rtc.AgoraServiceConfig;
 import io.agora.rtc.AgoraVideoEncodedImageSender;
 import io.agora.rtc.Constants;
-import io.agora.rtc.DefaultLocalUserObserver;
 import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.EncodedVideoFrameInfo;
 import io.agora.rtc.RtcConnConfig;
@@ -28,6 +18,13 @@ import io.agora.rtc.example.common.FileSender;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.mediautils.H264Reader;
 import io.agora.rtc.example.utils.Utils;
+import java.io.FileInputStream;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SendH264Test {
     static {
@@ -46,8 +43,6 @@ public class SendH264Test {
     private static AgoraVideoEncodedImageSender customEncodedImageSender;
     private static AgoraLocalVideoTrack customEncodedVideoTrack;
 
-    private static CountDownLatch exitLatch;
-
     private static String channelId = "agaa";
     private static String userId = "0";
     private static int width = 360;
@@ -56,9 +51,11 @@ public class SendH264Test {
     private static String streamType = "high";
     private static boolean enableSimulcastStream = false;
     private static String videoFile = "test_data/send_video.h264";
+    private static long testTime = 60 * 1000;
 
-    private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
-    private static final ExecutorService logExecutorService = Executors.newCachedThreadPool();
+    private final static AtomicBoolean connConnected = new AtomicBoolean(false);
+
+    private static final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
 
     private static void parseArgs(String[] args) {
         SampleLogger.log("parseArgs args:" + Arrays.toString(args));
@@ -106,6 +103,10 @@ public class SendH264Test {
         if (parsedArgs.containsKey("-videoFile")) {
             videoFile = parsedArgs.get("-videoFile");
         }
+
+        if (parsedArgs.containsKey("-testTime")) {
+            testTime = Long.parseLong(parsedArgs.get("-testTime"));
+        }
     }
 
     public static void main(String[] args) {
@@ -128,6 +129,7 @@ public class SendH264Test {
         int ret = service.initialize(config);
         if (ret != 0) {
             SampleLogger.log("createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
+            releaseAgoraService();
             return;
         }
 
@@ -135,6 +137,7 @@ public class SendH264Test {
         service.setLogFilter(Constants.LOG_FILTER_DEBUG);
         if (ret != 0) {
             SampleLogger.log("createAndInitAgoraService AgoraService.setLogFile fail ret:" + ret);
+            releaseAgoraService();
             return;
         }
 
@@ -148,6 +151,7 @@ public class SendH264Test {
         conn = service.agoraRtcConnCreate(ccfg);
         if (conn == null) {
             SampleLogger.log("AgoraService.agoraRtcConnCreate fail\n");
+            releaseAgoraService();
             return;
         }
 
@@ -155,7 +159,9 @@ public class SendH264Test {
             @Override
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
                 super.onConnected(agoraRtcConn, connInfo, reason);
-                testTaskExecutorService.execute(() -> onConnConnected(agoraRtcConn, connInfo, reason));
+                SampleLogger.log("onConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
+                connConnected.set(true);
+                userId = connInfo.getLocalUserId();
             }
 
             @Override
@@ -171,69 +177,19 @@ public class SendH264Test {
                 SampleLogger.log("onUserLeft userId:" + userId + " reason:" + reason);
 
             }
-
-            @Override
-            public void onChangeRoleSuccess(AgoraRtcConn agoraRtcConn, int oldRole, int newRole) {
-                SampleLogger.log("onChangeRoleSuccess oldRole:" + oldRole + " newRole:" + newRole);
-            }
-
-            @Override
-            public void onChangeRoleFailure(AgoraRtcConn agoraRtcConn) {
-                SampleLogger.log("onChangeRoleFailure");
-            }
         });
         SampleLogger.log("registerObserver ret:" + ret);
 
         ret = conn.connect(token, channelId, userId);
         SampleLogger.log("Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
-
-        conn.getLocalUser().registerObserver(new DefaultLocalUserObserver() {
-            @Override
-            public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data,
-                    long length) {
-                SampleLogger.log("onStreamMessage: userid " + userId + " streamId " + streamId + "  data " + data);
-            }
-
-            @Override
-            public void onAudioPublishStateChanged(AgoraLocalUser agoraLocalUser, String channel, int oldState,
-                    int newState, int elapseSinceLastState) {
-                SampleLogger
-                        .log("onAudioPublishStateChanged channel:" + channel + " oldState:" + oldState + " newState:"
-                                + newState + " userRole:" + agoraLocalUser.getUserRole());
-            }
-
-            @Override
-            public void onVideoPublishStateChanged(AgoraLocalUser agoraLocalUser, String channel, int oldState,
-                    int newState, int elapseSinceLastState) {
-                SampleLogger
-                        .log("onVideoPublishStateChanged channel:" + channel + " oldState:" + oldState + " newState:"
-                                + newState + " userRole:" + agoraLocalUser.getUserRole());
-            }
-
-            public void onUserVideoTrackStateChanged(AgoraLocalUser agoraLocalUser, String userId,
-                    io.agora.rtc.AgoraRemoteVideoTrack agoraRemoteVideoTrack, int state, int reason, int elapsed) {
-                SampleLogger.log("onUserVideoTrackStateChanged userId:" + userId + " state:" + state + " reason:"
-                        + reason + " elapsed:" + elapsed);
-            };
-        });
-
-        mediaNodeFactory = service.createMediaNodeFactory();
-
-        exitLatch = new CountDownLatch(1);
-        try {
-            exitLatch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        if (ret != 0) {
+            SampleLogger.log("conn.connect fail ret=" + ret);
+            releaseConn();
+            releaseAgoraService();
+            return;
         }
 
-        releaseConn();
-        releaseAgoraService();
-    }
-
-    private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
-        SampleLogger.log("onConnConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
-        final String currentUserId = connInfo.getLocalUserId();
-        final String currentChannelId = connInfo.getChannelId();
+        mediaNodeFactory = service.createMediaNodeFactory();
 
         customEncodedImageSender = mediaNodeFactory.createVideoEncodedImageSender();
         // Create video track
@@ -251,11 +207,10 @@ public class SendH264Test {
         }
 
         // Publish video track
-        int ret = conn.getLocalUser().publishVideo(customEncodedVideoTrack);
+        ret = conn.getLocalUser().publishVideo(customEncodedVideoTrack);
         SampleLogger.log("sendH264Task publishVideo ret:" + ret);
 
         H264Reader h264Reader = new H264Reader(videoFile);
-
         FileSender h264SendThread = new FileSender(videoFile, 1000 / fps) {
             int lastFrameType = 0;
             int frameIndex = 0;
@@ -281,10 +236,10 @@ public class SendH264Test {
                 customEncodedImageSender.send(data, data.length, info);
                 frameIndex++;
 
-                logExecutorService.execute(() -> {
+                singleExecutorService.execute(() -> {
                     SampleLogger.log("send h264 frame data size:" + data.length +
                             " timestamp:" + timestamp + " frameIndex:" + frameIndex
-                            + " from channelId:" + currentChannelId + " userId:" + currentUserId);
+                            + " from channelId:" + channelId + " userId:" + userId);
                 });
             }
 
@@ -310,7 +265,28 @@ public class SendH264Test {
             }
         };
 
+        while (!connConnected.get()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
         h264SendThread.start();
+
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime < testTime) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        releaseConn();
+        releaseAgoraService();
+        System.exit(0);
     }
 
     private static void releaseConn() {
@@ -318,9 +294,11 @@ public class SendH264Test {
         if (conn == null) {
             return;
         }
+        connConnected.set(false);
 
         if (null != mediaNodeFactory) {
             mediaNodeFactory.destroy();
+            mediaNodeFactory = null;
         }
 
         if (null != customEncodedVideoTrack) {
@@ -345,11 +323,9 @@ public class SendH264Test {
         conn.getLocalUser().unregisterObserver();
 
         conn.destroy();
-
         conn = null;
 
-        testTaskExecutorService.shutdown();
-        logExecutorService.shutdown();
+        singleExecutorService.shutdown();
 
         SampleLogger.log("Disconnected from Agora channel successfully");
     }
@@ -359,6 +335,6 @@ public class SendH264Test {
             service.destroy();
             service = null;
         }
+        SampleLogger.log("releaseAgoraService");
     }
-
 }

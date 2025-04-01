@@ -1775,7 +1775,9 @@ public class AgoraConnectionTask {
                 }
 
                 if (enableSaveFile) {
-                    writeAudioFrameToFile(byteArray);
+                    singleExecutorService.execute(() -> {
+                        writeAudioFrameToFile(byteArray);
+                    });
                 }
                 if (null != vadResult) {
                     if (canLog) {
@@ -1784,7 +1786,9 @@ public class AgoraConnectionTask {
                             canLog = false;
                         }
                     }
-                    writeVadAudioToFile(vadResult.getOutFrame(), audioOutFile + "_vad.pcm");
+                    singleExecutorService.execute(() -> {
+                        writeAudioFrameToFile(vadResult.getOutFrame(), audioOutFile + "_vad.pcm");
+                    });
                 }
                 return 1;
             }
@@ -1862,7 +1866,9 @@ public class AgoraConnectionTask {
                     }
                 }
 
-                writeAudioFrameToFile(byteArray);
+                singleExecutorService.execute(() -> {
+                    writeAudioFrameToFile(byteArray);
+                });
                 return 1;
             }
 
@@ -1944,7 +1950,9 @@ public class AgoraConnectionTask {
                     byte[] data = new byte[ylength + ulength + vlength];
                     ByteBuffer buffer = ByteBuffer.wrap(data);
                     buffer.put(frame.getYBuffer()).put(frame.getUBuffer()).put(frame.getVBuffer());
-                    writeVideoFrameToFile(data);
+                    singleExecutorService.execute(() -> {
+                        writeVideoFrameToFile(data);
+                    });
                 }
 
                 final byte[] metaDataBufferData = io.agora.rtc.utils.Utils.getBytes(frame.getMetadataBuffer());
@@ -2044,7 +2052,9 @@ public class AgoraConnectionTask {
                         }
 
                         if (enableSaveFile) {
-                            writeVideoDataToFile(byteArray);
+                            singleExecutorService.execute(() -> {
+                                writeVideoDataToFile(byteArray);
+                            });
                         }
 
                         return 1;

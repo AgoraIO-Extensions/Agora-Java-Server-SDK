@@ -2,13 +2,11 @@ package io.agora.rtc.example.scenario;
 
 import io.agora.rtc.AgoraAudioPcmDataSender;
 import io.agora.rtc.AgoraLocalAudioTrack;
-import io.agora.rtc.AgoraLocalUser;
 import io.agora.rtc.AgoraMediaNodeFactory;
 import io.agora.rtc.AgoraRtcConn;
 import io.agora.rtc.AgoraService;
 import io.agora.rtc.AgoraServiceConfig;
 import io.agora.rtc.Constants;
-import io.agora.rtc.DefaultLocalUserObserver;
 import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
@@ -21,18 +19,13 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SendPcmRealTimeTest {
     private static String appId;
     private static String token;
     private final static String DEFAULT_LOG_PATH = "logs/agora_logs/agorasdk.log";
     private final static int DEFAULT_LOG_SIZE = 5 * 1024 * 1024; // default log size is 5 mb
-    private static String channelId = "agaa";
-    private static String userId = "0";
-    private static String audioFilePath = "test_data/send_audio_16k_1ch.pcm";
 
     private static AgoraService service;
     private static AgoraRtcConn conn;
@@ -41,12 +34,14 @@ public class SendPcmRealTimeTest {
     private static AgoraAudioPcmDataSender audioFrameSender;
     private static AgoraLocalAudioTrack customAudioTrack;
 
-    private static CountDownLatch exitLatch;
-
+    private static String channelId = "agaa";
+    private static String userId = "0";
+    private static String audioFilePath = "test_data/send_audio_16k_1ch.pcm";
     private static int numOfChannels = 1;
     private static int sampleRate = 16000;
+    private static long testTime = 60 * 1000;
 
-    private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
+    private final static AtomicBoolean connConnected = new AtomicBoolean(false);
 
     private static void parseArgs(String[] args) {
         SampleLogger.log("parseArgs args:" + Arrays.toString(args));
@@ -74,6 +69,10 @@ public class SendPcmRealTimeTest {
         if (parsedArgs.containsKey("-audioFilePath")) {
             audioFilePath = parsedArgs.get("-audioFilePath");
         }
+
+        if (parsedArgs.containsKey("-testTime")) {
+            testTime = Long.parseLong(parsedArgs.get("-testTime"));
+        }
     }
 
     public static void main(String[] args) {
@@ -96,6 +95,7 @@ public class SendPcmRealTimeTest {
         int ret = service.initialize(config);
         if (ret != 0) {
             SampleLogger.log("createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
+            releaseAgoraService();
             return;
         }
 
@@ -103,6 +103,7 @@ public class SendPcmRealTimeTest {
         service.setLogFilter(Constants.LOG_FILTER_DEBUG);
         if (ret != 0) {
             SampleLogger.log("createAndInitAgoraService AgoraService.setLogFile fail ret:" + ret);
+            releaseAgoraService();
             return;
         }
 
@@ -116,6 +117,7 @@ public class SendPcmRealTimeTest {
         conn = service.agoraRtcConnCreate(ccfg);
         if (conn == null) {
             SampleLogger.log("AgoraService.agoraRtcConnCreate fail\n");
+            releaseAgoraService();
             return;
         }
 
@@ -125,7 +127,8 @@ public class SendPcmRealTimeTest {
                 super.onConnected(agoraRtcConn, connInfo, reason);
                 SampleLogger.log(
                         "onConnected chennalId:" + connInfo.getChannelId() + " userId:" + connInfo.getLocalUserId());
-                testTaskExecutorService.execute(() -> onConnConnected(agoraRtcConn, connInfo, reason));
+                connConnected.set(true);
+                userId = connInfo.getLocalUserId();
             }
 
             @Override
@@ -141,61 +144,20 @@ public class SendPcmRealTimeTest {
                 SampleLogger.log("onUserLeft userId:" + userId + " reason:" + reason);
 
             }
-
-            @Override
-            public void onChangeRoleSuccess(AgoraRtcConn agoraRtcConn, int oldRole, int newRole) {
-                SampleLogger.log("onChangeRoleSuccess oldRole:" + oldRole + " newRole:" + newRole);
-            }
-
-            @Override
-            public void onChangeRoleFailure(AgoraRtcConn agoraRtcConn) {
-                SampleLogger.log("onChangeRoleFailure");
-            }
         });
         SampleLogger.log("registerObserver ret:" + ret);
 
         ret = conn.connect(token, channelId, userId);
         SampleLogger.log("Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
 
-        conn.getLocalUser().registerObserver(new DefaultLocalUserObserver() {
-            @Override
-            public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data,
-                    long length) {
-                SampleLogger.log("onStreamMessage: userid " + userId + " streamId " + streamId + "  data " + data);
-            }
-
-            @Override
-            public void onAudioPublishStateChanged(AgoraLocalUser agoraLocalUser, String channel, int oldState,
-                    int newState, int elapseSinceLastState) {
-                SampleLogger
-                        .log("onAudioPublishStateChanged channel:" + channel + " oldState:" + oldState + " newState:"
-                                + newState + " userRole:" + agoraLocalUser.getUserRole());
-            }
-
-            @Override
-            public void onVideoPublishStateChanged(AgoraLocalUser agoraLocalUser, String channel, int oldState,
-                    int newState, int elapseSinceLastState) {
-                // TODO Auto-generated method stub
-                SampleLogger
-                        .log("onVideoPublishStateChanged channel:" + channel + " oldState:" + oldState + " newState:"
-                                + newState + " userRole:" + agoraLocalUser.getUserRole());
-            }
-        });
-
-        mediaNodeFactory = service.createMediaNodeFactory();
-
-        exitLatch = new CountDownLatch(1);
-        try {
-            exitLatch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        if (ret != 0) {
+            SampleLogger.log("conn.connect fail ret=" + ret);
+            releaseConn();
+            releaseAgoraService();
+            return;
         }
 
-        releaseConn();
-        releaseAgoraService();
-    }
-
-    private static void onConnConnected(AgoraRtcConn conn, RtcConnInfo connInfo, int reason) {
+        mediaNodeFactory = service.createMediaNodeFactory();
         audioFrameSender = mediaNodeFactory.createAudioPcmDataSender();
         // Create audio track
         customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
@@ -256,18 +218,27 @@ public class SendPcmRealTimeTest {
             }
         };
 
+        while (!connConnected.get()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
         pcmSendThread.start();
 
-        try {
-            pcmSendThread.join();
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime < testTime) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
 
-        if (null != exitLatch) {
-            exitLatch.countDown();
-        }
+        releaseConn();
+        releaseAgoraService();
+        System.exit(0);
     }
 
     private static void releaseConn() {
@@ -275,6 +246,8 @@ public class SendPcmRealTimeTest {
         if (conn == null) {
             return;
         }
+
+        connConnected.set(false);
 
         if (null != mediaNodeFactory) {
             mediaNodeFactory.destroy();
@@ -305,8 +278,6 @@ public class SendPcmRealTimeTest {
         conn.destroy();
         conn = null;
 
-        testTaskExecutorService.shutdown();
-
         SampleLogger.log("Disconnected from Agora channel successfully");
     }
 
@@ -315,6 +286,7 @@ public class SendPcmRealTimeTest {
             service.destroy();
             service = null;
         }
+        SampleLogger.log("releaseAgoraService");
     }
 
 }

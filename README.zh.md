@@ -184,6 +184,10 @@
 
   参考 `Examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmYuvTest.java`,实现接收 pcm&yuv 数据
 
+- 发送接收流消息
+
+  参考 `Examples/src/java/io/agora/rtc/example/scenario/SendReceiverStreamMessageTest.java`,实现发送接收流消息
+
 ### 常见问题
 
 - 确保 Java 环境正确安装和配置

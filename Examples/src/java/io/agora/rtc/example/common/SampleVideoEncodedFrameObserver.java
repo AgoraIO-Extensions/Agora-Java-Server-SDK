@@ -1,16 +1,12 @@
 package io.agora.rtc.example.common;
 
-import java.nio.ByteBuffer;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import io.agora.rtc.AgoraVideoEncodedFrameObserver;
 import io.agora.rtc.EncodedVideoFrameInfo;
 import io.agora.rtc.IVideoEncodedFrameObserver;
 import io.agora.rtc.example.utils.Utils;
+import java.nio.ByteBuffer;
 
 public class SampleVideoEncodedFrameObserver extends FileWriter implements IVideoEncodedFrameObserver {
-    protected final ExecutorService writeFileExecutorService = Executors.newSingleThreadExecutor();
     private String outputFilePath = "";
 
     public SampleVideoEncodedFrameObserver(String outputFilePath) {
@@ -38,33 +34,15 @@ public class SampleVideoEncodedFrameObserver extends FileWriter implements IVide
         return 1;
     }
 
-    public void writeVideoDataToFile(ByteBuffer buffer) {
-        if ("".equals(outputFilePath.trim()) || buffer == null || buffer.remaining() == 0) {
-            return;
-        }
-        byte[] byteArray = io.agora.rtc.utils.Utils.getBytes(buffer);
-
-        writeFileExecutorService.execute(() -> {
-            try {
-                writeData(byteArray, byteArray.length);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
-    }
-
     public void writeVideoDataToFile(byte[] buffer) {
         if ("".equals(outputFilePath.trim()) || buffer == null || buffer.length == 0) {
             return;
         }
 
-        writeFileExecutorService.execute(() -> {
-            try {
-                writeData(buffer, buffer.length);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
+        try {
+            writeData(buffer, buffer.length);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
-
 }
