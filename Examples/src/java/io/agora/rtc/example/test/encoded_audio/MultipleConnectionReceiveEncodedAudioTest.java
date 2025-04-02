@@ -18,7 +18,7 @@ public class MultipleConnectionReceiveEncodedAudioTest extends AgoraTest {
         // Create Agora connection
         RtcConnConfig ccfg = new RtcConnConfig();
         ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
-        ccfg.setAutoSubscribeAudio(1);
+        ccfg.setAutoSubscribeAudio(0);
         ccfg.setAutoSubscribeVideo(0);
         ccfg.setEnableAudioRecordingOrPlayout(0);
         ccfg.setAudioRecvEncodedFrame(1);

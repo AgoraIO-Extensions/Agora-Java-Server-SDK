@@ -63,9 +63,6 @@ if $build_mediaUtils; then
     cp -f "$OUT/libmedia_utils.so" "third_party/libmedia_utils.so"
 fi
 
-cp -f "third_party/libffmpeg_utils.so" "libs/libffmpeg_utils.so"
-cp -f "third_party/libmedia_utils.so" "libs/libmedia_utils.so"
-
 find src -name "*.java" >build/test_source.txt
 
 # 编译 Java 文件

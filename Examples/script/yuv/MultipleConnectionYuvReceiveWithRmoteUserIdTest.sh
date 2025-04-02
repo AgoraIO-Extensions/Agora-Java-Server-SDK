@@ -1,0 +1,1 @@
+sh run.zsh io.agora.rtc.example.test.yuv.MultipleConnectionYuvReceiveTest -channelId yuvChannel -userId 0 -remoteUserId 888 -connectionCount 3 -videoFile test_data/360p_I420.yuv -videoOutFile test_data_out/received_yuv -frameCount 60 -enableSaveFile 1
