@@ -25,7 +25,7 @@ public class MultipleConnectionMixedAudioReceiveTest extends AgoraTest {
         RtcConnConfig ccfg = new RtcConnConfig();
         ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
         ccfg.setAudioSubsOptions(audioSubOpt);
-        ccfg.setAutoSubscribeAudio(1);
+        ccfg.setAutoSubscribeAudio(0);
         ccfg.setAutoSubscribeVideo(0);
         ccfg.setEnableAudioRecordingOrPlayout(1);
         ccfg.setChannelProfile(Constants.CHANNEL_PROFILE_LIVE_BROADCASTING);

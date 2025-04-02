@@ -7,7 +7,7 @@
 - [System Requirements](#system-requirements)
 - [Quick Start](#quick-start)
 - [SDK Acquisition](#sdk-acquisition)
-- [API Examples](#api-examples)
+- [Examples](#examples)
 - [API Reference](#api-reference)
 - [Changelog](#changelog)
 - [FAQ](#faq)
@@ -47,13 +47,11 @@ Refer to the [official example documentation](https://doc.shengwang.cn/doc/rtc-s
 </dependency>
 ```
 
-[linux-java-sdk-4.4.31.4](https://repo1.maven.org/maven2/io/agora/rtc/linux-java-sdk/4.4.31.4/linux-java-sdk-4.4.31.4.jar)
-
 ### CDN download
 
-[Agora-Linux-Java-SDK-v4.4.31.4-x86_64-491956-b0f672dd05-20250321_153537](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.31.4-x86_64-491956-b0f672dd05-20250321_153537.jar)
+[Agora-Linux-Java-SDK-v4.4.31.4-x86_64-491956-341b4be9b9-20250402_171133](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.31.4-x86_64-491956-341b4be9b9-20250402_171133.zip)
 
-## API Examples
+## Examples
 
 ### Environment Setup
 
@@ -114,18 +112,24 @@ Refer to the [official example documentation](https://doc.shengwang.cn/doc/rtc-s
 
 4. Extract SO files:
 
+   Navigate to the `Examples/libs` directory and execute:
+
    ```bash
    jar xvf agora-sdk.jar
-   mv native/linux/x86_64/*.so libs/
    ```
 
-   Ensure directory structure is:
+   After extraction, ensure the directory structure is as follows:
 
    ```
    libs/
    ├── agora-sdk.jar
-   └── lib***.so
+   └── native/
+       └── linux/
+           └── x86_64/
+               └── lib*.so (various dynamic library files)
    ```
+
+   _Note_: Ensure all .so files are correctly extracted, these files are the core components of the SDK.
 
 ### Compilation Process
 

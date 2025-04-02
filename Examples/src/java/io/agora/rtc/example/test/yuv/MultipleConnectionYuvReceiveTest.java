@@ -18,7 +18,7 @@ public class MultipleConnectionYuvReceiveTest extends AgoraTest {
         RtcConnConfig ccfg = new RtcConnConfig();
         ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
         ccfg.setAutoSubscribeAudio(0);
-        ccfg.setAutoSubscribeVideo(1);
+        ccfg.setAutoSubscribeVideo(0);
 
         if (ArgsConfig.connectionCount == 1) {
             createConnectionAndTest(ccfg, ArgsConfig.channelId, ArgsConfig.userId, TestTask.RECEIVE_YUV,

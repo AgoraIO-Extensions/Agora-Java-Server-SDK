@@ -1,9 +1,13 @@
 #!/usr/bin/env zsh
 #sh run.zsh io.agora.rtc.example.test.H264PcmTest -channelId  aga -token 123 -sampleRate 23900
 
-export DYLD_LIBRARY_PATH=$(pwd)/libs/
-export LD_LIBRARY_PATH=$(pwd)/libs/
-echo "$LD_LIBRARY_PATH"
+ARCH=$(uname -m)
+
+LIB_PATH="libs/native/linux/$ARCH"
+
+export DYLD_LIBRARY_PATH=$(pwd)/libs:$(pwd)/$LIB_PATH:$(pwd)/third_party
+export LD_LIBRARY_PATH=$(pwd)/libs:$(pwd)/$LIB_PATH:$(pwd)/third_party
+echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
 
 CLASS=$1
 shift 1
@@ -75,6 +79,9 @@ ulimit -s unlimited # Set stack size to unlimited
 
 CLASSPATH=".:third_party/commons-cli-1.5.0.jar:third_party/junit-4.13.2.jar:third_party/log4j-api-2.24.3.jar:third_party/log4j-core-2.24.3.jar:./libs/agora-sdk.jar:./build"
 
+# Ensure Java library path includes all necessary directories
+JAVA_LIBRARY_PATH="-Djava.library.path=libs:$LIB_PATH:third_party"
+
 # Check if ASAN is enabled either from config or command line
 if [ "$ENABLE_ASAN" = "true" ]; then
     echo "ASAN is enabled"
@@ -85,6 +92,6 @@ fi
 
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 
-# Execute Java command
-java -cp $CLASSPATH $JAVA_OPTS -Dlog.filename=app-$TIMESTAMP -Dlog4j.configurationFile=file:./log4j2.xml -Djava.library.path=libs $CLASS $* |
+# Execute Java command with updated java.library.path
+java -cp $CLASSPATH $JAVA_OPTS $JAVA_LIBRARY_PATH -Dlog.filename=app-$TIMESTAMP -Dlog4j.configurationFile=file:./log4j2.xml $CLASS $* |
     grep -v "WARNING in native method: JNI call made without checking exceptions"

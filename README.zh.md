@@ -5,7 +5,7 @@
 - [开发环境要求](#开发环境要求)
 - [快速开始](#快速开始)
 - [SDK 获取](#sdk-获取)
-- [API Example](#api-example)
+- [Examples](#examples)
 - [API 参考](#api-参考)
 - [更新日志](#更新日志)
 - [常见问题](#常见问题)
@@ -45,13 +45,11 @@
 </dependency>
 ```
 
-[linux-java-sdk-4.4.31.4](https://repo1.maven.org/maven2/io/agora/rtc/linux-java-sdk/4.4.31.4/linux-java-sdk-4.4.31.4.jar)
-
 ### CDN 下载
 
-[Agora-Linux-Java-SDK-v4.4.31.4-x86_64-491956-b0f672dd05-20250321_153537](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.31.4-x86_64-491956-b0f672dd05-20250321_153537.jar)
+[Agora-Linux-Java-SDK-v4.4.31.4-x86_64-491956-341b4be9b9-20250402_171133](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.31.4-x86_64-491956-341b4be9b9-20250402_171133.zip)
 
-## API Example
+## Examples
 
 ### 环境准备
 
@@ -112,18 +110,24 @@
 
 4. 提取 SO 文件：
 
+   进入 `Examples/libs` 目录，执行：
+
    ```bash
    jar xvf agora-sdk.jar
-   mv native/linux/x86_64/*.so libs/
    ```
 
-   确保目录结构如下：
+   提取完成后，确保目录结构如下：
 
    ```
    libs/
    ├── agora-sdk.jar
-   └── lib***.so
+   └── native/
+       └── linux/
+           └── x86_64/
+               └── lib*.so (各种动态库文件)
    ```
+
+   注意：确保所有 .so 文件都被正确提取，这些文件是 SDK 的核心组件。
 
 ### 编译过程
 
