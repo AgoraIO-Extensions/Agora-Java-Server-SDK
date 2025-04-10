@@ -327,70 +327,79 @@ public class Main {
 
 ### v4.4.31.4（2025-03-21）
 
-- 修复了多线程环境下可能导致的异常崩溃问题。
-- 改进了错误处理流程，增强了异常情况下的恢复能力。
+#### 优化
+
+- 修复了多线程环境下可能导致的异常崩溃问题
+- 改进了错误处理流程，增强了异常情况下的恢复能力
 
 ### v4.4.31.3（2025-02-26）
 
-- 修复了由于内存复用可能导致的异常处理问题。
+#### 优化
+
+- 修复了由于内存复用可能导致的异常处理问题
 
 ### v4.4.31.2（2025-02-19）
 
+#### API 更新
+
+- 新增 `sendStreamMessage(int streamId, byte[] messageData)` 方法，弃用 `sendStreamMessage(int streamId, String message, int length)` 方法
+
 #### 优化
 
-- 优化代码处理，提高系统稳健性。
-
-#### 新增
-
-- 新增 `sendStreamMessage(int streamId, byte[] messageData)` 方法，弃用 `sendStreamMessage(int streamId, String message, int length)` 方法。
+- 优化代码处理，提高系统稳健性
 
 ### v4.4.31.1（2025-01-06）
 
-#### 功能优化
+#### 优化
 
-- 优化 VAD 功能配置,现在默认开启 VAD 功能,无需手动配置
+- 优化 VAD 功能配置，现在默认开启 VAD 功能，无需手动配置
 
 ### v4.4.31（2024-12-23）
 
-#### 新增功能
+#### API 更新
 
-- 在 `AgoraServiceConfig` 中新增 `DomainLimit` 配置选项，用于域名限制管理。
-- 新增 `VadDumpUtils` 工具类，支持导出 VAD 处理过程的调试数据，便于问题诊断。
-- 新增 `AudioConsumerUtils` 类，提供优化的 PCM 数据传输机制，有效避免音频失真问题。
-- 在 `AgoraLocalUser` 中修改 `registerAudioFrameObserver` 方法，支持配置 `AgoraAudioVadConfigV2` 参数。
-- 在 `IAudioFrameObserver` 中新增 `onPlaybackAudioFrameBeforeMixing` 回调的 `vadResult` 参数，提供更详细的 VAD 处理结果。
-- 在 `AgoraLocalUser` 类中新增 `sendAudioMetaData` 方法，支持发送音频元数据。
-- 在 `ILocalUserObserver` 类中新增 `onAudioMetaDataReceived` 回调，用于接收音频元数据。
-- 在 `ExternalVideoFrame` 类中增加 `ColorSpace` 属性，支持自定义颜色空间设置。
+- 在 `AgoraServiceConfig` 中新增 `DomainLimit` 配置选项，用于域名限制管理
+- 新增 `VadDumpUtils` 工具类，支持导出 VAD 处理过程的调试数据
+- 新增 `AudioConsumerUtils` 类，提供优化的 PCM 数据传输机制
+- 在 `AgoraLocalUser` 中修改 `registerAudioFrameObserver` 方法，支持配置 `AgoraAudioVadConfigV2` 参数
+- 在 `IAudioFrameObserver` 中新增 `onPlaybackAudioFrameBeforeMixing` 回调的 `vadResult` 参数
+- 在 `AgoraLocalUser` 类中新增 `sendAudioMetaData` 方法，支持发送音频元数据
+- 在 `ILocalUserObserver` 类中新增 `onAudioMetaDataReceived` 回调，用于接收音频元数据
+- 在 `ExternalVideoFrame` 类中增加 `ColorSpace` 属性，支持自定义颜色空间设置
 
-#### 性能优化
+#### 优化
 
-- 优化代码逻辑架构，显著提升内存使用效率。
-- 修复多处内存泄露问题，提高系统稳定性。
-- 增强内存访问安全机制，有效防止内存踩踏问题。
+- 优化代码逻辑架构，显著提升内存使用效率
+- 修复多处内存泄露问题，提高系统稳定性
+- 增强内存访问安全机制，有效防止内存踩踏问题
 
 ### v4.4.30.2（2024-11-20）
 
-- 增强了 AgoraAudioVadV2 的 `processFrame` 处理，新增 `START_SPEAKING` 和 `STOP_SPEAKING` 状态回调。
-- 改进了编码帧回调的参数类型，`onEncodedAudioFrameReceived`、`onEncodedVideoImageReceived`、`onEncodedVideoFrame` 现在使用 `ByteBuffer` 替代 `Byte` 数组，提高性能和灵活性。
-- VAD 插件启动优化，`enableExtension` 现在在 SDK 内部实现，应用程序不再需要手动调用此方法。
-- 修复了 `VideoFrame` 中 `alphaBuffer` 和 `metadataBuffer` 的处理问题。
+#### API 更新
 
-#### 开发者注意事项
+- 增强了 AgoraAudioVadV2 的 `processFrame` 处理，新增 `START_SPEAKING` 和 `STOP_SPEAKING` 状态回调
+- 改进了编码帧回调的参数类型，`onEncodedAudioFrameReceived`、`onEncodedVideoImageReceived`、`onEncodedVideoFrame` 现在使用 `ByteBuffer` 替代 `Byte` 数组
 
-- 请更新使用编码帧回调的代码，以适应新的 `ByteBuffer` 参数类型。
-- 如之前手动调用了 VAD 插件的 `enableExtension`，现在可以移除该调用。
+#### 优化
+
+- VAD 插件启动优化，`enableExtension` 现在在 SDK 内部实现，应用程序不再需要手动调用此方法
+- 修复了 `VideoFrame` 中 `alphaBuffer` 和 `metadataBuffer` 的处理问题
 
 ### v4.4.30.1（2024-11-12）
 
-- 增加 AgoraAudioVad2 相关 `Vad2` 接口，移除 AgoraAudioVad 相关 `Vad` 接口。
-- 新增接收编码音频回调接口 `IAudioEncodedFrameObserver`。
-- 修复 `LocalAudioDetailedStats` 相关回调崩溃问题。
-- 修改 `onAudioVolumeIndication` 回调参数类型。
+#### API 更新
+
+- 增加 AgoraAudioVad2 相关 `Vad2` 接口，移除 AgoraAudioVad 相关 `Vad` 接口
+- 新增接收编码音频回调接口 `IAudioEncodedFrameObserver`
+
+#### 优化
+
+- 修复 `LocalAudioDetailedStats` 相关回调崩溃问题
+- 修改 `onAudioVolumeIndication` 回调参数类型
 
 ### v4.4.30（2024-10-24）
 
-- 详细更新日志请参考 [发版说明](https://doc.shengwang.cn/doc/rtc-server-sdk/java/overview/release-notes)。
+- 详细更新日志请参考 [发版说明](https://doc.shengwang.cn/doc/rtc-server-sdk/java/overview/release-notes)
 
 ## 常见问题
 
