@@ -330,72 +330,79 @@ public class Main {
 
 ### v4.4.31.4 (2025-03-21)
 
-- Fixed potential crash issues that could occur in multi-threaded environments.
-- Enhanced error handling processes, strengthening recovery capabilities in exceptional situations.
+#### Optimization
+
+- Fixed potential crash issues that could occur in multi-threaded environments
+- Enhanced error handling processes, strengthening recovery capabilities in exceptional situations
 
 ### v4.4.31.3 (2025-02-26)
 
 #### Optimization
 
-- Fixed memory reuse issues that could cause exceptions.
+- Fixed memory reuse issues that could cause exceptions
 
 ### v4.4.31.2 (2025-02-19)
 
+#### API Updates
+
+- Added `sendStreamMessage(int streamId, byte[] messageData)` method, deprecated `sendStreamMessage(int streamId, String message, int length)` method
+
 #### Optimization
 
-- Optimized code handling to improve system robustness.
-
-#### New Features
-
-- Added `sendStreamMessage(int streamId, byte[] messageData)` method, deprecated `sendStreamMessage(int streamId, String message, int length)` method.
+- Optimized code handling to improve system robustness
 
 ### v4.4.31.1 (2025-01-06)
 
-#### Feature Optimization
+#### Optimization
 
 - Optimized VAD functionality configuration, now VAD functionality is enabled by default without manual configuration
 
 ### v4.4.31 (2024-12-23)
 
-#### New Features
+#### API Updates
 
-- Added `DomainLimit` configuration option in `AgoraServiceConfig` for domain restriction management.
-- Added `VadDumpUtils` utility class to support exporting VAD process debug data for troubleshooting.
-- Added `AudioConsumerUtils` class, providing optimized PCM data transmission mechanism to effectively prevent audio distortion.
-- Modified `registerAudioFrameObserver` method in `AgoraLocalUser` to support `AgoraAudioVadConfigV2` parameter configuration.
-- Added `vadResult` parameter in `onPlaybackAudioFrameBeforeMixing` callback of `IAudioFrameObserver` to provide more detailed VAD processing results.
-- Added `sendAudioMetaData` method in `AgoraLocalUser` class for sending audio metadata.
-- Added `onAudioMetaDataReceived` callback in `ILocalUserObserver` class for receiving audio metadata.
-- Added `ColorSpace` property in the `ExternalVideoFrame` class to support custom color space configuration.
+- Added `DomainLimit` configuration option in `AgoraServiceConfig` for domain restriction management
+- Added `VadDumpUtils` utility class to support exporting VAD process debug data
+- Added `AudioConsumerUtils` class, providing optimized PCM data transmission mechanism
+- Modified `registerAudioFrameObserver` method in `AgoraLocalUser` to support `AgoraAudioVadConfigV2` parameter configuration
+- Added `vadResult` parameter in `onPlaybackAudioFrameBeforeMixing` callback of `IAudioFrameObserver`
+- Added `sendAudioMetaData` method in `AgoraLocalUser` class for sending audio metadata
+- Added `onAudioMetaDataReceived` callback in `ILocalUserObserver` class for receiving audio metadata
+- Added `ColorSpace` property in the `ExternalVideoFrame` class to support custom color space configuration
 
-#### Performance Improvements
+#### Optimization
 
-- Optimized code logic architecture to significantly improve memory efficiency.
-- Fixed multiple memory leak issues to enhance system stability.
-- Enhanced memory access security mechanism to effectively prevent memory corruption.
+- Optimized code logic architecture to significantly improve memory efficiency
+- Fixed multiple memory leak issues to enhance system stability
+- Enhanced memory access security mechanism to effectively prevent memory corruption
 
 ### v4.4.30.2 (2024-11-20)
 
-- Enhanced the `processFrame` handling in `AgoraAudioVadV2` with new `START_SPEAKING` and `STOP_SPEAKING` state callbacks.
-- Improved parameter types for encoded frame callbacks. `onEncodedAudioFrameReceived`, `onEncodedVideoImageReceived`, and `onEncodedVideoFrame` now use `ByteBuffer` instead of `Byte` arrays, enhancing performance and flexibility.
-- Optimized VAD plugin startup; `enableExtension` is now implemented within the SDK, so applications no longer need to call this method manually.
-- Fixed issues with the handling of `alphaBuffer` and `metadataBuffer` in `VideoFrame`.
+#### API Updates
 
-#### Developer Notes
+- Enhanced the `processFrame` handling in `AgoraAudioVadV2` with new `START_SPEAKING` and `STOP_SPEAKING` state callbacks
+- Improved parameter types for encoded frame callbacks, `onEncodedAudioFrameReceived`, `onEncodedVideoImageReceived`, and `onEncodedVideoFrame` now use `ByteBuffer` instead of `Byte` arrays
 
-- Please update the code using encoded frame callbacks to accommodate the new `ByteBuffer` parameter type.
-- If you previously called the `enableExtension` method for the VAD plugin manually, you can now remove that call.
+#### Optimization
+
+- Optimized VAD plugin startup; `enableExtension` is now implemented within the SDK, so applications no longer need to call this method manually
+- Fixed issues with the handling of `alphaBuffer` and `metadataBuffer` in `VideoFrame`
 
 ### v4.4.30.1 (2024-11-12)
 
-- Added `Vad2` interfaces related to `AgoraAudioVad2` and removed `Vad` interfaces related to `AgoraAudioVad`.
-- Added a new callback interface for receiving encoded audio frames: `IAudioEncodedFrameObserver`.
-- Fixed crashes related to `LocalAudioDetailedStats` callbacks.
-- Modified the parameter types for the `onAudioVolumeIndication` callback.
+#### API Updates
+
+- Added `Vad2` interfaces related to `AgoraAudioVad2` and removed `Vad` interfaces related to `AgoraAudioVad`
+- Added a new callback interface for receiving encoded audio frames: `IAudioEncodedFrameObserver`
+
+#### Optimization
+
+- Fixed crashes related to `LocalAudioDetailedStats` callbacks
+- Modified the parameter types for the `onAudioVolumeIndication` callback
 
 ### v4.4.30 (2024-10-24)
 
-- For detailed release notes, please refer to the [Release Notes](https://doc.shengwang.cn/doc/rtc-server-sdk/java/overview/release-notes).
+- For detailed release notes, please refer to the [Release Notes](https://doc.shengwang.cn/doc/rtc-server-sdk/java/overview/release-notes)
 
 ## FAQ
 
