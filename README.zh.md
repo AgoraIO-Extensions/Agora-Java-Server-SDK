@@ -1,15 +1,22 @@
 # Agora Linux Server Java SDK
 
+中文 | [English](./README.md)
+
 ## 目录
 
+- [简介](#简介)
 - [开发环境要求](#开发环境要求)
+- [SDK 下载](#sdk-下载)
 - [快速开始](#快速开始)
-- [SDK 获取](#sdk-获取)
+- [集成 SDK](#集成-sdk)
 - [Examples](#examples)
 - [API 参考](#api-参考)
 - [更新日志](#更新日志)
-- [常见问题](#常见问题)
-- [支持](#支持)
+- [其他参考](#其他参考)
+
+## 简介
+
+Agora Linux Server Java SDK (v4.4.31.4) 为您提供了强大的实时音视频通信能力，可无缝集成到 Linux 服务器端 Java 应用程序中。借助此 SDK，您的服务器可以作为数据源或处理节点加入 Agora 频道，实时获取和处理音视频流，从而实现多种业务相关的其他高级功能。
 
 ## 开发环境要求
 
@@ -29,11 +36,7 @@
 - Apache Maven 或其他构建工具
 - JDK 8+
 
-## 快速开始
-
-参考 [官方示例文档](https://doc.shengwang.cn/doc/rtc-server-sdk/java/get-started/run-example)
-
-## SDK 获取
+## SDK 下载
 
 ### Maven 下载
 
@@ -48,6 +51,225 @@
 ### CDN 下载
 
 [Agora-Linux-Java-SDK-v4.4.31.4-x86_64-491956-341b4be9b9-20250402_171133](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.31.4-x86_64-491956-341b4be9b9-20250402_171133.zip)
+
+## 快速开始
+
+参考 [官方示例文档](https://doc.shengwang.cn/doc/rtc-server-sdk/java/get-started/run-example)
+
+### 开通服务
+
+参考 [官网开通服务](https://doc.shengwang.cn/doc/rtc-server-sdk/java/get-started/enable-service)
+
+## 集成 SDK
+
+SDK 集成有两种方式：通过 Maven 集成和本地 SDK 集成。
+
+### 1. Maven 集成
+
+Maven 集成是最简单的方式，可以自动管理 Java 依赖关系。
+
+#### 1.1 添加 Maven 依赖
+
+在项目的 `pom.xml` 文件中添加以下依赖：
+
+```xml
+<!-- x86_64 平台 -->
+<dependency>
+    <groupId>io.agora.rtc</groupId>
+    <artifactId>linux-java-sdk</artifactId>
+    <version>4.4.31.4</version>
+</dependency>
+```
+
+#### 1.2 集成 so 库文件
+
+Maven 依赖包含了所需的 JAR 文件，但仍需手动处理 `.so` 库文件才能运行。请参考下面的 **加载原生库 (.so 文件)** 部分。
+
+### 2. 本地 SDK 集成
+
+本地 SDK 是一个包含所有必要文件的完整包，适合需要更灵活控制的场景。
+
+#### 2.1 SDK 包结构
+
+从官网下载的 SDK 包（zip 格式）包含以下内容：
+
+- **doc/** - JavaDoc 文档，详细的 API 说明
+- **examples/** - 示例代码和项目
+- **sdk/** - 核心 SDK 文件
+  - `agora-sdk.jar` - Java 类库
+  - `agora-sdk-javadoc.jar` - JavaDoc 文档
+
+#### 2.2 集成 JAR 文件
+
+你可以通过两种方式集成 JAR 文件：
+
+###### 本地 Maven 仓库方法
+
+方法一：只安装 SDK JAR
+
+```sh
+mvn install:install-file \
+  -Dfile=sdk/agora-sdk.jar \
+  -DgroupId=io.agora.rtc \
+  -DartifactId=linux-java-sdk \
+  -Dversion=4.4.31.4 \
+  -Dpackaging=jar \
+  -DgeneratePom=true
+```
+
+方法二：同时安装 SDK JAR 和 JavaDoc JAR
+
+```sh
+mvn install:install-file \
+  -Dfile=sdk/agora-sdk.jar \
+  -DgroupId=io.agora.rtc \
+  -DartifactId=linux-java-sdk \
+  -Dversion=4.4.31.4 \
+  -Dpackaging=jar \
+  -DgeneratePom=true \
+  -Djavadoc=sdk/agora-sdk-javadoc.jar
+```
+
+安装后，在 `pom.xml` 中添加依赖：
+
+```xml
+<dependency>
+    <groupId>io.agora.rtc</groupId>
+    <artifactId>linux-java-sdk</artifactId>
+    <version>4.4.31.4</version>
+</dependency>
+```
+
+###### 直接引用方法
+
+1. 将 JAR 文件复制到项目的 `libs` 目录：
+
+   ```sh
+   mkdir -p libs
+   cp sdk/agora-sdk.jar libs/
+   cp sdk/agora-sdk-javadoc.jar libs/  # 可选，用于 IDE 支持
+   ```
+
+2. 在 Java 项目中添加 classpath 引用：
+
+   ```sh
+   # 使用 SDK JAR
+   java -cp .:libs/agora-sdk.jar 你的主类
+
+   # 在 IDE 中配置 JavaDoc（常见的 IDE 如 IntelliJ IDEA 或 Eclipse 支持直接关联 JavaDoc JAR）
+   ```
+
+#### 2.3 集成 so 库文件
+
+下载的 SDK 包中已经包含了 `.so` 文件。你需要确保 Java 程序运行时能够找到这些文件。请参考下面的 **加载原生库 (.so 文件)** 部分。
+
+### 加载原生库 (.so 文件)
+
+Agora Linux Server Java SDK 依赖于底层的 C++ 原生库（`.so` 文件）。无论是通过 Maven 集成还是本地集成，都需要确保 Java 虚拟机 (JVM) 在运行时能够找到并加载这些库。
+
+#### 3.1 提取 so 库文件
+
+`.so` 文件包含在 `agora-sdk.jar` 或 `linux-java-sdk-x.x.x.x.jar` 文件内部。你需要先将它们提取出来：
+
+1.  在你的项目或部署目录下创建一个用于存放库文件的目录，例如 `libs`：
+
+    ```sh
+    mkdir -p libs
+    cd libs
+    ```
+
+2.  使用 `jar` 命令从 SDK 的 JAR 文件中提取内容（假设 JAR 文件位于 `libs` 目录下或 Maven 缓存中）：
+
+    ```sh
+    # 如果使用本地集成方式，JAR 文件通常在 libs 目录下
+    jar xvf agora-sdk.jar
+
+    # 如果使用 Maven 集成方式，JAR 文件在 Maven 缓存中，例如：
+    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.31.4/linux-java-sdk-4.4.31.4.jar
+    ```
+
+3.  提取后，`libs` 目录下会生成 `native/linux/x86_64` 子目录，其中包含所需的 `.so` 文件：
+
+    ```
+    libs/
+    ├── agora-sdk.jar (或者空的，如果仅用于提取)
+    ├── io/          # Java 的 class 类所在，无需关注
+    ├── META-INF/    # JAR 文件和应用程序相关的元数据，无需关注
+    └── native/      # 对应平台的 so 库文件
+        └── linux/
+            └── x86_64/   # x86_64 平台 so 库
+                ├── libagora_rtc_sdk.so
+                ├── libagora-fdkaac.so
+                ├── libaosl.so
+                └── libbinding.so
+    ```
+
+#### 3.2 配置加载路径
+
+有两种主要方法让 JVM 找到 `.so` 文件：
+
+**方法一：通过设置环境变量 `LD_LIBRARY_PATH` (推荐)**
+
+这是最可靠的方式，特别是在 `.so` 文件之间存在依赖关系时。
+
+```sh
+# 确定你的 .so 文件所在的目录，假设在 ./libs/native/linux/x86_64
+LIB_DIR=$(pwd)/libs/native/linux/x86_64
+
+# 设置 LD_LIBRARY_PATH 环境变量，将库目录添加到现有路径的前面
+export LD_LIBRARY_PATH=$LIB_DIR:$LD_LIBRARY_PATH
+
+# 运行你的 Java 应用
+java -jar 你的应用.jar
+# 或者使用 classpath
+# java -cp "你的classpath" 你的主类
+```
+
+**方法二：通过 JVM 参数 `-Djava.library.path`**
+
+这种方法直接告诉 JVM 在哪里查找库文件。
+
+```sh
+# 确定你的 .so 文件所在的目录，假设在 ./libs/native/linux/x86_64
+LIB_DIR=$(pwd)/libs/native/linux/x86_64
+
+# 运行 Java 应用，并通过 -D 参数指定库路径
+java -Djava.library.path=$LIB_DIR -jar 你的应用.jar
+# 或者使用 classpath
+# java -Djava.library.path=$LIB_DIR -cp "你的classpath" 你的主类
+```
+
+> **注意**：
+>
+> - 推荐使用方法一 (`LD_LIBRARY_PATH`)，因为它能更好地处理库之间的依赖。如果仅使用 `-Djava.library.path`，有时可能因为库找不到其依赖的其他库而加载失败。
+> - 确保 `$LIB_DIR` 指向包含 `libagora_rtc_sdk.so` 等文件的 **确切目录**。
+> - 你可以将设置环境变量的命令放入启动脚本中，以便每次运行应用时自动配置。
+
+参考以下脚本示例，它结合了两种方法，并设置了 classpath：
+
+```sh
+#!/bin/bash
+# 获取当前脚本所在目录的绝对路径
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# 确定 so 库文件路径 (假设在脚本目录下的 libs/native/linux/x86_64)
+LIB_PATH="$SCRIPT_DIR/libs/native/linux/x86_64"
+# SDK JAR 路径 (假设在脚本目录下的 libs)
+SDK_JAR="$SCRIPT_DIR/libs/agora-sdk.jar"
+# 你的应用主类
+MAIN_CLASS="你的主类"
+# 你的应用的其他依赖 classpath (如果有)
+APP_CP="你的其他classpath"
+
+# 设置库路径环境变量
+export LD_LIBRARY_PATH=$LIB_PATH:$LD_LIBRARY_PATH
+
+# 组合 classpath
+CLASSPATH=".:$SDK_JAR:$APP_CP" # '.' 表示当前目录
+
+# 执行 Java 程序
+# 同时使用 LD_LIBRARY_PATH 和 -Djava.library.path 以确保兼容性
+java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
+```
 
 ## Examples
 
@@ -201,11 +423,14 @@
 
 ## API 参考
 
-### 基础 API 参考
+### API 文档参考
 
-完整 API 文档请访问 [Agora Java Server SDK API 参考](https://doc.shengwang.cn/api-ref/rtc-server-sdk/java/overview)
+完整 API 文档可参考以下资源：
 
-### AgoraAudioVadV2
+- [API-reference.zh.md](./API-reference.zh.md) 文件（仅供参考）
+- 官方文档 [Agora Java Server SDK API 参考](https://doc.shengwang.cn/api-ref/rtc-server-sdk/java/overview)（以官方文档为准）
+
+### VAD 模块
 
 #### 介绍
 
@@ -327,36 +552,36 @@ public class Main {
 
 ### v4.4.31.4（2025-03-21）
 
-#### 优化
+#### 改进与优化
 
 - 修复了多线程环境下可能导致的异常崩溃问题
 - 改进了错误处理流程，增强了异常情况下的恢复能力
 
 ### v4.4.31.3（2025-02-26）
 
-#### 优化
+#### 改进与优化
 
 - 修复了由于内存复用可能导致的异常处理问题
 
 ### v4.4.31.2（2025-02-19）
 
-#### API 更新
+#### API 变更
 
 - 新增 `sendStreamMessage(int streamId, byte[] messageData)` 方法，弃用 `sendStreamMessage(int streamId, String message, int length)` 方法
 
-#### 优化
+#### 改进与优化
 
 - 优化代码处理，提高系统稳健性
 
 ### v4.4.31.1（2025-01-06）
 
-#### 优化
+#### 改进与优化
 
 - 优化 VAD 功能配置，现在默认开启 VAD 功能，无需手动配置
 
 ### v4.4.31（2024-12-23）
 
-#### API 更新
+#### API 变更
 
 - 在 `AgoraServiceConfig` 中新增 `DomainLimit` 配置选项，用于域名限制管理
 - 新增 `VadDumpUtils` 工具类，支持导出 VAD 处理过程的调试数据
@@ -367,7 +592,7 @@ public class Main {
 - 在 `ILocalUserObserver` 类中新增 `onAudioMetaDataReceived` 回调，用于接收音频元数据
 - 在 `ExternalVideoFrame` 类中增加 `ColorSpace` 属性，支持自定义颜色空间设置
 
-#### 优化
+#### 改进与优化
 
 - 优化代码逻辑架构，显著提升内存使用效率
 - 修复多处内存泄露问题，提高系统稳定性
@@ -375,24 +600,24 @@ public class Main {
 
 ### v4.4.30.2（2024-11-20）
 
-#### API 更新
+#### API 变更
 
 - 增强了 AgoraAudioVadV2 的 `processFrame` 处理，新增 `START_SPEAKING` 和 `STOP_SPEAKING` 状态回调
 - 改进了编码帧回调的参数类型，`onEncodedAudioFrameReceived`、`onEncodedVideoImageReceived`、`onEncodedVideoFrame` 现在使用 `ByteBuffer` 替代 `Byte` 数组
 
-#### 优化
+#### 改进与优化
 
 - VAD 插件启动优化，`enableExtension` 现在在 SDK 内部实现，应用程序不再需要手动调用此方法
 - 修复了 `VideoFrame` 中 `alphaBuffer` 和 `metadataBuffer` 的处理问题
 
 ### v4.4.30.1（2024-11-12）
 
-#### API 更新
+#### API 变更
 
 - 增加 AgoraAudioVad2 相关 `Vad2` 接口，移除 AgoraAudioVad 相关 `Vad` 接口
 - 新增接收编码音频回调接口 `IAudioEncodedFrameObserver`
 
-#### 优化
+#### 改进与优化
 
 - 修复 `LocalAudioDetailedStats` 相关回调崩溃问题
 - 修改 `onAudioVolumeIndication` 回调参数类型
@@ -401,12 +626,8 @@ public class Main {
 
 - 详细更新日志请参考 [发版说明](https://doc.shengwang.cn/doc/rtc-server-sdk/java/overview/release-notes)
 
-## 常见问题
+## 其他参考
 
-如遇到问题，请先查阅 [文档中心](https://doc.shengwang.cn/) 或在 [GitHub Issues](https://github.com/AgoraIO/Agora-Java-Server-SDK/issues) 中搜索相关问题
+详细参考官网（<https://doc.shengwang.cn/doc/rtc-server-sdk/java/landing-page>）
 
-## 支持
-
-- 技术支持：<sales@shengwang.cn>
-- 商业相关问题：<sales@shengwang.cn>
-- 其他架构支持：<sales@shengwang.cn>
+官网 API 文档 [Agora Server Java SDK API 参考](https://doc.shengwang.cn/api-ref/rtc-server-sdk/java/overview)
