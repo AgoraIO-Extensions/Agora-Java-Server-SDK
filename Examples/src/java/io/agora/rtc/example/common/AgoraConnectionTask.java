@@ -233,6 +233,11 @@ public class AgoraConnectionTask {
             public void onChangeRoleFailure(AgoraRtcConn agoraRtcConn) {
                 SampleLogger.log("onChangeRoleFailure");
             }
+
+            @Override
+            public void onEncryptionError(AgoraRtcConn agoraRtcConn, int errorType) {
+                SampleLogger.log("onEncryptionError errorType:" + errorType);
+            }
         });
         SampleLogger.log("registerObserver channelId:" + currentChannelId + " userId:" + currentUserId
                 + " ret:" + ret);
@@ -695,7 +700,7 @@ public class AgoraConnectionTask {
                         release(false);
                         return;
                     }
-                    int ret = audioEncodedFrameSender.send(data, data.length, encodedInfo);
+                    int ret = audioEncodedFrameSender.sendEncodedAudioFrame(data, encodedInfo);
                     if (canLog) {
                         SampleLogger.log("send aac frame data size:" + data.length + " timestamp:"
                                 + timestamp + " encodedInfo:" + encodedInfo
@@ -816,7 +821,7 @@ public class AgoraConnectionTask {
                         return;
                     }
 
-                    int ret = audioEncodedFrameSender.send(data, data.length, encodedInfo);
+                    int ret = audioEncodedFrameSender.sendEncodedAudioFrame(data, encodedInfo);
                     if (canLog) {
                         SampleLogger.log("send opus frame data size:" + data.length + " timestamp:"
                                 + timestamp + " encodedInfo:" + encodedInfo
@@ -1002,7 +1007,7 @@ public class AgoraConnectionTask {
                         externalVideoFrame.setFillAlphaBuffer(1);
                     }
 
-                    int ret = videoFrameSender.send(externalVideoFrame);
+                    int ret = videoFrameSender.sendVideoFrame(externalVideoFrame);
                     frameIndex++;
 
                     if (canLog) {
@@ -1143,7 +1148,7 @@ public class AgoraConnectionTask {
                     info.setFramesPerSecond(fps);
                     info.setRotation(0);
 
-                    int ret = customEncodedImageSender.send(data, data.length, info);
+                    int ret = customEncodedImageSender.sendEncodedVideoImage(data, info);
                     frameIndex++;
                     if (canLog) {
                         SampleLogger.log("send h264 frame data size:" + data.length + " ret:" + ret +
@@ -1317,7 +1322,7 @@ public class AgoraConnectionTask {
                     // colorSpace.setRange(1);
                     // externalVideoFrame.setColorSpace(colorSpace);
 
-                    int ret = videoFrameSender.send(externalVideoFrame);
+                    int ret = videoFrameSender.sendVideoFrame(externalVideoFrame);
                     frameIndex++;
 
                     if (canLog) {
@@ -1468,7 +1473,7 @@ public class AgoraConnectionTask {
                     info.setFramesPerSecond(fps);
                     info.setRotation(0);
 
-                    int ret = customEncodedImageSender.send(data, data.length, info);
+                    int ret = customEncodedImageSender.sendEncodedVideoImage(data, info);
                     frameIndex++;
                     if (canLog) {
                         SampleLogger
@@ -1572,6 +1577,7 @@ public class AgoraConnectionTask {
                 MediaDecodeUtils.DecodedMediaType.PCM_YUV,
                 new MediaDecodeUtils.MediaDecodeCallback() {
                     private ByteBuffer byteBuffer;
+                    private final AudioFrame audioFrame = new AudioFrame();
 
                     @Override
                     public void onAudioFrame(MediaDecode.MediaFrame frame) {
@@ -1585,10 +1591,14 @@ public class AgoraConnectionTask {
                         if (!taskStarted.get()) {
                             return;
                         }
-                        int ret = audioFrameSender.send(frame.buffer, (int) (frame.pts),
-                                frame.samples, frame.bytesPerSample,
-                                frame.channels,
-                                frame.sampleRate);
+
+                        audioFrame.setBuffer(ByteBuffer.wrap(frame.buffer));
+                        audioFrame.setRenderTimeMs(frame.pts);
+                        audioFrame.setSamplesPerChannel(frame.samples);
+                        audioFrame.setBytesPerSample(frame.bytesPerSample);
+                        audioFrame.setChannels(frame.channels);
+                        audioFrame.setSamplesPerSec(frame.sampleRate);
+                        int ret = audioFrameSender.sendAudioPcmData(audioFrame);
                         SampleLogger.log("SendPcmData frame.pts:" + frame.pts + " ret:" + ret);
                     }
 
@@ -1627,7 +1637,7 @@ public class AgoraConnectionTask {
                         if (!taskStarted.get()) {
                             return;
                         }
-                        int ret = videoFrameSender.send(externalVideoFrame);
+                        int ret = videoFrameSender.sendVideoFrame(externalVideoFrame);
                         SampleLogger.log("SendVideoFrame frame.pts:" + frame.pts + " ret:" + ret);
                     }
                 });

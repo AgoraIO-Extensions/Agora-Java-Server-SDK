@@ -264,7 +264,7 @@ public class SendYuvTest {
                     externalVideoFrame.setFillAlphaBuffer(1);
                 }
 
-                int ret = videoFrameSender.send(externalVideoFrame);
+                int ret = videoFrameSender.sendVideoFrame(externalVideoFrame);
                 frameIndex++;
 
                 SampleLogger.log("send yuv frame data size:" + data.length + " ret:" + ret +

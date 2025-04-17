@@ -233,7 +233,7 @@ public class SendH264Test {
                 info.setFramesPerSecond(fps);
                 info.setRotation(0);
 
-                customEncodedImageSender.send(data, data.length, info);
+                customEncodedImageSender.sendEncodedVideoImage(data, info);
                 frameIndex++;
 
                 singleExecutorService.execute(() -> {

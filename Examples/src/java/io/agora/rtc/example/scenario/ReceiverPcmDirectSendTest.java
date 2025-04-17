@@ -17,6 +17,7 @@ import io.agora.rtc.VadProcessResult;
 import io.agora.rtc.example.common.SampleAudioFrameObserver;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.Utils;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -184,6 +185,8 @@ public class ReceiverPcmDirectSendTest {
 
         audioFrameObserver = new SampleAudioFrameObserver(
                 audioOutFile + "_" + channelId + "_" + userId + ".pcm") {
+            private final AudioFrame audioFrame = new AudioFrame();
+
             @Override
             public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser, String channelId,
                     String userId,
@@ -212,10 +215,12 @@ public class ReceiverPcmDirectSendTest {
 
                 if (connConnected.get() && null != audioFrameSender) {
                     senderExecutorService.execute(() -> {
-                        audioFrameSender.send(byteArray, 0,
-                                byteArray.length / 2 / numOfChannels, 2,
-                                numOfChannels,
-                                sampleRate);
+                        audioFrame.setBuffer(ByteBuffer.wrap(byteArray));
+                        audioFrame.setSamplesPerChannel(byteArray.length / 2 / numOfChannels);
+                        audioFrame.setBytesPerSample(2);
+                        audioFrame.setChannels(numOfChannels);
+                        audioFrame.setSamplesPerSec(sampleRate);
+                        audioFrameSender.sendAudioPcmData(audioFrame);
                     });
                 }
                 return 1;

@@ -12,6 +12,7 @@ public class SampleCommon {
     public static AgoraService createAndInitAgoraService(int enableAudioDevice, int enableAudioProcessor,
             int enableVideo,
             int useStringUid, String appId) {
+        SampleLogger.log("createAndInitAgoraService AgoraService.getSdkVersion=" + AgoraService.getSdkVersion());
         AgoraService service = new AgoraService();
         AgoraServiceConfig config = new AgoraServiceConfig();
         config.setAppId(appId);

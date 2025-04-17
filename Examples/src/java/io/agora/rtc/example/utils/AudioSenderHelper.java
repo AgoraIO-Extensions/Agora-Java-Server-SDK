@@ -157,7 +157,7 @@ public class AudioSenderHelper {
                             encodedInfo.setSampleRateHz(audioFrameCache.getSampleRate());
                             encodedInfo.setSamplesPerChannel(audioFrameCache.getSamplesPerChannel());
                         }
-                        ((AgoraAudioEncodedFrameSender) currentTask.getSender()).send(sendData, sendData.length,
+                        ((AgoraAudioEncodedFrameSender) currentTask.getSender()).sendEncodedAudioFrame(sendData,
                                 encodedInfo);
                     }
                     break;
