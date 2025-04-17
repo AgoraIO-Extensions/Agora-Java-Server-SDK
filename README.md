@@ -4,15 +4,52 @@
 
 ## Table of Contents
 
-- [Introduction](#introduction)
-- [Development Environment Requirements](#development-environment-requirements)
-- [SDK Download](#sdk-download)
-- [Quick Start](#quick-start)
-- [Integrate the SDK](#integrate-the-sdk)
-- [Examples](#examples)
-- [API Reference](#api-reference)
-- [Changelog](#changelog)
-- [Other References](#other-references)
+1. [Introduction](#introduction)
+2. [Development Environment Requirements](#development-environment-requirements)
+   - [Hardware Environment](#hardware-environment)
+   - [Software Environment](#software-environment)
+3. [SDK Download](#sdk-download)
+   - [Maven Download](#maven-download)
+   - [CDN Download](#cdn-download)
+4. [Integrate the SDK](#integrate-the-sdk)
+   - [1. Maven Integration](#1-maven-integration)
+     - [1.1 Add Maven Dependency](#11-add-maven-dependency)
+     - [1.2 Integrate .so Library Files](#12-integrate-so-library-files)
+   - [2. Local SDK Integration](#2-local-sdk-integration)
+     - [2.1 SDK Package Structure](#21-sdk-package-structure)
+     - [2.2 Integrate JAR Files](#22-integrate-jar-files)
+     - [2.3 Integrate .so Library Files](#23-integrate-so-library-files)
+   - [3. Loading Native Libraries (.so Files)](#3-loading-native-libraries-so-files)
+     - [3.1 Extract .so Library Files](#31-extract-so-library-files)
+     - [3.2 Configure Loading Path](#32-configure-loading-path)
+5. [Quick Start](#quick-start)
+
+- [Official Example Documentation](#official-example-documentation)
+- [Enable Service](#enable-service)
+- [Run Examples](#run-examples)
+  - [Environment Preparation](#environment-preparation)
+  - [Project Configuration](#project-configuration)
+  - [Compilation Process](#compilation-process)
+  - [Running Examples](#running-examples)
+  - [Test Cases](#test-cases)
+  - [Common Issues](#common-issues)
+
+6. [API Reference](#api-reference)
+   - [API Documentation Reference](#api-documentation-reference)
+   - [VAD Module](#vad-module)
+     - [Introduction](#introduction-1)
+     - [Classes and Methods](#classes-and-methods)
+     - [Usage Example](#usage-example)
+7. [Changelog](#changelog)
+   - [v4.4.31.4 (2025-03-21)](#v44314-2025-03-21)
+   - [v4.4.31.3 (2025-02-26)](#v44313-2025-02-26)
+   - [v4.4.31.2 (2025-02-19)](#v44312-2025-02-19)
+   - [v4.4.31.1 (2025-01-06)](#v44311-2025-01-06)
+   - [v4.4.31 (2024-12-23)](#v4431-2024-12-23)
+   - [v4.4.30.2 (2024-11-20)](#v44302-2024-11-20)
+   - [v4.4.30.1 (2024-11-12)](#v44301-2024-11-12)
+   - [v4.4.30 (2024-10-24)](#v4430-2024-10-24)
+8. [Other References](#other-references)
 
 ## Introduction
 
@@ -51,14 +88,6 @@ The Agora Linux Server Java SDK (v4.4.31.4) provides powerful real-time audio an
 ### CDN Download
 
 [Agora-Linux-Java-SDK-v4.4.31.4-x86_64-491956-341b4be9b9-20250402_171133](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.31.4-x86_64-491956-341b4be9b9-20250402_171133.zip)
-
-## Quick Start
-
-Refer to the [Official Example Documentation](https://docs.agora.io/en/rtc-server-sdk/java/get-started/run-example/)
-
-### Enable Service
-
-Refer to [Official Service Activation Guide](https://docs.agora.io/en/rtc-server-sdk/java/get-started/enable-service/)
 
 ## Integrate the SDK
 
@@ -163,7 +192,7 @@ After installation, add the dependency to your `pom.xml`:
 
 The downloaded SDK package already contains the `.so` files. You need to ensure that the Java program can find these files at runtime. Please refer to the **Loading Native Libraries (.so Files)** section below.
 
-### Loading Native Libraries (.so Files)
+### 3. Loading Native Libraries (.so Files)
 
 The Agora Linux Server Java SDK depends on underlying C++ native libraries (`.so` files). Whether integrating via Maven or locally, you must ensure the Java Virtual Machine (JVM) can find and load these libraries at runtime.
 
@@ -271,11 +300,21 @@ CLASSPATH=".:$SDK_JAR:$APP_CP" # '.' represents the current directory
 java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
 ```
 
-## Examples
+## Quick Start
 
-### Environment Preparation
+### Official Example Documentation
 
-#### Install FFmpeg (Optional, for MP4 related tests)
+Refer to the [Official Example Documentation](https://docs.agora.io/en/rtc-server-sdk/java/get-started/run-example/)
+
+### Enable Service
+
+Refer to [Official Service Activation Guide](https://docs.agora.io/en/rtc-server-sdk/java/get-started/enable-service/)
+
+### Run Examples
+
+#### Environment Preparation
+
+##### Install FFmpeg (Optional, for MP4 related tests)
 
 1. Update system packages:
 
@@ -303,7 +342,7 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
 
 5. Update `FFMPEG_INCLUDE_DIR` and `FFMPEG_LIB_DIR` in `build.sh`.
 
-### Project Configuration
+#### Project Configuration
 
 1. Go to the `Examples` directory:
 
@@ -351,7 +390,7 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
 
    Note: Ensure all .so files are correctly extracted as they are core components of the SDK.
 
-### Compilation Process
+#### Compilation Process
 
 Execute the build script:
 
@@ -362,7 +401,7 @@ Execute the build script:
 - Use the `-ffmpegUtils` option to compile FFmpeg related libraries (required for MP4 tests).
 - Use the `-mediaUtils` option to compile audio/video decoding related libraries (required for sending encoded audio/video tests).
 
-### Running Examples
+#### Running Examples
 
 1. Run the test script:
 
@@ -372,7 +411,7 @@ Execute the build script:
 
 2. Modify test parameters: Directly edit the corresponding `.sh` file.
 
-### Test Cases
+#### Test Cases
 
 - Send PCM Audio
 
@@ -414,7 +453,7 @@ Execute the build script:
 
   Refer to `Examples/src/java/io/agora/rtc/example/scenario/SendReceiverStreamMessageTest.java` for sending and receiving stream messages.
 
-### Common Issues
+#### Common Issues
 
 - Ensure the Java environment is correctly installed and configured.
 - Verify `agora-sdk.jar` version compatibility.
