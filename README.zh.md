@@ -4,15 +4,50 @@
 
 ## 目录
 
-- [简介](#简介)
-- [开发环境要求](#开发环境要求)
-- [SDK 下载](#sdk-下载)
-- [快速开始](#快速开始)
-- [集成 SDK](#集成-sdk)
-- [Examples](#examples)
-- [API 参考](#api-参考)
-- [更新日志](#更新日志)
-- [其他参考](#其他参考)
+1. [简介](#简介)
+2. [开发环境要求](#开发环境要求)
+   - [硬件环境](#硬件环境)
+   - [软件环境](#软件环境)
+3. [SDK 下载](#sdk-下载)
+   - [Maven 下载](#maven-下载)
+   - [CDN 下载](#cdn-下载)
+4. [集成 SDK](#集成-sdk)
+   - [1. Maven 集成](#1-maven-集成)
+     - [1.1 添加 Maven 依赖](#11-添加-maven-依赖)
+     - [1.2 集成 so 库文件](#12-集成-so-库文件)
+   - [2. 本地 SDK 集成](#2-本地-sdk-集成)
+     - [2.1 SDK 包结构](#21-sdk-包结构)
+     - [2.2 集成 JAR 文件](#22-集成-jar-文件)
+     - [2.3 集成 so 库文件](#23-集成-so-库文件)
+   - [3. 加载原生库 (.so 文件)](#3-加载原生库-so-文件)
+     - [3.1 提取 so 库文件](#31-提取-so-库文件)
+     - [3.2 配置加载路径](#32-配置加载路径)
+5. [快速开始](#快速开始)
+   - [官方示例文档](#官方示例文档)
+   - [开通服务](#开通服务)
+   - [跑通 Examples](#跑通-examples)
+     - [环境准备](#环境准备)
+     - [项目配置](#项目配置)
+     - [编译过程](#编译过程)
+     - [运行示例](#运行示例)
+     - [测试 case](#测试-case)
+     - [常见问题](#常见问题)
+6. [API 参考](#api-参考)
+   - [API 文档参考](#api-文档参考)
+   - [VAD 模块](#vad-模块)
+     - [介绍](#介绍)
+     - [类和方法](#类和方法)
+     - [使用示例](#使用示例)
+7. [更新日志](#更新日志)
+   - [v4.4.31.4（2025-03-21）](#v443142025-03-21)
+   - [v4.4.31.3（2025-02-26）](#v443132025-02-26)
+   - [v4.4.31.2（2025-02-19）](#v443122025-02-19)
+   - [v4.4.31.1（2025-01-06）](#v443112025-01-06)
+   - [v4.4.31（2024-12-23）](#v44312024-12-23)
+   - [v4.4.30.2（2024-11-20）](#v443022024-11-20)
+   - [v4.4.30.1（2024-11-12）](#v443012024-11-12)
+   - [v4.4.30（2024-10-24）](#v44302024-10-24)
+8. [其他参考](#其他参考)
 
 ## 简介
 
@@ -51,14 +86,6 @@ Agora Linux Server Java SDK (v4.4.31.4) 为您提供了强大的实时音视频�
 ### CDN 下载
 
 [Agora-Linux-Java-SDK-v4.4.31.4-x86_64-491956-341b4be9b9-20250402_171133](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.31.4-x86_64-491956-341b4be9b9-20250402_171133.zip)
-
-## 快速开始
-
-参考 [官方示例文档](https://doc.shengwang.cn/doc/rtc-server-sdk/java/get-started/run-example)
-
-### 开通服务
-
-参考 [官网开通服务](https://doc.shengwang.cn/doc/rtc-server-sdk/java/get-started/enable-service)
 
 ## 集成 SDK
 
@@ -163,7 +190,7 @@ mvn install:install-file \
 
 下载的 SDK 包中已经包含了 `.so` 文件。你需要确保 Java 程序运行时能够找到这些文件。请参考下面的 **加载原生库 (.so 文件)** 部分。
 
-### 加载原生库 (.so 文件)
+### 3. 加载原生库 (.so 文件)
 
 Agora Linux Server Java SDK 依赖于底层的 C++ 原生库（`.so` 文件）。无论是通过 Maven 集成还是本地集成，都需要确保 Java 虚拟机 (JVM) 在运行时能够找到并加载这些库。
 
@@ -271,11 +298,21 @@ CLASSPATH=".:$SDK_JAR:$APP_CP" # '.' 表示当前目录
 java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
 ```
 
-## Examples
+## 快速开始
 
-### 环境准备
+### 官方示例文档
 
-#### 安装 FFmpeg（可选，用于 MP4 相关测试）
+参考 [官方示例文档](https://doc.shengwang.cn/doc/rtc-server-sdk/java/get-started/run-example)
+
+### 开通服务
+
+参考 [官网开通服务](https://doc.shengwang.cn/doc/rtc-server-sdk/java/get-started/enable-service)
+
+### 跑通 Examples
+
+#### 环境准备
+
+##### 安装 FFmpeg（可选，用于 MP4 相关测试）
 
 1. 更新系统包：
 
@@ -303,7 +340,7 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
 
 5. 更新 `build.sh` 中的 `FFMPEG_INCLUDE_DIR` 和 `FFMPEG_LIB_DIR`。
 
-### 项目配置
+#### 项目配置
 
 1. 进入 `Examples` 目录：
 
@@ -351,7 +388,7 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
 
    注意：确保所有 .so 文件都被正确提取，这些文件是 SDK 的核心组件。
 
-### 编译过程
+#### 编译过程
 
 执行编译脚本：
 
@@ -362,7 +399,7 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
 - 使用 `-ffmpegUtils` 选项编译 FFmpeg 相关库（MP4 测试必需）
 - 使用 `-mediaUtils` 选项编译解码音视频相关库（发送编码音视频测试必须）
 
-### 运行示例
+#### 运行示例
 
 1. 运行测试脚本：
 
@@ -372,7 +409,7 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
 
 2. 修改测试参数：直接编辑对应的 `.sh` 文件
 
-### 测试 case
+#### 测试 case
 
 - 发送 PCM 音频
 
@@ -414,7 +451,7 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
 
   参考 `Examples/src/java/io/agora/rtc/example/scenario/SendReceiverStreamMessageTest.java`,实现发送接收流消息
 
-### 常见问题
+#### 常见问题
 
 - 确保 Java 环境正确安装和配置
 - 验证 `agora-sdk.jar` 版本兼容性
