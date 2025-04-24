@@ -108,13 +108,13 @@ public class SendReceiverStreamMessageTest {
             startReceiveStreamMessage();
         });
 
-        while (testTaskCount.get() != 0) {
+        do {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-        }
+        } while (testTaskCount.get() != 0);
 
         releaseAgoraService();
         System.exit(0);

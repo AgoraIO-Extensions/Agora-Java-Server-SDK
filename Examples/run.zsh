@@ -40,11 +40,11 @@ if [ "$ENABLE_JNI_CHECK" = "false" ]; then
     JNI_OPTS="-XX:-CheckJNICalls"
 else
     echo "JNI checks are enabled (debug/dev mode)"
-    JNI_OPTS=""
+    JNI_OPTS="-Xcheck:jni"
 fi
 
 # Define common Java runtime parameters
-DEBUG_OPTS="-XX:+UnlockDiagnosticVMOptions -XX:+PreserveFramePointer -Xcheck:jni -XX:NativeMemoryTracking=detail -XX:+PrintCommandLineFlags"
+DEBUG_OPTS="-XX:+UnlockDiagnosticVMOptions -XX:+PreserveFramePointer  -XX:NativeMemoryTracking=detail -XX:+PrintCommandLineFlags"
 CRASH_OPTS="-XX:ErrorFile=./logs/hs_err_pid%p.log -XX:LogFile=./logs/jvm.log -XX:+CreateMinidumpOnCrash -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./logs/"
 
 JAVA_OPTS="$DEBUG_OPTS $CRASH_OPTS $JNI_OPTS"

@@ -2779,15 +2779,15 @@ public int getString(String key, Out value)
 
 ### IRtcConnObserver
 
-IRtcConnObserver 接口用于监听 RTC 连接的状态和事件。
+RTC 连接事件的观察者接口。
 
 ```java
 public interface IRtcConnObserver {
-    // 方法声明
+    // ... 回调方法 ...
 }
 ```
 
-#### 方法
+#### 回调方法
 
 ##### onConnected
 
@@ -2795,13 +2795,13 @@ public interface IRtcConnObserver {
 public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason)
 ```
 
-当连接成功建立时触发。
+当 SDK 与 Agora 频道的连接状态变为 `CONNECTION_STATE_CONNECTED`(3) 时触发。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `connInfo`：连接信息。
-- `reason`：连接成功的原因 (`Constants.CONNECTION_CHANGED_REASON_TYPE`)。
+- `agoraRtcConn`：连接对象。
+- `connInfo`：连接信息。详见 [`RtcConnInfo`](#rtcconninfo)。
+- `reason`：连接状态发生改变的原因。详见 [`ConnectionChangedReasonType`](#connectionchangedreasontype)。
 
 ##### onDisconnected
 
@@ -2809,13 +2809,13 @@ public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int rea
 public void onDisconnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason)
 ```
 
-当连接断开时触发。
+当 SDK 与 Agora 频道的连接状态变为 `CONNECTION_STATE_DISCONNECTED`(1) 时触发。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `connInfo`：连接信息。
-- `reason`：连接断开的原因 (`Constants.CONNECTION_CHANGED_REASON_TYPE`)。
+- `agoraRtcConn`：连接对象。
+- `connInfo`：连接信息。详见 [`RtcConnInfo`](#rtcconninfo)。
+- `reason`：连接状态发生改变的原因。详见 [`ConnectionChangedReasonType`](#connectionchangedreasontype)。
 
 ##### onConnecting
 
@@ -2823,13 +2823,13 @@ public void onDisconnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int 
 public void onConnecting(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason)
 ```
 
-当 SDK 正在尝试连接到服务器时触发。
+当 SDK 与 Agora 频道的连接状态变为 `CONNECTION_STATE_CONNECTING`(2) 时触发。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `connInfo`：连接信息。
-- `reason`：连接状态改变的原因 (`Constants.CONNECTION_CHANGED_REASON_TYPE`)。
+- `agoraRtcConn`：连接对象。
+- `connInfo`：连接信息。详见 [`RtcConnInfo`](#rtcconninfo)。
+- `reason`：连接状态发生改变的原因。详见 [`ConnectionChangedReasonType`](#connectionchangedreasontype)。
 
 ##### onReconnecting
 
@@ -2837,27 +2837,30 @@ public void onConnecting(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int re
 public void onReconnecting(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason)
 ```
 
-当 SDK 正在尝试重新连接到服务器时触发。
+当 SDK 与 Agora 频道的连接状态变为 `CONNECTION_STATE_RECONNECTING`(4) 时触发。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `connInfo`：连接信息。
-- `reason`：连接状态改变的原因 (`Constants.CONNECTION_CHANGED_REASON_TYPE`)。
+- `agoraRtcConn`：连接对象。
+- `connInfo`：连接信息。详见 [`RtcConnInfo`](#rtcconninfo)。
+- `reason`：连接状态发生改变的原因。详见 [`ConnectionChangedReasonType`](#connectionchangedreasontype)。
 
-##### onReconnected
+##### onReconnected (已废弃)
 
 ```java
+@Deprecated
 public void onReconnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason)
 ```
 
-当 SDK 重新连接到服务器成功时触发。
+当断线后连接重新建立时触发。
+
+**已废弃**：请改用 `onConnected` 回调，其中 `reason` 为 `CONNECTION_CHANGED_REJOIN_SUCCESS`。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `connInfo`：连接信息。
-- `reason`：连接状态改变的原因 (`Constants.CONNECTION_CHANGED_REASON_TYPE`)。
+- `agoraRtcConn`：连接对象。
+- `connInfo`：连接信息。详见 [`RtcConnInfo`](#rtcconninfo)。
+- `reason`：连接状态发生改变的原因。详见 [`ConnectionChangedReasonType`](#connectionchangedreasontype)。
 
 ##### onConnectionLost
 
@@ -2865,12 +2868,12 @@ public void onReconnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int r
 public void onConnectionLost(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo)
 ```
 
-当连接丢失时触发，表示 SDK 与服务器的连接已断开且无法自动恢复。
+当 SDK 与 Agora 频道的连接丢失时触发。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `connInfo`：连接信息。
+- `agoraRtcConn`：连接对象。
+- `connInfo`：连接信息。详见 [`RtcConnInfo`](#rtcconninfo)。
 
 ##### onLastmileQuality
 
@@ -2878,12 +2881,12 @@ public void onConnectionLost(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo)
 public void onLastmileQuality(AgoraRtcConn agoraRtcConn, int quality)
 ```
 
-报告网络最后一英里（客户端到边缘服务器）的质量。
+报告最后一公里网络质量。该回调在 App 调用 `startLastmileProbeTest` 后两秒内触发。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `quality`：网络质量，参考 `Constants.QUALITY_TYPE`。
+- `agoraRtcConn`：连接对象。
+- `quality`：最后一公里网络质量。详见 [`QualityType`](#qualitytype)。
 
 ##### onLastmileProbeResult
 
@@ -2891,12 +2894,12 @@ public void onLastmileQuality(AgoraRtcConn agoraRtcConn, int quality)
 public void onLastmileProbeResult(AgoraRtcConn agoraRtcConn, LastmileProbeResult result)
 ```
 
-报告最后一英里网络探测测试的结果。
+报告最后一公里网络探测结果。该回调在 App 调用 `startLastmileProbeTest` 后 30 秒内触发。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `result`：探测结果 (`LastmileProbeResult`)。
+- `agoraRtcConn`：连接对象。
+- `result`：最后一公里网络探测结果。详见 [`LastmileProbeResult`](#lastmileproberesult)。
 
 ##### onTokenPrivilegeWillExpire
 
@@ -2904,12 +2907,12 @@ public void onLastmileProbeResult(AgoraRtcConn agoraRtcConn, LastmileProbeResult
 public void onTokenPrivilegeWillExpire(AgoraRtcConn agoraRtcConn, String token)
 ```
 
-当 Token 即将过期时（通常在过期前 30 秒）触发。
+当 Token 即将在 30 秒内过期时触发。SDK 触发此回调提醒 App 在 Token 权限过期前获取新的 Token。收到此回调后，你必须在你的服务器上生成新的 Token，并调用 `renewToken` 将新 Token 传递给 SDK。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `token`：即将过期的 Token。
+- `agoraRtcConn`：连接对象。
+- `token`：即将在 30 秒内过期的 Token。
 
 ##### onTokenPrivilegeDidExpire
 
@@ -2917,11 +2920,11 @@ public void onTokenPrivilegeWillExpire(AgoraRtcConn agoraRtcConn, String token)
 public void onTokenPrivilegeDidExpire(AgoraRtcConn agoraRtcConn)
 ```
 
-当 Token 已经过期时触发。
+当 Token 已过期时触发。收到此回调后，你必须在你的服务器上生成新的 Token，并调用 `renewToken` 将新 Token 传递给 SDK。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
+- `agoraRtcConn`：连接对象。
 
 ##### onConnectionFailure
 
@@ -2929,13 +2932,13 @@ public void onTokenPrivilegeDidExpire(AgoraRtcConn agoraRtcConn)
 public void onConnectionFailure(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason)
 ```
 
-当连接失败时触发（区别于 `onDisconnected`，这通常指初始连接失败）。
+当 SDK 与 Agora 频道的连接状态变为 `CONNECTION_STATE_FAILED`(5) 时触发。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `connInfo`：连接信息。
-- `reason`：连接失败的原因 (`Constants.CONNECTION_CHANGED_REASON_TYPE`)。
+- `agoraRtcConn`：连接对象。
+- `connInfo`：连接信息。详见 [`RtcConnInfo`](#rtcconninfo)。
+- `reason`：连接状态发生改变的原因。详见 [`ConnectionChangedReasonType`](#connectionchangedreasontype)。
 
 ##### onConnectionLicenseValidationFailure
 
@@ -2943,13 +2946,13 @@ public void onConnectionFailure(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo,
 public void onConnectionLicenseValidationFailure(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason)
 ```
 
-当 License 验证失败时触发。
+当连接 License 校验失败时触发。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `connInfo`：连接信息。
-- `reason`：失败原因。
+- `agoraRtcConn`：连接对象。
+- `connInfo`：连接信息。详见 [`RtcConnInfo`](#rtcconninfo)。
+- `reason`：License 校验失败的原因。
 
 ##### onUserJoined
 
@@ -2957,12 +2960,12 @@ public void onConnectionLicenseValidationFailure(AgoraRtcConn agoraRtcConn, RtcC
 public void onUserJoined(AgoraRtcConn agoraRtcConn, String userId)
 ```
 
-当远端用户加入频道时触发。
+当远端用户加入频道时触发。你可以在此回调中获取远端用户的 ID。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `userId`：加入频道的用户 ID。
+- `agoraRtcConn`：连接对象。
+- `userId`：加入频道的远端用户的 ID。
 
 ##### onUserLeft
 
@@ -2970,13 +2973,13 @@ public void onUserJoined(AgoraRtcConn agoraRtcConn, String userId)
 public void onUserLeft(AgoraRtcConn agoraRtcConn, String userId, int reason)
 ```
 
-当远端用户离开频道时触发。
+当远端用户离开频道时触发。你可以通过 `reason` 参数了解用户离开频道的原因。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `userId`：离开频道的用户 ID。
-- `reason`：用户离开的原因 (`Constants.USER_OFFLINE_REASON_TYPE`)。
+- `agoraRtcConn`：连接对象。
+- `userId`：离开频道的用户的 ID。
+- `reason`：远端用户离开频道的原因。详见 [`UserOfflineReasonType`](#userofflinereasontype)。
 
 ##### onTransportStats
 
@@ -2984,12 +2987,12 @@ public void onUserLeft(AgoraRtcConn agoraRtcConn, String userId, int reason)
 public void onTransportStats(AgoraRtcConn agoraRtcConn, RtcStats stats)
 ```
 
-报告当前的通话统计信息，通常每 2 秒触发一次。
+报告连接的传输统计信息。当连接状态为 `CONNECTION_STATE_CONNECTED` 时，SDK 每两秒触发一次此回调。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `stats`：通话统计数据 (`RtcStats`)。
+- `agoraRtcConn`：连接对象。
+- `stats`：传输统计信息。详见 [`RtcStats`](#rtcstats)。
 
 ##### onChangeRoleSuccess
 
@@ -2997,13 +3000,13 @@ public void onTransportStats(AgoraRtcConn agoraRtcConn, RtcStats stats)
 public void onChangeRoleSuccess(AgoraRtcConn agoraRtcConn, int oldRole, int newRole)
 ```
 
-切换用户角色成功时触发。
+当本地用户角色切换成功时触发。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `oldRole`：之前的角色。
-- `newRole`：切换后的新角色。
+- `agoraRtcConn`：连接对象。
+- `oldRole`：本地用户之前的角色。详见 [`ClientRoleType`](#clientroletype)。
+- `newRole`：本地用户当前的角色。详见 [`ClientRoleType`](#clientroletype)。
 
 ##### onChangeRoleFailure
 
@@ -3011,11 +3014,11 @@ public void onChangeRoleSuccess(AgoraRtcConn agoraRtcConn, int oldRole, int newR
 public void onChangeRoleFailure(AgoraRtcConn agoraRtcConn)
 ```
 
-切换用户角色失败时触发。
+当本地用户切换角色失败时触发。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
+- `agoraRtcConn`：连接对象。
 
 ##### onUserNetworkQuality
 
@@ -3023,14 +3026,14 @@ public void onChangeRoleFailure(AgoraRtcConn agoraRtcConn)
 public void onUserNetworkQuality(AgoraRtcConn agoraRtcConn, String userId, int txQuality, int rxQuality)
 ```
 
-报告指定用户的网络质量。
+报告每个用户的网络质量。SDK 每两秒触发一次此回调，报告频道内每个用户（包括本地用户）的上行和下行网络状况。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `userId`：用户 ID。如果是本地用户，则为 null。
-- `txQuality`：该用户的上行网络质量 (`Constants.QUALITY_TYPE`)。
-- `rxQuality`：该用户的下行网络质量 (`Constants.QUALITY_TYPE`)。
+- `agoraRtcConn`：连接对象。
+- `userId`：用户 ID。如果 `userId` 为空，则此回调报告本地用户的网络质量。
+- `txQuality`：上行网络质量。详见 [`QualityType`](#qualitytype)。
+- `rxQuality`：下行网络质量。详见 [`QualityType`](#qualitytype)。
 
 ##### onNetworkTypeChanged
 
@@ -3042,8 +3045,8 @@ public void onNetworkTypeChanged(AgoraRtcConn agoraRtcConn, int type)
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `type`：新的网络类型 (`Constants.NETWORK_TYPE`)。
+- `agoraRtcConn`：连接对象。
+- `type`：当前网络类型。详见 [`NetworkType`](#networktype)。
 
 ##### onApiCallExecuted
 
@@ -3051,14 +3054,14 @@ public void onNetworkTypeChanged(AgoraRtcConn agoraRtcConn, int type)
 public void onApiCallExecuted(AgoraRtcConn agoraRtcConn, int err, String api, String result)
 ```
 
-当调用 SDK API 执行结束后触发。
+报告 API 调用执行结果。通常用于异步操作。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `err`：错误码。
+- `agoraRtcConn`：连接对象。
+- `err`：API 调用返回的错误码。详见 [`ErrorCodeType`](#errorcodetype)。
 - `api`：被调用的 API 名称。
-- `result`：API 执行结果的 JSON 字符串。
+- `result`：API 调用的结果字符串。
 
 ##### onContentInspectResult
 
@@ -3066,12 +3069,12 @@ public void onApiCallExecuted(AgoraRtcConn agoraRtcConn, int err, String api, St
 public void onContentInspectResult(AgoraRtcConn agoraRtcConn, int result)
 ```
 
-内容审查结果回调。
+报告内容审查结果。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `result`：审查结果 (`Constants.CONTENT_INSPECT_RESULT`)。
+- `agoraRtcConn`：连接对象。
+- `result`：内容审查结果。详见 [`ContentInspectResult`](#contentinspectresult)。
 
 ##### onSnapshotTaken
 
@@ -3079,17 +3082,17 @@ public void onContentInspectResult(AgoraRtcConn agoraRtcConn, int result)
 public void onSnapshotTaken(AgoraRtcConn agoraRtcConn, String channel, int userId, String filePath, int width, int height, int errCode)
 ```
 
-截图操作完成时触发。
+当快照成功截取时触发。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `channel`：频道名。
-- `userId`：用户 ID。
-- `filePath`：截图文件保存路径。
-- `width`：截图宽度。
-- `height`：截图高度。
-- `errCode`：错误码，0 表示成功。
+- `agoraRtcConn`：连接对象。
+- `channel`：频道名称。
+- `userId`：用户 ID。如果用户 ID 为 0，则快照为本地用户的快照。
+- `filePath`：快照文件的本地路径。
+- `width`：快照的宽度（像素）。
+- `height`：快照的高度（像素）。
+- `errCode`：错误码。0 表示成功。
 
 ##### onError
 
@@ -3097,13 +3100,13 @@ public void onSnapshotTaken(AgoraRtcConn agoraRtcConn, String channel, int userI
 public void onError(AgoraRtcConn agoraRtcConn, int error, String msg)
 ```
 
-当 SDK 内部发生错误时触发。通常是不可恢复的错误。
+报告 SDK 运行时错误。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `error`：错误码 (`Constants.ERROR_CODE_TYPE`)。
-- `msg`：错误描述信息。
+- `agoraRtcConn`：连接对象。
+- `error`：错误码。详见 [`ErrorCodeType`](#errorcodetype)。
+- `msg`：错误信息。
 
 ##### onWarning
 
@@ -3111,13 +3114,13 @@ public void onError(AgoraRtcConn agoraRtcConn, int error, String msg)
 public void onWarning(AgoraRtcConn agoraRtcConn, int warning, String msg)
 ```
 
-当 SDK 内部发生警告时触发。通常表示一些问题，但可能可以恢复。
+报告 SDK 运行时警告。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `warning`：警告码 (`Constants.WARN_CODE_TYPE`)。
-- `msg`：警告描述信息。
+- `agoraRtcConn`：连接对象。
+- `warning`：警告码。详见 [警告码](#警告码)。
+- `msg`：警告信息。
 
 ##### onChannelMediaRelayStateChanged
 
@@ -3125,13 +3128,13 @@ public void onWarning(AgoraRtcConn agoraRtcConn, int warning, String msg)
 public void onChannelMediaRelayStateChanged(AgoraRtcConn agoraRtcConn, int state, int code)
 ```
 
-跨频道媒体流转发状态发生改变时触发。
+当频道媒体流转发状态发生改变时触发。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `state`：当前的转发状态 (`Constants.CHANNEL_MEDIA_RELAY_STATE`)。
-- `code`：相关的错误码或状态码 (`Constants.CHANNEL_MEDIA_RELAY_ERROR`)。
+- `agoraRtcConn`：连接对象。
+- `state`：状态码。详见 [频道媒体流转发状态](#频道媒体流转发状态)。
+- `code`：错误码。详见 [频道媒体流转发错误码](#频道媒体流转发错误码)。
 
 ##### onLocalUserRegistered
 
@@ -3139,13 +3142,13 @@ public void onChannelMediaRelayStateChanged(AgoraRtcConn agoraRtcConn, int state
 public void onLocalUserRegistered(AgoraRtcConn agoraRtcConn, int uid, String userAccount)
 ```
 
-当本地用户成功注册 User Account 时触发。
+当本地用户通过调用 `joinChannelWithUserAccount` 方法成功注册用户账户时触发。此回调报告本地用户的用户 ID 和用户账户。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `uid`：用户的 UID。
-- `userAccount`：用户的 User Account。
+- `agoraRtcConn`：连接对象。
+- `uid`：本地用户的 ID。
+- `userAccount`：本地用户的用户账户。
 
 ##### onUserAccountUpdated
 
@@ -3153,13 +3156,13 @@ public void onLocalUserRegistered(AgoraRtcConn agoraRtcConn, int uid, String use
 public void onUserAccountUpdated(AgoraRtcConn agoraRtcConn, int uid, String userAccount)
 ```
 
-当用户的 User Account 信息更新时触发。
+当用户信息更新时触发。技术预览，请不要依赖此事件。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `uid`：用户的 UID。
-- `userAccount`：更新后的 User Account。
+- `agoraRtcConn`：连接对象。
+- `uid`：本地用户的 ID。
+- `userAccount`：本地用户的用户账户。
 
 ##### onStreamMessageError
 
@@ -3167,16 +3170,16 @@ public void onUserAccountUpdated(AgoraRtcConn agoraRtcConn, int uid, String user
 public void onStreamMessageError(AgoraRtcConn agoraRtcConn, String userId, int streamId, int code, int missed, int cached)
 ```
 
-当发送数据流消息 (`sendStreamMessage`) 失败时触发。
+报告接收数据流消息时发生的错误。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `userId`：接收方的用户 ID。
-- `streamId`：数据流 ID。
-- `code`：错误码。
-- `missed`：发送失败的消息数量。
-- `cached`：当前缓存的消息数量。
+- `agoraRtcConn`：连接对象。
+- `userId`：发送数据流的用户的 ID。
+- `streamId`：数据流的 ID。
+- `code`：错误码。详见 [`ErrorCodeType`](#errorcodetype)。
+- `missed`：丢失的消息数量。
+- `cached`：当数据流中断时，接收到的缓存消息数量。
 
 ##### onEncryptionError
 
@@ -3184,12 +3187,12 @@ public void onStreamMessageError(AgoraRtcConn agoraRtcConn, String userId, int s
 public void onEncryptionError(AgoraRtcConn agoraRtcConn, int errorType)
 ```
 
-当发生加密错误时触发。
+当传输过程中发生加密错误时触发。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
-- `errorType`：加密错误类型 (`Constants.ENCRYPTION_ERROR_TYPE`)。
+- `agoraRtcConn`：连接对象。
+- `errorType`：加密错误的类型。详见 [`EncryptionErrorType`](#encryptionerrortype)。
 
 ##### onUploadLogResult
 
@@ -3197,14 +3200,14 @@ public void onEncryptionError(AgoraRtcConn agoraRtcConn, int errorType)
 public void onUploadLogResult(AgoraRtcConn agoraRtcConn, String requestId, int success, int reason)
 ```
 
-当调用 `uploadLogFile` 方法上传日志文件的结果返回时触发。
+报告用户日志上传结果。
 
 **参数**：
 
-- `agoraRtcConn`：RTC 连接实例。
+- `agoraRtcConn`：连接对象。
 - `requestId`：上传请求的 ID。
-- `success`：是否上传成功 (`boolean`, 1 为成功, 0 为失败)。
-- `reason`：上传结果的原因 (`Constants.UPLOAD_ERROR_REASON`)。
+- `success`：上传是否成功（1 表示成功，0 表示失败）。
+- `reason`：上传结果的原因。详见 [`UploadErrorReason`](#uploaderrorreason)。
 
 ### ILocalUserObserver
 
