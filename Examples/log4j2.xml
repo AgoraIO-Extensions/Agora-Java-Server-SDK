@@ -16,7 +16,7 @@
             filePattern="logs/${sys:log.filename}-%d{yyyyMMdd_HHmmss}-%i.log.gz">
             <PatternLayout pattern="%d{HH:mm:ss.SSS}[%t]%-5level:%msg%n" />
             <Policies>
-                <SizeBasedTriggeringPolicy size="10 MB" />
+                <SizeBasedTriggeringPolicy size="1024 MB" />
                 <DeleteAction basePath="logs" maxDepth="1">
                     <IfFileName glob="*.gz">
                         <IfLastModified age="5d">

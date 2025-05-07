@@ -23,6 +23,8 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SendYuvTest {
@@ -49,6 +51,7 @@ public class SendYuvTest {
     private static long testTime = 60 * 1000;
 
     private final static AtomicBoolean connConnected = new AtomicBoolean(false);
+    private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
 
     private static void parseArgs(String[] args) {
         SampleLogger.log("parseArgs args:" + Arrays.toString(args));
@@ -292,8 +295,8 @@ public class SendYuvTest {
             }
 
             @Override
-            public void release(boolean withJoin) {
-                super.release(withJoin);
+            public void release() {
+                super.release();
                 DirectBufferCleaner.release(byteBuffer);
                 DirectBufferCleaner.release(matedataByteBuffer);
                 DirectBufferCleaner.release(alphaByteBuffer);
@@ -309,7 +312,7 @@ public class SendYuvTest {
             }
         }
 
-        yuvSender.start();
+        testTaskExecutorService.execute(yuvSender);
 
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < testTime) {
@@ -339,6 +342,7 @@ public class SendYuvTest {
         }
 
         connConnected.set(false);
+        testTaskExecutorService.shutdown();
 
         if (null != mediaNodeFactory) {
             mediaNodeFactory.destroy();

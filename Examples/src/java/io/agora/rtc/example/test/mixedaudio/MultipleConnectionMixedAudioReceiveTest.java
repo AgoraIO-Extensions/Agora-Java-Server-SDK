@@ -23,7 +23,7 @@ public class MultipleConnectionMixedAudioReceiveTest extends AgoraTest {
         audioSubOpt.setSampleRateHz(ArgsConfig.sampleRate);
 
         RtcConnConfig ccfg = new RtcConnConfig();
-        ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
+        ccfg.setClientRoleType(Constants.CLIENT_ROLE_AUDIENCE);
         ccfg.setAudioSubsOptions(audioSubOpt);
         ccfg.setAutoSubscribeAudio(0);
         ccfg.setAutoSubscribeVideo(0);
@@ -37,6 +37,11 @@ public class MultipleConnectionMixedAudioReceiveTest extends AgoraTest {
             for (int i = 0; i < ArgsConfig.connectionCount; i++) {
                 createConnectionAndTest(ccfg, ArgsConfig.channelId + i, ArgsConfig.userId,
                         TestTask.RECEIVE_MIXED_AUDIO, ArgsConfig.testTime);
+                try {
+                    Thread.sleep(500);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
 

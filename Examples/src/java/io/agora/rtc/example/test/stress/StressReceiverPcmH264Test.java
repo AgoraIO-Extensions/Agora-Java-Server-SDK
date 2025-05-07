@@ -32,7 +32,7 @@ public class StressReceiverPcmH264Test extends AgoraTest {
         testStartTime = System.currentTimeMillis();
 
         RtcConnConfig ccfg = new RtcConnConfig();
-        ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
+        ccfg.setClientRoleType(Constants.CLIENT_ROLE_AUDIENCE);
         ccfg.setAutoSubscribeAudio(0);
         ccfg.setAutoSubscribeVideo(0);
         ccfg.setChannelProfile(Constants.CHANNEL_PROFILE_LIVE_BROADCASTING);

@@ -28,6 +28,11 @@ public class MultipleConnectionDataStreamSendTest extends AgoraTest {
             for (int i = 0; i < ArgsConfig.connectionCount; i++) {
                 createConnectionAndTest(ccfg, ArgsConfig.channelId + i, ArgsConfig.userId,
                         TestTask.SEND_DATA_STREAM, ArgsConfig.testTime);
+                try {
+                    Thread.sleep(500);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
     }

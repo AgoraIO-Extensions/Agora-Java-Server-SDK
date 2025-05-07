@@ -15,7 +15,7 @@ public class MultipleConnectionH264ReceiveTest extends AgoraTest {
     public void setup() {
         super.setup();
         RtcConnConfig ccfg = new RtcConnConfig();
-        ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
+        ccfg.setClientRoleType(Constants.CLIENT_ROLE_AUDIENCE);
         ccfg.setAutoSubscribeAudio(0);
         ccfg.setAutoSubscribeVideo(0);
         ccfg.setChannelProfile(1);
@@ -27,6 +27,11 @@ public class MultipleConnectionH264ReceiveTest extends AgoraTest {
             for (int i = 0; i < ArgsConfig.connectionCount; i++) {
                 createConnectionAndTest(ccfg, ArgsConfig.channelId + i, ArgsConfig.userId, TestTask.RECEIVE_H264,
                         ArgsConfig.testTime);
+                try {
+                    Thread.sleep(500);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
 

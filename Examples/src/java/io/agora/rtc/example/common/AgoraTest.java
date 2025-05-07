@@ -255,14 +255,14 @@ public class AgoraTest {
                             ArgsConfig.fps, Constants.VIDEO_STREAM_HIGH, true);
                     break;
                 case SEND_H264:
-                    connTask.sendH264Task(ArgsConfig.videoFile, 1000 / ArgsConfig.fps, 0, 0,
-                            Constants.VIDEO_STREAM_HIGH, true);
+                    connTask.sendH264Task(ArgsConfig.videoFile, 1000 / ArgsConfig.fps, ArgsConfig.height,
+                            ArgsConfig.width, Constants.VIDEO_STREAM_HIGH, true);
                     break;
                 case SEND_H264_DUAL_STREAM:
-                    connTask.sendH264Task(ArgsConfig.highVideoFile, 1000 / ArgsConfig.fps, 0, 0,
-                            Constants.VIDEO_STREAM_HIGH, false);
-                    connTask.sendH264Task(ArgsConfig.lowVideoFile, 1000 / ArgsConfig.fps, 0, 0,
-                            Constants.VIDEO_STREAM_LOW, true);
+                    connTask.sendH264Task(ArgsConfig.highVideoFile, 1000 / ArgsConfig.fps, ArgsConfig.height,
+                            ArgsConfig.width, Constants.VIDEO_STREAM_HIGH, false);
+                    connTask.sendH264Task(ArgsConfig.lowVideoFile, 1000 / ArgsConfig.fps, ArgsConfig.height,
+                            ArgsConfig.width, Constants.VIDEO_STREAM_LOW, true);
                     break;
                 case SEND_RGBA_PCM:
                     connTask.sendPcmTask(ArgsConfig.audioFile, 10, ArgsConfig.numOfChannels, ArgsConfig.sampleRate,

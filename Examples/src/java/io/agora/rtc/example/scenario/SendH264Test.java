@@ -56,6 +56,7 @@ public class SendH264Test {
     private final static AtomicBoolean connConnected = new AtomicBoolean(false);
 
     private static final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
+    private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
 
     private static void parseArgs(String[] args) {
         SampleLogger.log("parseArgs args:" + Arrays.toString(args));
@@ -257,8 +258,8 @@ public class SendH264Test {
             }
 
             @Override
-            public void release(boolean withJoin) {
-                super.release(withJoin);
+            public void release() {
+                super.release();
                 if (null != h264Reader) {
                     h264Reader.close();
                 }
@@ -273,7 +274,7 @@ public class SendH264Test {
             }
         }
 
-        h264SendThread.start();
+        testTaskExecutorService.execute(h264SendThread);
 
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < testTime) {
@@ -326,6 +327,7 @@ public class SendH264Test {
         conn = null;
 
         singleExecutorService.shutdown();
+        testTaskExecutorService.shutdown();
 
         SampleLogger.log("Disconnected from Agora channel successfully");
     }
