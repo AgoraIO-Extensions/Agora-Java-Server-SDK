@@ -30,7 +30,7 @@ public class MultipleConnectionRgbaPcmSendTest extends AgoraTest {
                 createConnectionAndTest(ccfg, ArgsConfig.channelId + i, connUserId, TestTask.SEND_RGBA_PCM,
                         ArgsConfig.testTime);
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep((long) (ArgsConfig.sleepTime * 1000));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

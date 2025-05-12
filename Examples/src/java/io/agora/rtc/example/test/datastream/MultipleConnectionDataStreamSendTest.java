@@ -29,7 +29,7 @@ public class MultipleConnectionDataStreamSendTest extends AgoraTest {
                 createConnectionAndTest(ccfg, ArgsConfig.channelId + i, ArgsConfig.userId,
                         TestTask.SEND_DATA_STREAM, ArgsConfig.testTime);
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep((long) (ArgsConfig.sleepTime * 1000));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

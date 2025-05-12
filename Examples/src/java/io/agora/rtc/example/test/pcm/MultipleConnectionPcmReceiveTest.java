@@ -40,7 +40,7 @@ public class MultipleConnectionPcmReceiveTest extends AgoraTest {
                     createConnectionAndTest(ccfg, ArgsConfig.channelId, connUserId, TestTask.RECEIVE_PCM,
                             ArgsConfig.testTime);
                     try {
-                        Thread.sleep(500);
+                        Thread.sleep((long) (ArgsConfig.sleepTime * 1000));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -51,7 +51,7 @@ public class MultipleConnectionPcmReceiveTest extends AgoraTest {
                     createConnectionAndTest(ccfg, ArgsConfig.channelId + i, connUserId, TestTask.RECEIVE_PCM,
                             ArgsConfig.testTime);
                     try {
-                        Thread.sleep(500);
+                        Thread.sleep((long) (ArgsConfig.sleepTime * 1000));
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

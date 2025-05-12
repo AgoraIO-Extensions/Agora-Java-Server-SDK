@@ -5,6 +5,7 @@ import io.agora.rtc.AgoraRtcConn;
 import io.agora.rtc.AgoraService;
 import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
+import io.agora.rtc.AgoraParameter;
 import java.io.File;
 import java.util.List;
 import java.util.Scanner;
@@ -135,6 +136,9 @@ public class AgoraTest {
         service = SampleCommon.createAndInitAgoraService(0, 1, 1, ArgsConfig.enableStringUid ? 1 : 0, ArgsConfig.appId);
 
         mediaNodeFactory = service.createMediaNodeFactory();
+
+        AgoraParameter parameter = service.getAgoraParameter();
+        parameter.setParameters("{\"rtc.enable_nasa2\":false}");
 
         // AgoraParameter parameter = service.getAgoraParameter();
         // parameter.setParameters("{\"che.audio.custom_payload_type\":78}");

@@ -241,7 +241,6 @@ public class SendYuvTest {
                 externalVideoFrame.setFormat(Constants.EXTERNAL_VIDEO_FRAME_PIXEL_FORMAT_I420);
                 externalVideoFrame.setStride(width);
                 externalVideoFrame.setType(Constants.EXTERNAL_VIDEO_FRAME_BUFFER_TYPE_RAW_DATA);
-                externalVideoFrame.setTimestamp(timestamp);
 
                 String testMetaData = "testMetaData";
                 if (null == matedataByteBuffer) {

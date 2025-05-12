@@ -24,13 +24,26 @@ public class MultipleConnectionH264ReceiveTest extends AgoraTest {
             createConnectionAndTest(ccfg, ArgsConfig.channelId, ArgsConfig.userId, TestTask.RECEIVE_H264,
                     ArgsConfig.testTime);
         } else {
-            for (int i = 0; i < ArgsConfig.connectionCount; i++) {
-                createConnectionAndTest(ccfg, ArgsConfig.channelId + i, ArgsConfig.userId, TestTask.RECEIVE_H264,
-                        ArgsConfig.testTime);
-                try {
-                    Thread.sleep(500);
-                } catch (Exception e) {
-                    e.printStackTrace();
+            if (ArgsConfig.singleChannel == 1) {
+                for (int i = 0; i < ArgsConfig.connectionCount; i++) {
+                    String connUserId = ArgsConfig.userId.equals("0") ? ArgsConfig.userId : ArgsConfig.userId + i;
+                    createConnectionAndTest(ccfg, ArgsConfig.channelId, connUserId, TestTask.RECEIVE_H264,
+                            ArgsConfig.testTime);
+                    try {
+                        Thread.sleep((long) (ArgsConfig.sleepTime * 1000));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            } else {
+                for (int i = 0; i < ArgsConfig.connectionCount; i++) {
+                    createConnectionAndTest(ccfg, ArgsConfig.channelId + i, ArgsConfig.userId, TestTask.RECEIVE_H264,
+                            ArgsConfig.testTime);
+                    try {
+                        Thread.sleep((long) (ArgsConfig.sleepTime * 1000));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }

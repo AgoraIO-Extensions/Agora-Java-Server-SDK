@@ -38,7 +38,7 @@ public class MultipleConnectionMixedAudioReceiveTest extends AgoraTest {
                 createConnectionAndTest(ccfg, ArgsConfig.channelId + i, ArgsConfig.userId,
                         TestTask.RECEIVE_MIXED_AUDIO, ArgsConfig.testTime);
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep((long) (ArgsConfig.sleepTime * 1000));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

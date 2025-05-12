@@ -249,9 +249,7 @@ public class AgoraConnectionTask {
                     return;
                 }
                 if (ArgsConfig.isStressTest == 0) {
-                    SampleLogger.log("onUplinkNetworkInfoUpdated channelId:"
-                            + agoraRtcConn.getConnInfo().getChannelId() + " userId:"
-                            + agoraRtcConn.getConnInfo().getLocalUserId() + " info:" + info);
+                    SampleLogger.log("onUplinkNetworkInfoUpdated info:" + info);
                 }
             }
 
@@ -261,9 +259,7 @@ public class AgoraConnectionTask {
                     return;
                 }
                 if (ArgsConfig.isStressTest == 0) {
-                    SampleLogger.log("onDownlinkNetworkInfoUpdated channelId:"
-                            + agoraRtcConn.getConnInfo().getChannelId() + " userId:"
-                            + agoraRtcConn.getConnInfo().getLocalUserId() + " info:" + info);
+                    SampleLogger.log("onDownlinkNetworkInfoUpdated info:" + info);
                 }
             }
         });
@@ -988,7 +984,6 @@ public class AgoraConnectionTask {
                     externalVideoFrame.setFormat(Constants.EXTERNAL_VIDEO_FRAME_PIXEL_FORMAT_I420);
                     externalVideoFrame.setStride(width);
                     externalVideoFrame.setType(Constants.EXTERNAL_VIDEO_FRAME_BUFFER_TYPE_RAW_DATA);
-                    externalVideoFrame.setTimestamp(timestamp);
 
                     String testMetaData = "testMetaData";
                     if (null == matedataByteBuffer) {
@@ -1145,14 +1140,11 @@ public class AgoraConnectionTask {
                         return;
                     }
 
-                    long currentTime = timestamp;
                     info.setFrameType(lastFrameType);
                     info.setStreamType(streamType);
                     info.setWidth(width);
                     info.setHeight(height);
                     info.setCodecType(Constants.VIDEO_CODEC_H264);
-                    info.setCaptureTimeMs(currentTime);
-                    info.setDecodeTimeMs(currentTime);
                     info.setFramesPerSecond(fps);
                     info.setRotation(0);
 
@@ -1188,7 +1180,6 @@ public class AgoraConnectionTask {
                     if (isLoopSend) {
                         localH264Reader.reset();
                         reset();
-                        frameIndex = 0;
                     } else {
                         if (null != taskFinishLatch) {
                             taskFinishLatch.countDown();
@@ -1323,7 +1314,6 @@ public class AgoraConnectionTask {
                     externalVideoFrame.setHeight(height);
                     externalVideoFrame.setBuffer(byteBuffer);
                     externalVideoFrame.setAlphaBuffer(alphaBuffer);
-                    externalVideoFrame.setTimestamp(timestamp);
                     externalVideoFrame.setRotation(0);
                     // ColorSpace colorSpace = new ColorSpace();
                     // colorSpace.setPrimaries(1);
@@ -1473,8 +1463,6 @@ public class AgoraConnectionTask {
                     info.setWidth(width);
                     info.setHeight(height);
                     info.setCodecType(Constants.VIDEO_CODEC_VP8);
-                    info.setCaptureTimeMs(currentTime);
-                    info.setDecodeTimeMs(currentTime);
                     info.setFramesPerSecond(fps);
                     info.setRotation(0);
 
@@ -1599,7 +1587,6 @@ public class AgoraConnectionTask {
                         }
 
                         audioFrame.setBuffer(ByteBuffer.wrap(frame.buffer));
-                        audioFrame.setRenderTimeMs(frame.pts);
                         audioFrame.setSamplesPerChannel(frame.samples);
                         audioFrame.setBytesPerSample(frame.bytesPerSample);
                         audioFrame.setChannels(frame.channels);
@@ -2156,7 +2143,7 @@ public class AgoraConnectionTask {
         if (ArgsConfig.isStressTest == 1) {
             long currentTime = System.currentTimeMillis();
             long elapsedTime = currentTime - testStartTime;
-            long maxStressTime = (ArgsConfig.sleepTime - ArgsConfig.timeForStressLeave) * 1000;
+            long maxStressTime = (long) ((ArgsConfig.sleepTime - ArgsConfig.timeForStressLeave) * 1000);
 
             if (elapsedTime < maxStressTime) {
                 synchronized (this) {

@@ -44,7 +44,7 @@ public class StressReceiverPcmH264Test extends AgoraTest {
             testTaskExecutorService.execute(() -> {
                 int index = 0;
                 while (checkTestTime()) {
-                    int t1 = random.nextInt(ArgsConfig.sleepTime - ArgsConfig.timeForStressLeave) + 1;
+                    int t1 = random.nextInt((int) (ArgsConfig.sleepTime - ArgsConfig.timeForStressLeave)) + 1;
                     String channel = ArgsConfig.connectionCount == 1 ? ArgsConfig.channelId
                             : ArgsConfig.channelId + threadId;
                     String connUserId = ArgsConfig.userId.equals("0") ? ArgsConfig.userId
@@ -54,7 +54,7 @@ public class StressReceiverPcmH264Test extends AgoraTest {
                             t1);
 
                     try {
-                        Thread.sleep(ArgsConfig.sleepTime * 1000);
+                        Thread.sleep((long) (ArgsConfig.sleepTime * 1000));
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }

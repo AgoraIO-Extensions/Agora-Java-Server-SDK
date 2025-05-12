@@ -222,15 +222,12 @@ public class SendH264Test {
                     return;
                 }
                 EncodedVideoFrameInfo info = new EncodedVideoFrameInfo();
-                long currentTime = timestamp;
                 info.setFrameType(lastFrameType);
                 info.setStreamType(
                         streamType.equals("high") ? Constants.VIDEO_STREAM_HIGH : Constants.VIDEO_STREAM_LOW);
                 info.setWidth(width);
                 info.setHeight(height);
                 info.setCodecType(Constants.VIDEO_CODEC_H264);
-                info.setCaptureTimeMs(currentTime);
-                info.setDecodeTimeMs(currentTime);
                 info.setFramesPerSecond(fps);
                 info.setRotation(0);
 

@@ -29,7 +29,7 @@ public class MultipleConnectionAacSendTest extends AgoraTest {
                 createConnectionAndTest(ccfg, ArgsConfig.channelId + i, ArgsConfig.userId, TestTask.SEND_AAC,
                         ArgsConfig.testTime);
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep((long) (ArgsConfig.sleepTime * 1000));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
