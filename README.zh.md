@@ -39,6 +39,7 @@
      - [类和方法](#类和方法)
      - [使用示例](#使用示例)
 7. [更新日志](#更新日志)
+   - [v4.4.32（2025-05-12）](#v44322025-05-12)
    - [v4.4.31.4（2025-03-21）](#v443142025-03-21)
    - [v4.4.31.3（2025-02-26）](#v443132025-02-26)
    - [v4.4.31.2（2025-02-19）](#v443122025-02-19)
@@ -51,7 +52,7 @@
 
 ## 简介
 
-Agora Linux Server Java SDK (v4.4.31.4) 为您提供了强大的实时音视频通信能力，可无缝集成到 Linux 服务器端 Java 应用程序中。借助此 SDK，您的服务器可以作为数据源或处理节点加入 Agora 频道，实时获取和处理音视频流，从而实现多种业务相关的其他高级功能。
+Agora Linux Server Java SDK (v4.4.32) 为您提供了强大的实时音视频通信能力，可无缝集成到 Linux 服务器端 Java 应用程序中。借助此 SDK，您的服务器可以作为数据源或处理节点加入 Agora 频道，实时获取和处理音视频流，从而实现多种业务相关的其他高级功能。
 
 ## 开发环境要求
 
@@ -79,7 +80,7 @@ Agora Linux Server Java SDK (v4.4.31.4) 为您提供了强大的实时音视频�
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.31.4</version>
+    <version>4.4.32</version>
 </dependency>
 ```
 
@@ -104,7 +105,7 @@ Maven 集成是最简单的方式，可以自动管理 Java 依赖关系。
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.31.4</version>
+    <version>4.4.32</version>
 </dependency>
 ```
 
@@ -139,7 +140,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.31.4 \
+  -Dversion=4.4.32 \
   -Dpackaging=jar \
   -DgeneratePom=true
 ```
@@ -151,7 +152,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.31.4 \
+  -Dversion=4.4.32 \
   -Dpackaging=jar \
   -DgeneratePom=true \
   -Djavadoc=sdk/agora-sdk-javadoc.jar
@@ -163,7 +164,7 @@ mvn install:install-file \
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.31.4</version>
+    <version>4.4.32</version>
 </dependency>
 ```
 
@@ -212,7 +213,7 @@ Agora Linux Server Java SDK 依赖于底层的 C++ 原生库（`.so` 文件）�
     jar xvf agora-sdk.jar
 
     # 如果使用 Maven 集成方式，JAR 文件在 Maven 缓存中，例如：
-    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.31.4/linux-java-sdk-4.4.31.4.jar
+    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32/linux-java-sdk-4.4.32.jar
     ```
 
 3.  提取后，`libs` 目录下会生成 `native/linux/x86_64` 子目录，其中包含所需的 `.so` 文件：
@@ -586,6 +587,21 @@ public class Main {
 ```
 
 ## 更新日志
+
+### v4.4.32（2025-05-12）
+
+#### API 变更
+
+- `AgoraService` 新增 `getSdkVersion` 方法，用于获取 SDK 版本号
+- `AgoraAudioEncodedFrameSender` 移除 `send(byte[] payloadData, int payloadSize, EncodedAudioFrameInfo info)` 方法，新增 `sendEncodedAudioFrame(byte[] payloadData, EncodedAudioFrameInfo info)` 方法替代
+- `AgoraAudioPcmDataSender` 的 `send(byte[] audioData, int captureTimestamp, int samplesPerChannel, int bytesPerSample,
+int numberOfChannels, int sampleRate) ` 方法标位不推荐，新增 `sendAudioPcmData(AudioFrame audioFrame)` 方法替代
+- `AgoraVideoEncodedImageSender` 移除 `send(byte[] imageBuffer, int length, EncodedVideoFrameInfo info` 方法，新增 `sendEncodedVideoImage(byte[] imageBuffer, EncodedVideoFrameInfo info)` 方法替代
+- `AgoraVideoFrameSender` 移除 `send(ExternalVideoFrame frame)` 方法，新增 `sendVideoFrame(ExternalVideoFrame frame)` 方法替代
+
+#### 改进与优化
+
+- 修复了 `destroy` 方法可能导致的崩溃问题
 
 ### v4.4.31.4（2025-03-21）
 

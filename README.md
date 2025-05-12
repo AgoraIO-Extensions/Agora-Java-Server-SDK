@@ -41,6 +41,7 @@
      - [Classes and Methods](#classes-and-methods)
      - [Usage Example](#usage-example)
 7. [Changelog](#changelog)
+   - [v4.4.32 (2025-05-12)](#v4432-2025-05-12)
    - [v4.4.31.4 (2025-03-21)](#v44314-2025-03-21)
    - [v4.4.31.3 (2025-02-26)](#v44313-2025-02-26)
    - [v4.4.31.2 (2025-02-19)](#v44312-2025-02-19)
@@ -53,7 +54,7 @@
 
 ## Introduction
 
-The Agora Linux Server Java SDK (v4.4.31.4) provides powerful real-time audio and video communication capabilities that can be seamlessly integrated into Linux server-side Java applications. With this SDK, your server can join Agora channels as a data source or processing node, accessing and processing audio and video streams in real-time to implement various business-related advanced features.
+The Agora Linux Server Java SDK (v4.4.32) provides powerful real-time audio and video communication capabilities that can be seamlessly integrated into Linux server-side Java applications. With this SDK, your server can join Agora channels as a data source or processing node, accessing and processing audio and video streams in real-time to implement various business-related advanced features.
 
 ## Development Environment Requirements
 
@@ -81,7 +82,7 @@ The Agora Linux Server Java SDK (v4.4.31.4) provides powerful real-time audio an
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.31.4</version>
+    <version>4.4.32</version>
 </dependency>
 ```
 
@@ -106,7 +107,7 @@ Add the following dependency to your project's `pom.xml` file:
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.31.4</version>
+    <version>4.4.32</version>
 </dependency>
 ```
 
@@ -141,7 +142,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.31.4 \
+  -Dversion=4.4.32 \
   -Dpackaging=jar \
   -DgeneratePom=true
 ```
@@ -153,7 +154,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.31.4 \
+  -Dversion=4.4.32 \
   -Dpackaging=jar \
   -DgeneratePom=true \
   -Djavadoc=sdk/agora-sdk-javadoc.jar
@@ -165,7 +166,7 @@ After installation, add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.31.4</version>
+    <version>4.4.32</version>
 </dependency>
 ```
 
@@ -214,7 +215,7 @@ The `.so` files are contained within the `agora-sdk.jar` or `linux-java-sdk-x.x.
     jar xvf agora-sdk.jar
 
     # If using Maven integration, the JAR file is in the Maven cache, e.g.:
-    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.31.4/linux-java-sdk-4.4.31.4.jar
+    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32/linux-java-sdk-4.4.32.jar
     ```
 
 3.  After extraction, a `native/linux/x86_64` subdirectory will be generated within the `libs` directory, containing the required `.so` files:
@@ -590,6 +591,20 @@ public class Main {
 ```
 
 ## Changelog
+
+### v4.4.32 (2025-05-12)
+
+#### API Changes
+
+- `AgoraService`: Added `getSdkVersion` method to obtain the SDK version.
+- `AgoraAudioEncodedFrameSender`: Removed `send(byte[] payloadData, int payloadSize, EncodedAudioFrameInfo info)` method, replaced with `sendEncodedAudioFrame(byte[] payloadData, EncodedAudioFrameInfo info)`.
+- `AgoraAudioPcmDataSender`: The method `send(byte[] audioData, int captureTimestamp, int samplesPerChannel, int bytesPerSample, int numberOfChannels, int sampleRate)` is now deprecated, replaced with `sendAudioPcmData(AudioFrame audioFrame)`.
+- `AgoraVideoEncodedImageSender`: Removed `send(byte[] imageBuffer, int length, EncodedVideoFrameInfo info)` method, replaced with `sendEncodedVideoImage(byte[] imageBuffer, EncodedVideoFrameInfo info)`.
+- `AgoraVideoFrameSender`: Removed `send(ExternalVideoFrame frame)` method, replaced with `sendVideoFrame(ExternalVideoFrame frame)`.
+
+#### Improvements & Optimizations
+
+- Fixed a potential crash issue caused by the `destroy` method.
 
 ### v4.4.31.4 (2025-03-21)
 
