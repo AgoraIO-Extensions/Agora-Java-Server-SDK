@@ -38,6 +38,9 @@
      - [介绍](#介绍)
      - [类和方法](#类和方法)
      - [使用示例](#使用示例)
+   - [Audio 3A 模块](#audio-3a-模块)
+     - [介绍](#介绍-1)
+     - [类和方法](#类和方法-1)
 7. [更新日志](#更新日志)
    - [v4.4.32（2025-05-12）](#v44322025-05-12)
    - [v4.4.31.4（2025-03-21）](#v443142025-03-21)
@@ -452,6 +455,10 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
 
   参考 `Examples/src/java/io/agora/rtc/example/scenario/SendReceiverStreamMessageTest.java`,实现发送接收流消息
 
+- 音频 3A 处理
+
+  参考 `Examples/src/java/io/agora/rtc/example/scenario/Audio3aTest.java`,实现音频 3A 处理
+
 #### 常见问题
 
 - 确保 Java 环境正确安装和配置
@@ -582,6 +589,237 @@ public class Main {
 
         // 销毁 VAD 实例
         vad.destroy();
+    }
+}
+```
+
+### Audio 3A 模块
+
+#### 介绍
+
+`AgoraAudioProcessor` 是一个用于音频 3A（AEC、ANS、AGC）处理的模块。它可以对音频帧进行声学回声消除 (AEC)、自动噪声抑制 (ANS) 和自动增益控制 (AGC)，以提升音频质量。该模块需要相应的模型文件来执行处理。
+
+#### 类和方法
+
+##### AgoraAudioProcessor 类
+
+###### 构造方法
+
+```java
+public AgoraAudioProcessor()
+```
+
+- **描述**：构造一个 `AgoraAudioProcessor` 实例。
+
+###### 方法
+
+```java
+public int init(String appId, String license, IAgoraAudioProcessorEventHandler eventHandler, AgoraAudioProcessorConfig config)
+```
+
+- **描述**：初始化音频处理器。必须在使用其他方法前调用。
+- **参数**：
+  - `appId`：`String` 类型，声网后台获取的 App ID。
+  - `license`：`String` 类型，声网后台获取的 License。
+  - `eventHandler`：`IAgoraAudioProcessorEventHandler` 类型，用于接收处理器事件和错误的回调处理器。
+  - `config`：`AgoraAudioProcessorConfig` 类型，3A 处理器配置对象，用于配置模型路径等。
+- **返回**：`int` 类型，0 表示成功，其他值表示失败。
+
+```java
+public AgoraAudioFrame process(AgoraAudioFrame audioFrame)
+```
+
+- **描述**：对输入的音频帧进行 3A 处理。
+- **参数**：
+  - `audioFrame`：`io.agora.rtc.audio3a.AgoraAudioFrame` 类型，包含待处理 PCM 音频数据的帧对象。
+- **返回**：`io.agora.rtc.audio3a.AgoraAudioFrame` 类型，处理后的音频帧。如果处理失败，可能返回 `null`。
+
+```java
+public int release()
+```
+
+- **描述**：释放 `AgoraAudioProcessor` 实例所占用的所有资源。处理完成后应调用此方法。
+- **返回**：`int` 类型，0 表示成功，其他值表示失败。
+
+##### AgoraAudioProcessorConfig 类
+
+此类用于配置 `AgoraAudioProcessor`。
+
+###### 方法
+
+```java
+public void setModelPath(String modelPath)
+```
+
+- **描述**: 设置 3A 处理所需的模型文件路径。模型文件通常随 SDK 包提供，位于 `resources/model/` 目录下。
+- **参数**:
+  - `modelPath`: `String` 类型，模型文件所在的目录路径。例如 `./resources/model/`。
+
+###### 示例
+
+```java
+AgoraAudioProcessorConfig config = new AgoraAudioProcessorConfig();
+config.setModelPath("./resources/model/"); // 根据实际模型文件位置进行设置
+```
+
+##### IAgoraAudioProcessorEventHandler 接口
+
+此接口用于接收来自 `AgoraAudioProcessor` 的事件和错误通知。
+
+###### 方法
+
+```java
+public void onEvent(Constants.AgoraAudioProcessorEventType eventType)
+```
+
+- **描述**：报告处理器在运行过程中发生的事件。
+- **参数**：
+  - `eventType`：`io.agora.rtc.Constants.AgoraAudioProcessorEventType` 类型，具体的事件类型。
+
+```java
+public void onError(int errorCode)
+```
+
+- **描述**：报告处理器在运行过程中发生的错误。
+- **参数**：
+  - `errorCode`：`int` 类型，错误码，指示发生的具体错误。
+
+##### io.agora.rtc.audio3a.AgoraAudioFrame 类
+
+此类用于封装音频数据以供 `AgoraAudioProcessor` 处理。 (注意：这与 `io.agora.rtc.AudioFrame` 可能不同，请使用 `audio3a` 包下的版本)
+
+###### 关键属性
+
+| 属性名            | 类型       | 描述                                                                                                        |
+| ----------------- | ---------- | ----------------------------------------------------------------------------------------------------------- |
+| type              | int        | 音频帧类型，通常为 `Constants.AudioFrameType.PCM16.getValue()`。                                            |
+| sampleRate        | int        | 音频采样率 (Hz)，例如 16000, 32000, 48000。                                                                 |
+| channels          | int        | 音频通道数，例如 1 (单声道) 或 2 (立体声)。                                                                 |
+| samplesPerChannel | int        | 每个通道的采样点数量。对于 10ms 的帧，通常是 `sampleRate / 100`。                                           |
+| bytesPerSample    | int        | 每个采样点的字节数。例如 PCM16 格式为 2 字节 (`Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue()`)。 |
+| buffer            | ByteBuffer | 包含原始 PCM 音频数据的 `java.nio.ByteBuffer`。                                                             |
+
+###### 主要方法 (Setters/Getters)
+
+```java
+public void setType(int type);
+public int getType();
+
+public void setSampleRate(int sampleRate);
+public int getSampleRate();
+
+public void setChannels(int channels);
+public int getChannels();
+
+public void setSamplesPerChannel(int samplesPerChannel);
+public int getSamplesPerChannel();
+
+public void setBytesPerSample(int bytesPerSample);
+public int getBytesPerSample();
+
+public void setBuffer(java.nio.ByteBuffer buffer);
+public java.nio.ByteBuffer getBuffer();
+```
+
+#### 使用示例
+
+以下是一个简单的示例代码，展示如何使用 `AgoraAudioProcessor` 进行音频帧处理：
+
+```java
+import io.agora.rtc.audio3a.AgoraAudioProcessor;
+import io.agora.rtc.audio3a.AgoraAudioProcessorConfig;
+import io.agora.rtc.audio3a.IAgoraAudioProcessorEventHandler;
+import io.agora.rtc.audio3a.AgoraAudioFrame; // 使用 audio3a 包下的 AgoraAudioFrame
+import io.agora.rtc.Constants; // SDK 的常量类
+import java.nio.ByteBuffer;
+import java.util.Arrays; // 用于打印数据示例
+
+public class Audio3AProcessingExample {
+    public static void main(String[] args) {
+        // 替换为您的 App ID 和 License
+        String appId = "YOUR_APP_ID";
+        String license = "YOUR_LICENSE_KEY";
+
+        // 1. 创建 AgoraAudioProcessor 实例
+        AgoraAudioProcessor audioProcessor = new AgoraAudioProcessor();
+
+        // 2. 配置 AgoraAudioProcessorConfig
+        AgoraAudioProcessorConfig config = new AgoraAudioProcessorConfig();
+        // 设置模型文件路径，通常在 SDK 包的 resources/model/ 目录下
+        // 请确保路径正确，否则初始化可能失败
+        config.setModelPath("./resources/model/"); // 根据您的实际路径修改
+
+        // 3. 初始化 AgoraAudioProcessor
+        int initRet = audioProcessor.init(appId, license,
+                new IAgoraAudioProcessorEventHandler() {
+                    @Override
+                    public void onEvent(Constants.AgoraAudioProcessorEventType eventType) {
+                        System.out.println("AgoraAudioProcessor Event: " + eventType);
+                    }
+
+                    @Override
+                    public void onError(int errorCode) {
+                        System.err.println("AgoraAudioProcessor Error: " + errorCode);
+                    }
+                }, config);
+
+        if (initRet != 0) {
+            System.err.println("Failed to initialize AgoraAudioProcessor. Error code: " + initRet);
+            // 根据错误码处理初始化失败的情况，例如检查 appId, license, modelPath 是否正确
+            return;
+        }
+        System.out.println("AgoraAudioProcessor initialized successfully.");
+
+        // 4. 准备音频帧 (AgoraAudioFrame)
+        // 示例参数：16kHz, 单声道, 10ms 音频帧
+        int sampleRate = 16000;
+        int channels = 1;
+        int samplesPerChannel = sampleRate / 100; // 10ms frame -> 160 samples
+        int bytesPerSample = Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue(); // PCM16
+
+        AgoraAudioFrame inputFrame = new AgoraAudioFrame();
+        inputFrame.setType(Constants.AudioFrameType.PCM16.getValue());
+        inputFrame.setSampleRate(sampleRate);
+        inputFrame.setChannels(channels);
+        inputFrame.setSamplesPerChannel(samplesPerChannel);
+        inputFrame.setBytesPerSample(bytesPerSample);
+
+        // 创建并填充音频数据 ByteBuffer
+        // 实际应用中，这里的 pcmData 来自音频源，如麦克风或文件
+        int bufferSize = samplesPerChannel * channels * bytesPerSample;
+        byte[] pcmData = new byte[bufferSize];
+        // ... 此处用虚拟数据填充 pcmData ...
+        // 例如：Arrays.fill(pcmData, (byte) 10); // 仅为示例
+        ByteBuffer audioBuffer = ByteBuffer.allocateDirect(bufferSize);
+        audioBuffer.put(pcmData);
+        audioBuffer.flip(); // 切换到读模式
+        inputFrame.setBuffer(audioBuffer);
+
+        // 5. 处理音频帧
+        AgoraAudioFrame outputFrame = audioProcessor.process(inputFrame);
+
+        if (outputFrame != null && outputFrame.getBuffer() != null) {
+            System.out.println("Audio frame processed successfully.");
+            ByteBuffer processedBuffer = outputFrame.getBuffer();
+            // processedBuffer 包含了经过 3A 处理的音频数据
+            // 您可以将数据写入文件、发送到网络或进行其他操作
+            // 例如，获取处理后的字节数据：
+            // byte[] processedBytes = new byte[processedBuffer.remaining()];
+            // processedBuffer.get(processedBytes);
+            // System.out.println("Processed data sample (first 10 bytes): " +
+            // Arrays.toString(Arrays.copyOfRange(processedBytes, 0, Math.min(10, processedBytes.length))));
+        } else {
+            System.err.println("Failed to process audio frame or output frame is null.");
+            // 检查是否有错误回调，或 process 方法的返回值
+        }
+
+        // 6. 释放资源
+        int releaseRet = audioProcessor.release();
+        if (releaseRet == 0) {
+            System.out.println("AgoraAudioProcessor released successfully.");
+        } else {
+            System.err.println("Failed to release AgoraAudioProcessor. Error code: " + releaseRet);
+        }
     }
 }
 ```

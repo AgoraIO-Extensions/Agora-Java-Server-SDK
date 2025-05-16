@@ -103,6 +103,40 @@ public class Utils {
         return new String[] { appId, token };
     }
 
+    public static String[] readAppIdAndLicense(String filePath) {
+        if (filePath == null || filePath.isEmpty()) {
+            return new String[] { null, null };
+        }
+        String appId = null;
+        String license = null;
+        try {
+            List<String> lines = Files.readAllLines(Paths.get(filePath));
+
+            Pattern appIdPattern = Pattern.compile("APP_ID=(.*)");
+            Pattern licensePattern = Pattern.compile("LICENSE=(.*)");
+
+            for (String line : lines) {
+                Matcher appIdMatcher = appIdPattern.matcher(line);
+                Matcher licenseMatcher = licensePattern.matcher(line);
+
+                if (appIdMatcher.find()) {
+                    appId = appIdMatcher.group(1);
+                }
+                if (licenseMatcher.find()) {
+                    license = licenseMatcher.group(1);
+                }
+
+                if (appId != null && license != null) {
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return new String[] { appId, license };
+    }
+
     public static boolean isNullOrEmpty(String str) {
         return str == null || str.isEmpty();
     }

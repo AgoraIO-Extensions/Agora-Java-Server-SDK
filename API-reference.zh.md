@@ -18,6 +18,7 @@
   - [AgoraVideoEncodedImageSender](#agoravideoencodedimagesender)
   - [AgoraAudioEncodedFrameSender](#agoraaudioencodedframesender)
   - [AgoraParameter](#agoraparameter)
+  - [AgoraAudioProcessor](#agoraprocessor)
 - [观察者接口](#观察者接口)
   - [IRtcConnObserver](#irtcconnobserver)
   - [ILocalUserObserver](#ilocaluserobserver)
@@ -26,6 +27,7 @@
   - [IAudioFrameObserver](#iaudioframeobserver)
   - [IAudioEncodedFrameObserver](#iaudioencodedframeobserver)
   - [IVideoEncodedFrameObserver](#ivideoencodedframeobserver)
+  - [IAgoraAudioProcessorEventHandler](#iagoraaudioprocessoreventhandler)
 - [数据结构](#数据结构)
   - [AgoraServiceConfig](#agoraserviceconfig)
   - [RtcConnConfig](#rtcconnconfig)
@@ -53,6 +55,12 @@
   - [UplinkNetworkInfo](#uplinknetworkinfo)
   - [DownlinkNetworkInfo](#downlinknetworkinfo)
   - [PeerDownlinkInfo](#peerdownlinkinfo)
+  - [AecConfig](#aecconfig)
+  - [AnsConfig](#ansconfig)
+  - [AgcConfig](#agcconfig)
+  - [BghvsConfig](#bghvsconfig)
+  - [AgoraAudioProcessorConfig](#agoraaudioprocessorconfig)
+  - [AgoraAudioFrame](#agoraaudioframe)
 - [工具类](#工具类)
   - [AudioConsumerUtils](#audioconsumerutils)
   - [VadDumpUtils](#vaddumputils)
@@ -2775,6 +2783,19 @@ public int getString(String key, Out value)
 - 0：成功
 - < 0：失败
 
+### AgoraAudioProcessor
+
+`AgoraAudioProcessor` 类提供上行音频处理接口，包括 AEC (声学回声消除)、ANS (自动噪声抑制)、AGC (自动增益控制) 和 BGHVS (背景谐波人声抑制)。
+
+**主要方法:**
+
+- `AgoraAudioProcessor()`: 构造函数。
+- `int init(String appId, String license, IAgoraAudioProcessorEventHandler eventHandler, AgoraAudioProcessorConfig config)`: 使用给定配置初始化处理器。
+- `AgoraAudioFrame process(AgoraAudioFrame frame)`: 处理音频帧并返回处理后的帧。
+- `int release()`: 释放处理器及相关资源。
+
+**注意:** 此类使用原生方法进行实际处理。
+
 ## 观察者接口
 
 ### IRtcConnObserver
@@ -4190,6 +4211,17 @@ public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int user
 
 - SDK 预留参数，返回 0 即可。
 
+### IAgoraAudioProcessorEventHandler
+
+`IAgoraAudioProcessorEventHandler` 接口提供来自 Agora 上行音频处理库的事件和错误回调。
+
+**方法:**
+
+- `void onEvent(Constants.AgoraAudioProcessorEventType eventType)`: 音频处理器的事件回调。
+- `void onError(int errorCode)`: 音频处理器的错误回调。
+
+**注意:** 这两个方法都有默认的空实现。
+
 ## 数据结构
 
 ### AgoraServiceConfig
@@ -4626,9 +4658,138 @@ public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int user
 - **currentDownscaleLevel**：当前下采样级别 (int)。
 - **expectedBitrateBps**：预期比特率（bps）(int)。
 
-### 工具类
+### AecConfig
 
-#### AudioConsumerUtils
+`AecConfig` 类配置声学回声消除 (AEC) 设置。
+
+**主要属性:**
+
+- **enabled**: 是否启用 AEC (`boolean`)。
+- **stereoAecEnabled**: 是否启用立体声 AEC (`boolean`)。
+- **enableAecAutoReset**: 是否启用 AEC 自动重置 (`boolean`)。
+- **aecStartupMaxSuppressTimeInMs**: AEC 启动期间的最大抑制时间 (毫秒) (`int`)。
+- **filterLength**: AEC 的滤波器长度 (`Constants.AecFilterLength`)。
+- **aecModelType**: AEC 模型类型 (`Constants.AecModelType`)。
+- **aecSuppressionMode**: AEC 抑制模式 (`Constants.AecSuppressionMode`)。
+- **aiAecSuppressionMode**: AI AEC 抑制模式 (`Constants.AIAecSuppressionMode`)。
+
+**构造函数:**
+
+- `AecConfig()`
+- `AecConfig(boolean enabled, boolean stereoAecEnabled, boolean enableAecAutoReset, int aecStartupMaxSuppressTimeInMs, Constants.AecFilterLength filterLength, Constants.AecModelType aecModelType, Constants.AecSuppressionMode aecSuppressionMode, Constants.AIAecSuppressionMode aiAecSuppressionMode)`
+
+**方法:**
+
+- 所有属性的 Getters 和 Setters。
+
+### AnsConfig
+
+`AnsConfig` 类配置自动噪声抑制 (ANS) 设置。
+
+**主要属性:**
+
+- **enabled**: 是否启用 ANS (`boolean`)。
+- **suppressionMode**: ANS 抑制模式 (`Constants.AnsSuppressionMode`)。
+- **ansModelType**: ANS 模型类型 (`Constants.AnsModelType`)。
+- **speechProtectThreshold**: 语音保护阈值 (`int`)。
+
+**构造函数:**
+
+- `AnsConfig()`
+- `AnsConfig(boolean enabled, Constants.AnsSuppressionMode suppressionMode, Constants.AnsModelType ansModelType, int speechProtectThreshold)`
+
+**方法:**
+
+- 所有属性的 Getters 和 Setters。
+
+### AgcConfig
+
+`AgcConfig` 类配置自动增益控制 (AGC) 设置。
+
+**主要属性:**
+
+- **enabled**: 是否启用 AGC (`boolean`)。
+- **useAnalogMode**: 是否使用模拟模式 (`boolean`)。
+- **maxDigitalGaindB**: 最大数字增益 (dB) (`int`)。
+- **targetleveldB**: 目标电平 (dB) (`int`)。
+- **curveSlope**: 曲线斜率 (`int`)。
+
+**构造函数:**
+
+- `AgcConfig()`
+- `AgcConfig(boolean enabled, boolean useAnalogMode, int maxDigitalGaindB, int targetleveldB, int curveSlope)`
+
+**方法:**
+
+- 所有属性的 Getters 和 Setters。
+
+### BghvsConfig
+
+`BghvsConfig` 类配置背景谐波人声抑制 (BGHVS) 设置。
+
+**主要属性:**
+
+- **enabled**: 是否启用 BGHVS (`boolean`)。
+- **bghvsSosLenInMs**: 语音起始段长度 (毫秒) (`int`)。
+- **bghvsEosLenInMs**: 语音结束段长度 (毫秒) (`int`)。
+- **bghvsSppMode**: BGHVS 抑制模式 (`Constants.BghvsSuppressionMode`)。
+- **bghvsDelayInFrmNums**: 延迟帧数 (`int`)。
+
+**构造函数:**
+
+- `BghvsConfig()`
+- `BghvsConfig(boolean enabled, int bghvsSosLenInMs, int bghvsEosLenInMs, Constants.BghvsSuppressionMode bghvsSppMode, int bghvsDelayInFrmNums)`
+
+**方法:**
+
+- 所有属性的 Getters 和 Setters。
+
+### AgoraAudioProcessorConfig
+
+`AgoraAudioProcessorConfig` 类用于配置 `AgoraAudioProcessor`。
+
+**主要属性:**
+
+- **modelPath**: 模型文件路径 (`String`)。
+- **aecConfig**: AEC 配置 (`AecConfig`)。
+- **ansConfig**: ANS 配置 (`AnsConfig`)。
+- **agcConfig**: AGC 配置 (`AgcConfig`)。
+- **bghvsConfig**: BGHVS 配置 (`BghvsConfig`)。
+
+**构造函数:**
+
+- `AgoraAudioProcessorConfig()`
+- `AgoraAudioProcessorConfig(String modelPath, AecConfig aecConfig, AnsConfig ansConfig, AgcConfig agcConfig, BghvsConfig bghvsConfig)`
+
+**方法:**
+
+- 所有属性的 Getters 和 Setters。
+
+### AgoraAudioFrame
+
+`AgoraAudioFrame` 类表示用于处理的音频帧。
+
+**主要属性:**
+
+- **type**: 音频帧类型 (`int`)。
+- **sampleRate**: 采样率 (Hz) (`int`)。
+- **channels**: 通道数 (`int`)。
+- **samplesPerChannel**: 每通道采样数 (`int`)。
+- **bytesPerSample**: 每采样字节数 (`int`)。
+- **buffer**: 音频数据缓冲区 (`ByteBuffer`)。
+
+**构造函数:**
+
+- `AgoraAudioFrame()`
+- `AgoraAudioFrame(int type, int sampleRate, int channels, int samplesPerChannel, int bytesPerSample, ByteBuffer buffer)`
+
+**方法:**
+
+- 所有属性的 Getters 和 Setters。
+
+## 工具类
+
+### AudioConsumerUtils
 
 `AudioConsumerUtils` 类用于消费 PCM 音频数据并将其推送到 RTC 频道。主要用于 AI 场景，如处理 TTS 返回的数据。
 

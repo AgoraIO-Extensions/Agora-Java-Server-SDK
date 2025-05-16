@@ -40,6 +40,9 @@
      - [Introduction](#introduction-1)
      - [Classes and Methods](#classes-and-methods)
      - [Usage Example](#usage-example)
+   - [Audio 3A Module](#audio-3a-module)
+     - [Introduction](#introduction-2)
+     - [Classes and Methods](#classes-and-methods-1)
 7. [Changelog](#changelog)
    - [v4.4.32 (2025-05-12)](#v4432-2025-05-12)
    - [v4.4.31.4 (2025-03-21)](#v44314-2025-03-21)
@@ -454,6 +457,10 @@ Execute the build script:
 
   Refer to `Examples/src/java/io/agora/rtc/example/scenario/SendReceiverStreamMessageTest.java` for sending and receiving stream messages.
 
+- Audio 3A Processing
+
+  Refer to `Examples/src/java/io/agora/rtc/example/scenario/Audio3aTest.java` for audio 3A processing.
+
 #### Common Issues
 
 - Ensure the Java environment is correctly installed and configured.
@@ -586,6 +593,237 @@ public class Main {
 
         // Destroy VAD instance
         vad.destroy();
+    }
+}
+```
+
+### Audio 3A Module
+
+#### Introduction
+
+The `AgoraAudioProcessor` is a module designed for Audio 3A processing, which includes Acoustic Echo Cancellation (AEC), Automatic Noise Suppression (ANS), and Automatic Gain Control (AGC). It processes audio frames to enhance audio quality by mitigating echo, reducing noise, and normalizing volume levels. This module requires corresponding model files to perform its processing tasks.
+
+#### Classes and Methods
+
+##### AgoraAudioProcessor Class
+
+###### Constructor
+
+```java
+public AgoraAudioProcessor()
+```
+
+- **Description**: Constructs an `AgoraAudioProcessor` instance.
+
+###### Methods
+
+```java
+public int init(String appId, String license, IAgoraAudioProcessorEventHandler eventHandler, AgoraAudioProcessorConfig config)
+```
+
+- **Description**: Initializes the audio processor. This must be called before any other methods.
+- **Parameters**:
+  - `appId`: `String`, your App ID obtained from Agora Console.
+  - `license`: `String`, your License key obtained from Agora Console.
+  - `eventHandler`: `IAgoraAudioProcessorEventHandler`, a callback handler to receive processor events and errors.
+  - `config`: `AgoraAudioProcessorConfig`, the 3A processor configuration object, used for setting the model path, etc.
+- **Returns**: `int`, 0 for success, other values indicate failure.
+
+```java
+public AgoraAudioFrame process(AgoraAudioFrame audioFrame)
+```
+
+- **Description**: Performs 3A processing on the input audio frame.
+- **Parameters**:
+  - `audioFrame`: `io.agora.rtc.audio3a.AgoraAudioFrame`, the frame object containing PCM audio data to be processed.
+- **Returns**: `io.agora.rtc.audio3a.AgoraAudioFrame`, the processed audio frame. May return `null` if processing fails.
+
+```java
+public int release()
+```
+
+- **Description**: Releases all resources occupied by the `AgoraAudioProcessor` instance. This should be called when processing is complete.
+- **Returns**: `int`, 0 for success, other values indicate failure.
+
+##### AgoraAudioProcessorConfig Class
+
+This class is used to configure the `AgoraAudioProcessor`.
+
+###### Methods
+
+```java
+public void setModelPath(String modelPath)
+```
+
+- **Description**: Sets the path to the model files required for 3A processing. Model files are typically provided with the SDK package, often in a `resources/model/` directory.
+- **Parameters**:
+  - `modelPath`: `String`, the directory path where model files are located. For example, `./resources/model/`.
+
+###### Example
+
+```java
+AgoraAudioProcessorConfig config = new AgoraAudioProcessorConfig();
+config.setModelPath("./resources/model/"); // Set according to the actual model file location
+```
+
+##### IAgoraAudioProcessorEventHandler Interface
+
+This interface is used to receive event and error notifications from the `AgoraAudioProcessor`.
+
+###### Methods
+
+```java
+public void onEvent(Constants.AgoraAudioProcessorEventType eventType)
+```
+
+- **Description**: Reports events that occur during processor operation.
+- **Parameters**:
+  - `eventType`: `io.agora.rtc.Constants.AgoraAudioProcessorEventType`, the specific event type.
+
+```java
+public void onError(int errorCode)
+```
+
+- **Description**: Reports errors that occur during processor operation.
+- **Parameters**:
+  - `errorCode`: `int`, the error code indicating the specific error that occurred.
+
+##### io.agora.rtc.audio3a.AgoraAudioFrame Class
+
+This class is used to encapsulate audio data for processing by `AgoraAudioProcessor`. (Note: This might be different from `io.agora.rtc.AudioFrame`; use the version from the `audio3a` package).
+
+###### Key Properties
+
+| Property Name     | Type       | Description                                                                                                             |
+| ----------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------- |
+| type              | int        | Audio frame type, typically `Constants.AudioFrameType.PCM16.getValue()`.                                                |
+| sampleRate        | int        | Audio sample rate (Hz), e.g., 16000, 32000, 48000.                                                                      |
+| channels          | int        | Number of audio channels, e.g., 1 (mono) or 2 (stereo).                                                                 |
+| samplesPerChannel | int        | Number of samples per channel. For a 10ms frame, this is usually `sampleRate / 100`.                                    |
+| bytesPerSample    | int        | Number of bytes per sample. E.g., for PCM16, it's 2 bytes (`Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue()`). |
+| buffer            | ByteBuffer | `java.nio.ByteBuffer` containing the raw PCM audio data.                                                                |
+
+###### Main Methods (Setters/Getters)
+
+```java
+public void setType(int type);
+public int getType();
+
+public void setSampleRate(int sampleRate);
+public int getSampleRate();
+
+public void setChannels(int channels);
+public int getChannels();
+
+public void setSamplesPerChannel(int samplesPerChannel);
+public int getSamplesPerChannel();
+
+public void setBytesPerSample(int bytesPerSample);
+public int getBytesPerSample();
+
+public void setBuffer(java.nio.ByteBuffer buffer);
+public java.nio.ByteBuffer getBuffer();
+```
+
+#### Usage Example
+
+Below is a simple example demonstrating how to use `AgoraAudioProcessor` for audio frame processing:
+
+```java
+import io.agora.rtc.audio3a.AgoraAudioProcessor;
+import io.agora.rtc.audio3a.AgoraAudioProcessorConfig;
+import io.agora.rtc.audio3a.IAgoraAudioProcessorEventHandler;
+import io.agora.rtc.audio3a.AgoraAudioFrame; // Use AgoraAudioFrame from the audio3a package
+import io.agora.rtc.Constants; // SDK's constants class
+import java.nio.ByteBuffer;
+import java.util.Arrays; // For printing data in example
+
+public class Audio3AProcessingExample {
+    public static void main(String[] args) {
+        // Replace with your App ID and License
+        String appId = "YOUR_APP_ID";
+        String license = "YOUR_LICENSE_KEY";
+
+        // 1. Create AgoraAudioProcessor instance
+        AgoraAudioProcessor audioProcessor = new AgoraAudioProcessor();
+
+        // 2. Configure AgoraAudioProcessorConfig
+        AgoraAudioProcessorConfig config = new AgoraAudioProcessorConfig();
+        // Set the model file path, usually in resources/model/ of the SDK package
+        // Ensure the path is correct, otherwise initialization might fail
+        config.setModelPath("./resources/model/"); // Modify according to your actual path
+
+        // 3. Initialize AgoraAudioProcessor
+        int initRet = audioProcessor.init(appId, license,
+                new IAgoraAudioProcessorEventHandler() {
+                    @Override
+                    public void onEvent(Constants.AgoraAudioProcessorEventType eventType) {
+                        System.out.println("AgoraAudioProcessor Event: " + eventType);
+                    }
+
+                    @Override
+                    public void onError(int errorCode) {
+                        System.err.println("AgoraAudioProcessor Error: " + errorCode);
+                    }
+                }, config);
+
+        if (initRet != 0) {
+            System.err.println("Failed to initialize AgoraAudioProcessor. Error code: " + initRet);
+            // Handle initialization failure based on the error code, e.g., check appId, license, modelPath
+            return;
+        }
+        System.out.println("AgoraAudioProcessor initialized successfully.");
+
+        // 4. Prepare audio frame (AgoraAudioFrame)
+        // Example parameters: 16kHz, mono, 10ms audio frame
+        int sampleRate = 16000;
+        int channels = 1;
+        int samplesPerChannel = sampleRate / 100; // 10ms frame -> 160 samples
+        int bytesPerSample = Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue(); // PCM16
+
+        AgoraAudioFrame inputFrame = new AgoraAudioFrame();
+        inputFrame.setType(Constants.AudioFrameType.PCM16.getValue());
+        inputFrame.setSampleRate(sampleRate);
+        inputFrame.setChannels(channels);
+        inputFrame.setSamplesPerChannel(samplesPerChannel);
+        inputFrame.setBytesPerSample(bytesPerSample);
+
+        // Create and populate the audio data ByteBuffer
+        // In a real application, pcmData would come from an audio source like a microphone or file
+        int bufferSize = samplesPerChannel * channels * bytesPerSample;
+        byte[] pcmData = new byte[bufferSize];
+        // ... Fill pcmData with dummy data here ...
+        // Example: Arrays.fill(pcmData, (byte) 10); // For demonstration only
+        ByteBuffer audioBuffer = ByteBuffer.allocateDirect(bufferSize);
+        audioBuffer.put(pcmData);
+        audioBuffer.flip(); // Switch to read mode
+        inputFrame.setBuffer(audioBuffer);
+
+        // 5. Process the audio frame
+        AgoraAudioFrame outputFrame = audioProcessor.process(inputFrame);
+
+        if (outputFrame != null && outputFrame.getBuffer() != null) {
+            System.out.println("Audio frame processed successfully.");
+            ByteBuffer processedBuffer = outputFrame.getBuffer();
+            // processedBuffer contains the 3A-processed audio data
+            // You can write this data to a file, send it over the network, or perform other operations
+            // Example: Get processed byte data:
+            // byte[] processedBytes = new byte[processedBuffer.remaining()];
+            // processedBuffer.get(processedBytes);
+            // System.out.println("Processed data sample (first 10 bytes): " +
+            // Arrays.toString(Arrays.copyOfRange(processedBytes, 0, Math.min(10, processedBytes.length))));
+        } else {
+            System.err.println("Failed to process audio frame or output frame is null.");
+            // Check for error callbacks or the return value of the process method
+        }
+
+        // 6. Release resources
+        int releaseRet = audioProcessor.release();
+        if (releaseRet == 0) {
+            System.out.println("AgoraAudioProcessor released successfully.");
+        } else {
+            System.err.println("Failed to release AgoraAudioProcessor. Error code: " + releaseRet);
+        }
     }
 }
 ```

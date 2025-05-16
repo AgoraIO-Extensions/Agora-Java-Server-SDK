@@ -18,6 +18,7 @@ This document provides a reference for the main classes and methods of the Agora
   - [AgoraVideoEncodedImageSender](#agoravideoencodedimagesender)
   - [AgoraAudioEncodedFrameSender](#agoraaudioencodedframesender)
   - [AgoraParameter](#agoraparameter)
+  - [AgoraAudioProcessor](#agoraudioprocessor)
 - [Observer Interfaces](#observer-interfaces)
   - [IRtcConnObserver](#irtcconnobserver)
   - [ILocalUserObserver](#ilocaluserobserver)
@@ -26,6 +27,7 @@ This document provides a reference for the main classes and methods of the Agora
   - [IAudioFrameObserver](#iaudioframeobserver)
   - [IAudioEncodedFrameObserver](#iaudioencodedframeobserver)
   - [IVideoEncodedFrameObserver](#ivideoencodedframeobserver)
+  - [IAgoraAudioProcessorEventHandler](#iagoraaudioprocessoreventhandler)
 - [Data Structures](#data-structures)
   - [AgoraServiceConfig](#agoraserviceconfig)
   - [RtcConnConfig](#rtcconnconfig)
@@ -53,11 +55,17 @@ This document provides a reference for the main classes and methods of the Agora
   - [UplinkNetworkInfo](#uplinknetworkinfo)
   - [DownlinkNetworkInfo](#downlinknetworkinfo)
   - [PeerDownlinkInfo](#peerdownlinkinfo)
+  - [AecConfig](#aecconfig)
+  - [AnsConfig](#ansconfig)
+  - [AgcConfig](#agcconfig)
+  - [BghvsConfig](#bghvsconfig)
+  - [AgoraAudioProcessorConfig](#agoraaudioprocessorconfig)
+  - [AgoraAudioFrame](#agoraaudioframe)
 - [Utility Classes](#utility-classes)
   - [AudioConsumerUtils](#audioconsumerutils)
   - [VadDumpUtils](#vaddumputils)
 
-## 核心类
+## Core Classes
 
 ### AgoraService
 
@@ -2779,7 +2787,20 @@ Gets a string parameter.
 - 0: Success
 - < 0: Failure
 
-## 观察者接口
+### AgoraAudioProcessor
+
+The `AgoraAudioProcessor` class provides an interface for uplink audio processing, including AEC, ANS, AGC, and BGHVS.
+
+**Main Methods:**
+
+- `AgoraAudioProcessor()`: Constructor.
+- `int init(String appId, String license, IAgoraAudioProcessorEventHandler eventHandler, AgoraAudioProcessorConfig config)`: Initializes the processor with the given configuration.
+- `AgoraAudioFrame process(AgoraAudioFrame frame)`: Processes an audio frame and returns the processed frame.
+- `int release()`: Releases the processor and associated resources.
+
+**Note:** This class uses native methods for actual processing.
+
+### 观察者接口
 
 ### IRtcConnObserver
 
@@ -3314,16 +3335,16 @@ Triggered when a remote user's audio track is successfully subscribed to.
 public void onUserAudioTrackStateChanged(AgoraLocalUser agoraLocalUser, String userId, AgoraRemoteAudioTrack agoraRemoteAudioTrack, int state, int reason, int elapsed)
 ```
 
-当远端用户的音频轨道状态发生改变时触发。
+Triggered when the state of a remote user's audio track changes.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `userId`：远端用户 ID。
-- `agoraRemoteAudioTrack`：远端音频轨道。
-- `state`：新的状态 (`Constants.REMOTE_AUDIO_STATE`)。
-- `reason`：状态改变的原因 (`Constants.REMOTE_AUDIO_STATE_REASON`)。
-- `elapsed`：从订阅开始到触发此回调的耗时（毫秒）。
+- `agoraLocalUser`: The local user instance.
+- `userId`: The remote user ID.
+- `agoraRemoteAudioTrack`: The remote audio track.
+- `state`: The new state (`Constants.REMOTE_AUDIO_STATE`).
+- `reason`: The reason for the state change (`Constants.REMOTE_AUDIO_STATE_REASON`).
+- `elapsed`: Time elapsed (ms) from subscribing to this callback being triggered.
 
 ##### onAudioSubscribeStateChanged
 
@@ -3331,16 +3352,16 @@ public void onUserAudioTrackStateChanged(AgoraLocalUser agoraLocalUser, String u
 public void onAudioSubscribeStateChanged(AgoraLocalUser agoraLocalUser, String channel, String userId, int oldState, int newState, int elapseSinceLastState)
 ```
 
-当音频订阅状态发生改变时触发。
+Triggered when the audio subscription state changes.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `channel`：频道名。
-- `userId`：远端用户 ID。
-- `oldState`：之前的订阅状态 (`Constants.STREAM_SUBSCRIBE_STATE`)。
-- `newState`：当前的订阅状态 (`Constants.STREAM_SUBSCRIBE_STATE`)。
-- `elapseSinceLastState`：距离上次状态改变的耗时（毫秒）。
+- `agoraLocalUser`: The local user instance.
+- `channel`: The channel name.
+- `userId`: The remote user ID.
+- `oldState`: The previous subscription state (`Constants.STREAM_SUBSCRIBE_STATE`).
+- `newState`: The current subscription state (`Constants.STREAM_SUBSCRIBE_STATE`).
+- `elapseSinceLastState`: Time elapsed (ms) since the last state change.
 
 ##### onAudioPublishStateChanged
 
@@ -3348,15 +3369,15 @@ public void onAudioSubscribeStateChanged(AgoraLocalUser agoraLocalUser, String c
 public void onAudioPublishStateChanged(AgoraLocalUser agoraLocalUser, String channel, int oldState, int newState, int elapseSinceLastState)
 ```
 
-当音频发布状态发生改变时触发。
+Triggered when the audio publishing state changes.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `channel`：频道名。
-- `oldState`：之前的发布状态 (`Constants.STREAM_PUBLISH_STATE`)。
-- `newState`：当前的发布状态 (`Constants.STREAM_PUBLISH_STATE`)。
-- `elapseSinceLastState`：距离上次状态改变的耗时（毫秒）。
+- `agoraLocalUser`: The local user instance.
+- `channel`: The channel name.
+- `oldState`: The previous publishing state (`Constants.STREAM_PUBLISH_STATE`).
+- `newState`: The current publishing state (`Constants.STREAM_PUBLISH_STATE`).
+- `elapseSinceLastState`: Time elapsed (ms) since the last state change.
 
 ##### onFirstRemoteAudioFrame
 
@@ -3364,13 +3385,13 @@ public void onAudioPublishStateChanged(AgoraLocalUser agoraLocalUser, String cha
 public void onFirstRemoteAudioFrame(AgoraLocalUser agoraLocalUser, String userId, int elapsed)
 ```
 
-当收到指定远端用户的首帧音频时触发。
+Triggered when the first audio frame from the specified remote user is received.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `userId`：远端用户 ID。
-- `elapsed`：从订阅开始到收到首帧的耗时（毫秒）。
+- `agoraLocalUser`: The local user instance.
+- `userId`: The remote user ID.
+- `elapsed`: The time elapsed (ms) from subscription to receiving the first frame.
 
 ##### onFirstRemoteAudioDecoded
 
@@ -3378,13 +3399,13 @@ public void onFirstRemoteAudioFrame(AgoraLocalUser agoraLocalUser, String userId
 public void onFirstRemoteAudioDecoded(AgoraLocalUser agoraLocalUser, String userId, int elapsed)
 ```
 
-当成功解码指定远端用户的首帧音频时触发。
+Triggered when the first audio frame from the specified remote user is successfully decoded.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `userId`：远端用户 ID。
-- `elapsed`：从订阅开始到解码首帧的耗时（毫秒）。
+- `agoraLocalUser`: The local user instance.
+- `userId`: The remote user ID.
+- `elapsed`: The time elapsed (ms) from subscription to decoding the first frame.
 
 ##### onVideoTrackPublishSuccess
 
@@ -3392,12 +3413,12 @@ public void onFirstRemoteAudioDecoded(AgoraLocalUser agoraLocalUser, String user
 public void onVideoTrackPublishSuccess(AgoraLocalUser agoraLocalUser, AgoraLocalVideoTrack agoraLocalVideoTrack)
 ```
 
-当本地视频轨道发布成功时触发。
+When the local video track is successfully published, this method is triggered.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `agoraLocalVideoTrack`：成功发布的本地视频轨道。
+- `agoraLocalUser`: The local user instance.
+- `agoraLocalVideoTrack`: The local video track that is successfully published.
 
 ##### onVideoTrackPublicationFailure
 
@@ -3405,13 +3426,13 @@ public void onVideoTrackPublishSuccess(AgoraLocalUser agoraLocalUser, AgoraLocal
 public void onVideoTrackPublicationFailure(AgoraLocalUser agoraLocalUser, AgoraLocalVideoTrack agoraLocalVideoTrack, int error)
 ```
 
-当本地视频轨道发布失败时触发。
+Triggered when publishing the local video track fails.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `agoraLocalVideoTrack`：发布失败的本地视频轨道。
-- `error`：错误码 (`Constants.RTC_ERROR_CODE`)。
+- `agoraLocalUser`: The local user instance.
+- `agoraLocalVideoTrack`: The local video track that failed to publish.
+- `error`: Error code (`Constants.RTC_ERROR_CODE`).
 
 ##### onLocalVideoTrackStateChanged
 
@@ -3419,14 +3440,14 @@ public void onVideoTrackPublicationFailure(AgoraLocalUser agoraLocalUser, AgoraL
 public void onLocalVideoTrackStateChanged(AgoraLocalUser agoraLocalUser, AgoraLocalVideoTrack agoraLocalVideoTrack, int state, int error)
 ```
 
-当本地视频轨道状态发生改变时触发。
+Triggered when the state of the local video track changes.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `agoraLocalVideoTrack`：状态改变的本地视频轨道。
-- `state`：新的状态 (`Constants.LOCAL_VIDEO_STREAM_STATE`)。
-- `error`：相关的错误码 (`Constants.LOCAL_VIDEO_STREAM_ERROR`)。
+- `agoraLocalUser`: The local user instance.
+- `agoraLocalVideoTrack`: The local video track whose state changed.
+- `state`: The new state (`Constants.LOCAL_VIDEO_STREAM_STATE`).
+- `error`: Related error code (`Constants.LOCAL_VIDEO_STREAM_ERROR`).
 
 ##### onLocalVideoTrackStatistics
 
@@ -3434,13 +3455,13 @@ public void onLocalVideoTrackStateChanged(AgoraLocalUser agoraLocalUser, AgoraLo
 public void onLocalVideoTrackStatistics(AgoraLocalUser agoraLocalUser, AgoraLocalVideoTrack agoraLocalVideoTrack, LocalVideoTrackStats stats)
 ```
 
-报告本地视频流的统计信息。
+Reports the statistics of the local video stream.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `agoraLocalVideoTrack`：本地视频轨道。
-- `stats`：本地视频统计数据 (`LocalVideoTrackStats`)。
+- `agoraLocalUser`: The local user instance.
+- `agoraLocalVideoTrack`: The local video track.
+- `stats`: Local video statistics data (`LocalVideoTrackStats`).
 
 ##### onUserVideoTrackSubscribed
 
@@ -3448,14 +3469,14 @@ public void onLocalVideoTrackStatistics(AgoraLocalUser agoraLocalUser, AgoraLoca
 public void onUserVideoTrackSubscribed(AgoraLocalUser agoraLocalUser, String userId, VideoTrackInfo info, AgoraRemoteVideoTrack agoraRemoteVideoTrack)
 ```
 
-当成功订阅远端用户的视频轨道时触发。
+Triggered when a remote user's video track is successfully subscribed to.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `userId`：远端用户 ID。
-- `info`：视频轨道信息 (`VideoTrackInfo`)。
-- `agoraRemoteVideoTrack`：订阅到的远端视频轨道。
+- `agoraLocalUser`: The local user instance.
+- `userId`: The remote user ID.
+- `info`: Video track information (`VideoTrackInfo`).
+- `agoraRemoteVideoTrack`: The subscribed remote video track.
 
 ##### onUserVideoTrackStateChanged
 
@@ -3463,16 +3484,16 @@ public void onUserVideoTrackSubscribed(AgoraLocalUser agoraLocalUser, String use
 public void onUserVideoTrackStateChanged(AgoraLocalUser agoraLocalUser, String userId, AgoraRemoteVideoTrack agoraRemoteVideoTrack, int state, int reason, int elapsed)
 ```
 
-当远端用户的视频轨道状态发生改变时触发。
+Triggered when the state of a remote user's video track changes.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `userId`：远端用户 ID。
-- `agoraRemoteVideoTrack`：远端视频轨道。
-- `state`：新的状态 (`Constants.REMOTE_VIDEO_STATE`)。
-- `reason`：状态改变的原因 (`Constants.REMOTE_VIDEO_STATE_REASON`)。
-- `elapsed`：从订阅开始到触发此回调的耗时（毫秒）。
+- `agoraLocalUser`: The local user instance.
+- `userId`: The remote user ID.
+- `agoraRemoteVideoTrack`: The remote video track.
+- `state`: The new state (`Constants.REMOTE_VIDEO_STATE`).
+- `reason`: The reason for the state change (`Constants.REMOTE_VIDEO_STATE_REASON`).
+- `elapsed`: Time elapsed (ms) from subscribing to this callback being triggered.
 
 ##### onRemoteVideoTrackStatistics
 
@@ -3480,13 +3501,13 @@ public void onUserVideoTrackStateChanged(AgoraLocalUser agoraLocalUser, String u
 public void onRemoteVideoTrackStatistics(AgoraLocalUser agoraLocalUser, AgoraRemoteVideoTrack agoraRemoteVideoTrack, RemoteVideoTrackStats stats)
 ```
 
-报告接收到的远端视频流的统计信息。
+Reports the statistics of the received remote video stream.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `agoraRemoteVideoTrack`：远端视频轨道。
-- `stats`：远端视频统计数据 (`RemoteVideoTrackStats`)。
+- `agoraLocalUser`: The local user instance.
+- `agoraRemoteVideoTrack`: The remote video track.
+- `stats`: Remote video statistics data (`RemoteVideoTrackStats`).
 
 ##### onAudioVolumeIndication
 
@@ -3494,13 +3515,13 @@ public void onRemoteVideoTrackStatistics(AgoraLocalUser agoraLocalUser, AgoraRem
 public void onAudioVolumeIndication(AgoraLocalUser agoraLocalUser, AudioVolumeInfo[] speakers, int totalVolume)
 ```
 
-报告谁在说话以及说话者的音量。
+Reports who is speaking and the volume of the speakers.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `speakers`：包含说话者信息的数组 (`AudioVolumeInfo[]`)。如果为空，表示当前没有人说话。
-- `totalVolume`：混音后的总音量，范围 [0, 255]。
+- `agoraLocalUser`: The local user instance.
+- `speakers`: An array containing information about the speakers (`AudioVolumeInfo[]`). If empty, it means no one is speaking.
+- `totalVolume`: The total volume after mixing, range [0, 255].
 
 ##### onActiveSpeaker
 
@@ -3508,12 +3529,12 @@ public void onAudioVolumeIndication(AgoraLocalUser agoraLocalUser, AudioVolumeIn
 public void onActiveSpeaker(AgoraLocalUser agoraLocalUser, String userId)
 ```
 
-当检测到活跃的说话者时触发。
+Triggered when an active speaker is detected.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `userId`：当前最活跃的说话者 ID。
+- `agoraLocalUser`: The local user instance.
+- `userId`: The ID of the current active speaker.
 
 ##### onRemoteVideoStreamInfoUpdated
 
@@ -3521,12 +3542,12 @@ public void onActiveSpeaker(AgoraLocalUser agoraLocalUser, String userId)
 public void onRemoteVideoStreamInfoUpdated(AgoraLocalUser agoraLocalUser, RemoteVideoStreamInfo info)
 ```
 
-当远端视频流的信息更新时触发。
+Triggered when the information of the remote video stream is updated.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `info`：远端视频流信息 (`RemoteVideoStreamInfo`)。
+- `agoraLocalUser`: The local user instance.
+- `info`: Information about the remote video stream (`RemoteVideoStreamInfo`).
 
 ##### onVideoSubscribeStateChanged
 
@@ -3534,16 +3555,16 @@ public void onRemoteVideoStreamInfoUpdated(AgoraLocalUser agoraLocalUser, Remote
 public void onVideoSubscribeStateChanged(AgoraLocalUser agoraLocalUser, String channel, String userId, int oldState, int newState, int elapseSinceLastState)
 ```
 
-当视频订阅状态发生改变时触发。
+Triggered when the video subscription state changes.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `channel`：频道名。
-- `userId`：远端用户 ID。
-- `oldState`：之前的订阅状态 (`Constants.STREAM_SUBSCRIBE_STATE`)。
-- `newState`：当前的订阅状态 (`Constants.STREAM_SUBSCRIBE_STATE`)。
-- `elapseSinceLastState`：距离上次状态改变的耗时（毫秒）。
+- `agoraLocalUser`: The local user instance.
+- `channel`: The channel name.
+- `userId`: The remote user ID.
+- `oldState`: The previous subscription state (`Constants.STREAM_SUBSCRIBE_STATE`).
+- `newState`: The current subscription state (`Constants.STREAM_SUBSCRIBE_STATE`).
+- `elapseSinceLastState`: Time elapsed (ms) since the last state change.
 
 ##### onVideoPublishStateChanged
 
@@ -3551,15 +3572,15 @@ public void onVideoSubscribeStateChanged(AgoraLocalUser agoraLocalUser, String c
 public void onVideoPublishStateChanged(AgoraLocalUser agoraLocalUser, String channel, int oldState, int newState, int elapseSinceLastState)
 ```
 
-当视频发布状态发生改变时触发。
+Triggered when the video publishing state changes.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `channel`：频道名。
-- `oldState`：之前的发布状态 (`Constants.STREAM_PUBLISH_STATE`)。
-- `newState`：当前的发布状态 (`Constants.STREAM_PUBLISH_STATE`)。
-- `elapseSinceLastState`：距离上次状态改变的耗时（毫秒）。
+- `agoraLocalUser`: The local user instance.
+- `channel`: The channel name.
+- `oldState`: The previous publishing state (`Constants.STREAM_PUBLISH_STATE`).
+- `newState`: The current publishing state (`Constants.STREAM_PUBLISH_STATE`).
+- `elapseSinceLastState`: Time elapsed (ms) since the last state change.
 
 ##### onFirstRemoteVideoFrame
 
@@ -3567,15 +3588,15 @@ public void onVideoPublishStateChanged(AgoraLocalUser agoraLocalUser, String cha
 public void onFirstRemoteVideoFrame(AgoraLocalUser agoraLocalUser, String userId, int width, int height, int elapsed)
 ```
 
-当收到指定远端用户的首帧视频时触发。
+Triggered when the first video frame from the specified remote user is received.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `userId`：远端用户 ID。
-- `width`：视频宽度。
-- `height`：视频高度。
-- `elapsed`：从订阅开始到收到首帧的耗时（毫秒）。
+- `agoraLocalUser`: The local user instance.
+- `userId`: The remote user ID.
+- `width`: Video width.
+- `height`: Video height.
+- `elapsed`: The time elapsed (ms) from subscription to receiving the first frame.
 
 ##### onFirstRemoteVideoDecoded
 
@@ -3583,15 +3604,15 @@ public void onFirstRemoteVideoFrame(AgoraLocalUser agoraLocalUser, String userId
 public void onFirstRemoteVideoDecoded(AgoraLocalUser agoraLocalUser, String userId, int width, int height, int elapsed)
 ```
 
-当成功解码指定远端用户的首帧视频时触发。
+Triggered when the first video frame from the specified remote user is successfully decoded.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `userId`：远端用户 ID。
-- `width`：视频宽度。
-- `height`：视频高度。
-- `elapsed`：从订阅开始到解码首帧的耗时（毫秒）。
+- `agoraLocalUser`: The local user instance.
+- `userId`: The remote user ID.
+- `width`: Video width.
+- `height`: Video height.
+- `elapsed`: The time elapsed (ms) from subscription to decoding the first frame.
 
 ##### onFirstRemoteVideoFrameRendered
 
@@ -3599,15 +3620,15 @@ public void onFirstRemoteVideoDecoded(AgoraLocalUser agoraLocalUser, String user
 public void onFirstRemoteVideoFrameRendered(AgoraLocalUser agoraLocalUser, String userId, int width, int height, int elapsed)
 ```
 
-当渲染出指定远端用户的首帧视频时触发。
+Triggered when the first video frame from the specified remote user is rendered.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `userId`：远端用户 ID。
-- `width`：视频宽度。
-- `height`：视频高度。
-- `elapsed`：从订阅开始到渲染首帧的耗时（毫秒）。
+- `agoraLocalUser`: The local user instance.
+- `userId`: The remote user ID.
+- `width`: Video width.
+- `height`: Video height.
+- `elapsed`: The time elapsed (ms) from subscription to rendering the first frame.
 
 ##### onVideoSizeChanged
 
@@ -3615,15 +3636,15 @@ public void onFirstRemoteVideoFrameRendered(AgoraLocalUser agoraLocalUser, Strin
 public void onVideoSizeChanged(AgoraLocalUser agoraLocalUser, String userId, int width, int height, int rotation)
 ```
 
-当远端视频的尺寸或旋转角度发生改变时触发。
+Triggered when the size or rotation angle of the remote video changes.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `userId`：远端用户 ID。
-- `width`：新的宽度。
-- `height`：新的高度。
-- `rotation`：新的旋转角度。
+- `agoraLocalUser`: The local user instance.
+- `userId`: The remote user ID.
+- `width`: New width.
+- `height`: New height.
+- `rotation`: New rotation angle.
 
 ##### onUserInfoUpdated
 
@@ -3631,14 +3652,14 @@ public void onVideoSizeChanged(AgoraLocalUser agoraLocalUser, String userId, int
 public void onUserInfoUpdated(AgoraLocalUser agoraLocalUser, String userId, int msg, int val)
 ```
 
-当用户信息更新时触发（例如，音频或视频状态变化）。
+Triggered when user information is updated (e.g., audio or video state changes).
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `userId`：远端用户 ID。
-- `msg`：更新的消息类型 (`Constants.USER_INFO_UPDATED_MSG`)。
-- `val`：更新的值 (通常是 0 或 1)。
+- `agoraLocalUser`: The local user instance.
+- `userId`: The remote user ID.
+- `msg`: The type of update message (`Constants.USER_INFO_UPDATED_MSG`).
+- `val`: The updated value (usually 0 or 1).
 
 ##### onIntraRequestReceived
 
@@ -3646,11 +3667,11 @@ public void onUserInfoUpdated(AgoraLocalUser agoraLocalUser, String userId, int 
 public void onIntraRequestReceived(AgoraLocalUser agoraLocalUser)
 ```
 
-当收到远端用户发送的 I 帧请求时触发。
+Triggered when an I-frame request is received from a remote user.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
+- `agoraLocalUser`: The local user instance.
 
 ##### onRemoteSubscribeFallbackToAudioOnly
 
@@ -3658,13 +3679,13 @@ public void onIntraRequestReceived(AgoraLocalUser agoraLocalUser)
 public void onRemoteSubscribeFallbackToAudioOnly(AgoraLocalUser agoraLocalUser, String userId, int isFallbackOrRecover)
 ```
 
-当远端订阅的流因网络不佳回退为纯音频流，或从纯音频流恢复时触发。
+Triggered when the remote subscribed stream falls back to audio-only due to poor network conditions, or recovers from audio-only.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `userId`：远端用户 ID。
-- `isFallbackOrRecover`：1 表示回退到纯音频，0 表示恢复到音视频。
+- `agoraLocalUser`: The local user instance.
+- `userId`: The remote user ID.
+- `isFallbackOrRecover`: 1 means fallback to audio-only, 0 means recovery to audio and video.
 
 ##### onStreamMessage
 
@@ -3672,15 +3693,15 @@ public void onRemoteSubscribeFallbackToAudioOnly(AgoraLocalUser agoraLocalUser, 
 public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data, long length)
 ```
 
-当收到远端用户通过数据流 (`sendStreamMessage`) 发送的消息时触发。
+Triggered when a message sent by a remote user via data stream (`sendStreamMessage`) is received.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `userId`：发送消息的远端用户 ID。
-- `streamId`：数据流 ID。
-- `data`：收到的消息内容 (String)。
-- `length`：消息长度。
+- `agoraLocalUser`: The local user instance.
+- `userId`: The remote user ID who sent the message.
+- `streamId`: The data stream ID.
+- `data`: The received message content (String).
+- `length`: The message length.
 
 ##### onUserStateChanged
 
@@ -3688,13 +3709,13 @@ public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int st
 public void onUserStateChanged(AgoraLocalUser agoraLocalUser, String userId, int state)
 ```
 
-当远端用户状态发生改变时触发（例如静音/取消静音、启用/禁用视频）。
+Triggered when the state of a remote user changes (e.g., mute/unmute, enable/disable video).
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `userId`：远端用户 ID。
-- `state`：新的用户状态（具体含义取决于触发场景）。
+- `agoraLocalUser`: The local user instance.
+- `userId`: The remote user ID.
+- `state`: The new user state (the specific meaning depends on the trigger scenario).
 
 ##### onAudioTrackPublishStart
 
@@ -3702,12 +3723,12 @@ public void onUserStateChanged(AgoraLocalUser agoraLocalUser, String userId, int
 public void onAudioTrackPublishStart(AgoraLocalUser agoraLocalUser, AgoraLocalAudioTrack agoraLocalAudioTrack)
 ```
 
-当开始发布本地音频轨道时触发。
+Triggered when the local audio track starts publishing.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `agoraLocalAudioTrack`：开始发布的本地音频轨道。
+- `agoraLocalUser`: The local user instance.
+- `agoraLocalAudioTrack`: The local audio track being published.
 
 ##### onAudioTrackUnpublished
 
@@ -3715,12 +3736,12 @@ public void onAudioTrackPublishStart(AgoraLocalUser agoraLocalUser, AgoraLocalAu
 public void onAudioTrackUnpublished(AgoraLocalUser agoraLocalUser, AgoraLocalAudioTrack agoraLocalAudioTrack)
 ```
 
-当取消发布本地音频轨道时触发。
+Triggered when the local audio track is unpublished.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `agoraLocalAudioTrack`：取消发布的本地音频轨道。
+- `agoraLocalUser`: The local user instance.
+- `agoraLocalAudioTrack`: The local audio track being unpublished.
 
 ##### onVideoTrackPublishStart
 
@@ -3728,12 +3749,12 @@ public void onAudioTrackUnpublished(AgoraLocalUser agoraLocalUser, AgoraLocalAud
 public void onVideoTrackPublishStart(AgoraLocalUser agoraLocalUser, AgoraLocalVideoTrack agoraLocalVideoTrack)
 ```
 
-当开始发布本地视频轨道时触发。
+Triggered when the local video track starts publishing.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `agoraLocalVideoTrack`：开始发布的本地视频轨道。
+- `agoraLocalUser`: The local user instance.
+- `agoraLocalVideoTrack`: The local video track being published.
 
 ##### onVideoTrackUnpublished
 
@@ -3741,12 +3762,12 @@ public void onVideoTrackPublishStart(AgoraLocalUser agoraLocalUser, AgoraLocalVi
 public void onVideoTrackUnpublished(AgoraLocalUser agoraLocalUser, AgoraLocalVideoTrack agoraLocalVideoTrack)
 ```
 
-当取消发布本地视频轨道时触发。
+Triggered when the local video track is unpublished.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `agoraLocalVideoTrack`：取消发布的本地视频轨道。
+- `agoraLocalUser`: The local user instance.
+- `agoraLocalVideoTrack`: The local video track being unpublished.
 
 ##### onAudioMetaDataReceived
 
@@ -3754,13 +3775,13 @@ public void onVideoTrackUnpublished(AgoraLocalUser agoraLocalUser, AgoraLocalVid
 public void onAudioMetaDataReceived(AgoraLocalUser agoraLocalUser, String userId, byte[] metaData)
 ```
 
-当收到远端用户发送的音频元数据时触发。
+Triggered when audio metadata sent by a remote user is received.
 
-**参数**：
+**Parameters**:
 
-- `agoraLocalUser`：本地用户实例。
-- `userId`：发送元数据的远端用户 ID。
-- `metaData`：收到的元数据 (byte[])。
+- `agoraLocalUser`: The local user instance.
+- `userId`: The remote user ID who sent the metadata.
+- `metaData`: The received metadata (byte[]).
 
 ### INetworkObserver
 
@@ -4204,7 +4225,18 @@ Triggered when an encoded video frame is received from a remote user.
 
 - Reserved by the SDK. Return 0.
 
-## 数据结构
+### IAgoraAudioProcessorEventHandler
+
+The `IAgoraAudioProcessorEventHandler` interface provides callbacks for events and errors from the Agora uplink audio processing library.
+
+**Methods:**
+
+- `void onEvent(Constants.AgoraAudioProcessorEventType eventType)`: Event callback for the audio processor.
+- `void onError(int errorCode)`: Error callback for the audio processor.
+
+**Note:** Both methods have default empty implementations.
+
+## Data Structures
 
 ### AgoraServiceConfig
 
@@ -4664,7 +4696,136 @@ The `PeerDownlinkInfo` class provides downlink information for a specific remote
 - **currentDownscaleLevel**: Current downscale level of the video stream (`int`). 0 means original resolution, 1 means downscaled once, etc.
 - **expectedBitrateBps**: Expected bitrate (bps) of this video stream (`int`). The bitrate the receiver expects based on network conditions and subscription settings.
 
-### 工具类
+### AecConfig
+
+The `AecConfig` class configures Acoustic Echo Cancellation (AEC) settings.
+
+**Main Properties:**
+
+- **enabled**: Whether AEC is enabled (`boolean`).
+- **stereoAecEnabled**: Whether stereo AEC is enabled (`boolean`).
+- **enableAecAutoReset**: Whether to enable AEC auto reset (`boolean`).
+- **aecStartupMaxSuppressTimeInMs**: Maximum suppression time during AEC startup (ms) (`int`).
+- **filterLength**: Filter length for AEC (`Constants.AecFilterLength`).
+- **aecModelType**: AEC model type (`Constants.AecModelType`).
+- **aecSuppressionMode**: AEC suppression mode (`Constants.AecSuppressionMode`).
+- **aiAecSuppressionMode**: AI AEC suppression mode (`Constants.AIAecSuppressionMode`).
+
+**Constructors:**
+
+- `AecConfig()`
+- `AecConfig(boolean enabled, boolean stereoAecEnabled, boolean enableAecAutoReset, int aecStartupMaxSuppressTimeInMs, Constants.AecFilterLength filterLength, Constants.AecModelType aecModelType, Constants.AecSuppressionMode aecSuppressionMode, Constants.AIAecSuppressionMode aiAecSuppressionMode)`
+
+**Methods:**
+
+- Getters and setters for all properties.
+
+### AnsConfig
+
+The `AnsConfig` class configures Automatic Noise Suppression (ANS) settings.
+
+**Main Properties:**
+
+- **enabled**: Whether ANS is enabled (`boolean`).
+- **suppressionMode**: ANS suppression mode (`Constants.AnsSuppressionMode`).
+- **ansModelType**: ANS model type (`Constants.AnsModelType`).
+- **speechProtectThreshold**: Speech protection threshold (`int`).
+
+**Constructors:**
+
+- `AnsConfig()`
+- `AnsConfig(boolean enabled, Constants.AnsSuppressionMode suppressionMode, Constants.AnsModelType ansModelType, int speechProtectThreshold)`
+
+**Methods:**
+
+- Getters and setters for all properties.
+
+### AgcConfig
+
+The `AgcConfig` class configures Automatic Gain Control (AGC) settings.
+
+**Main Properties:**
+
+- **enabled**: Whether AGC is enabled (`boolean`).
+- **useAnalogMode**: Whether to use analog mode (`boolean`).
+- **maxDigitalGaindB**: Maximum digital gain in dB (`int`).
+- **targetleveldB**: Target level in dB (`int`).
+- **curveSlope**: Curve slope (`int`).
+
+**Constructors:**
+
+- `AgcConfig()`
+- `AgcConfig(boolean enabled, boolean useAnalogMode, int maxDigitalGaindB, int targetleveldB, int curveSlope)`
+
+**Methods:**
+
+- Getters and setters for all properties.
+
+### BghvsConfig
+
+The `BghvsConfig` class configures Background Harmonic Voice Suppression (BGHVS) settings.
+
+**Main Properties:**
+
+- **enabled**: Whether BGHVS is enabled (`boolean`).
+- **bghvsSosLenInMs**: Start-of-speech length in ms (`int`).
+- **bghvsEosLenInMs**: End-of-speech length in ms (`int`).
+- **bghvsSppMode**: BGHVS suppression mode (`Constants.BghvsSuppressionMode`).
+- **bghvsDelayInFrmNums**: Delay in frame numbers (`int`).
+
+**Constructors:**
+
+- `BghvsConfig()`
+- `BghvsConfig(boolean enabled, int bghvsSosLenInMs, int bghvsEosLenInMs, Constants.BghvsSuppressionMode bghvsSppMode, int bghvsDelayInFrmNums)`
+
+**Methods:**
+
+- Getters and setters for all properties.
+
+### AgoraAudioProcessorConfig
+
+The `AgoraAudioProcessorConfig` class is used to configure the AgoraAudioProcessor.
+
+**Main Properties:**
+
+- **modelPath**: Path to the model file (`String`).
+- **aecConfig**: AEC configuration (`AecConfig`).
+- **ansConfig**: ANS configuration (`AnsConfig`).
+- **agcConfig**: AGC configuration (`AgcConfig`).
+- **bghvsConfig**: BGHVS configuration (`BghvsConfig`).
+
+**Constructors:**
+
+- `AgoraAudioProcessorConfig()`
+- `AgoraAudioProcessorConfig(String modelPath, AecConfig aecConfig, AnsConfig ansConfig, AgcConfig agcConfig, BghvsConfig bghvsConfig)`
+
+**Methods:**
+
+- Getters and setters for all properties.
+
+### AgoraAudioFrame
+
+The `AgoraAudioFrame` class represents an audio frame for processing.
+
+**Main Properties:**
+
+- **type**: Audio frame type (`int`).
+- **sampleRate**: Sample rate in Hz (`int`).
+- **channels**: Number of channels (`int`).
+- **samplesPerChannel**: Number of samples per channel (`int`).
+- **bytesPerSample**: Number of bytes per sample (`int`).
+- **buffer**: Audio data buffer (`ByteBuffer`).
+
+**Constructors:**
+
+- `AgoraAudioFrame()`
+- `AgoraAudioFrame(int type, int sampleRate, int channels, int samplesPerChannel, int bytesPerSample, ByteBuffer buffer)`
+
+**Methods:**
+
+- Getters and setters for all properties.
+
+### Utility Classes
 
 #### AudioConsumerUtils
 
