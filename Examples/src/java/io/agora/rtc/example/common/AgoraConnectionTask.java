@@ -569,7 +569,7 @@ public class AgoraConnectionTask {
         boolean isLoopSend = testTime > 0;
         FileSender pcmSendThread = new FileSender(filePath, interval) {
             private AudioConsumerUtils audioConsumerUtils = null;
-            private boolean canLog = true;
+            private boolean canLog = SampleLogger.isEnableLog();
 
             @Override
             public void sendOneFrame(byte[] data, long timestamp) {
@@ -687,7 +687,7 @@ public class AgoraConnectionTask {
         waitUntilPublishSuccess();
         boolean isLoopSend = testTime > 0;
         FileSender aacSendThread = new FileSender(filePath, interval) {
-            private boolean canLog = true;
+            private boolean canLog = SampleLogger.isEnableLog();
             private EncodedAudioFrameInfo encodedInfo = new EncodedAudioFrameInfo();
             private AacReader aacReader;
 
@@ -802,7 +802,7 @@ public class AgoraConnectionTask {
         waitUntilPublishSuccess();
         boolean isLoopSend = testTime > 0;
         FileSender opusSendThread = new FileSender(filePath, interval) {
-            private boolean canLog = true;
+            private boolean canLog = SampleLogger.isEnableLog();
             private EncodedAudioFrameInfo encodedInfo = new EncodedAudioFrameInfo();
             private OpusReader opusReader;
 
@@ -953,7 +953,7 @@ public class AgoraConnectionTask {
             private ByteBuffer byteBuffer;
             private ByteBuffer matedataByteBuffer;
             private ByteBuffer alphaByteBuffer;
-            private boolean canLog = true;
+            private boolean canLog = SampleLogger.isEnableLog();
             private ExternalVideoFrame externalVideoFrame = new ExternalVideoFrame();
 
             @Override
@@ -1124,7 +1124,7 @@ public class AgoraConnectionTask {
         FileSender h264SendThread = new FileSender(filePath, interval) {
             int lastFrameType = 0;
             int frameIndex = 0;
-            private boolean canLog = true;
+            private boolean canLog = SampleLogger.isEnableLog();
             private EncodedVideoFrameInfo info = new EncodedVideoFrameInfo();
             private H264Reader localH264Reader;
 
@@ -1262,7 +1262,7 @@ public class AgoraConnectionTask {
             ByteBuffer byteBuffer;
             ByteBuffer alphaBuffer;
             byte[] alphadata;
-            private boolean canLog = true;
+            private boolean canLog = SampleLogger.isEnableLog();
             private ExternalVideoFrame externalVideoFrame = new ExternalVideoFrame();
 
             public byte[] extractAlphaChannel(byte[] rgbaData, int width, int height) {
@@ -1441,7 +1441,7 @@ public class AgoraConnectionTask {
             private int frameIndex = 0;
             private int height;
             private int width;
-            private boolean canLog = true;
+            private boolean canLog = SampleLogger.isEnableLog();
             private EncodedVideoFrameInfo info = new EncodedVideoFrameInfo();
             private Vp8Reader vp8Reader;
 
@@ -1747,7 +1747,7 @@ public class AgoraConnectionTask {
         }
 
         audioFrameObserver = new SampleAudioFrameObserver(audioOutFile) {
-            private boolean canLog = true;
+            private boolean canLog = SampleLogger.isEnableLog();
 
             @Override
             public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser, String channelId, String userId,
@@ -1843,7 +1843,7 @@ public class AgoraConnectionTask {
         }
 
         audioFrameObserver = new SampleAudioFrameObserver(audioOutFile) {
-            private boolean canLog = true;
+            private boolean canLog = SampleLogger.isEnableLog();
 
             @Override
             public int onPlaybackAudioFrame(AgoraLocalUser agoraLocalUser, String channelId, AudioFrame frame) {
@@ -1924,7 +1924,7 @@ public class AgoraConnectionTask {
         }
 
         videoFrameObserver = new AgoraVideoFrameObserver2(new SampleVideFrameObserver(videoOutFile) {
-            private boolean canLog = true;
+            private boolean canLog = SampleLogger.isEnableLog();
             private int frameCount = 0;
             private long firstFrameTime = 0;
 
@@ -2027,7 +2027,7 @@ public class AgoraConnectionTask {
 
         videoEncodedFrameObserver = new AgoraVideoEncodedFrameObserver(
                 new SampleVideoEncodedFrameObserver(videoOutFile) {
-                    private boolean canLog = true;
+                    private boolean canLog = SampleLogger.isEnableLog();
 
                     @Override
                     public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int userId,
@@ -2098,7 +2098,7 @@ public class AgoraConnectionTask {
         }
 
         audioEncodedFrameObserver = new SampleAudioEncodedFrameObserver(audioOutFile) {
-            private boolean canLog = true;
+            private boolean canLog = SampleLogger.isEnableLog();
 
             @Override
             public int onEncodedAudioFrameReceived(String remoteUserId, ByteBuffer buffer,

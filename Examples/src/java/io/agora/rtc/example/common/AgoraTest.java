@@ -6,6 +6,7 @@ import io.agora.rtc.AgoraService;
 import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.AgoraParameter;
+
 import java.io.File;
 import java.util.List;
 import java.util.Scanner;
@@ -17,6 +18,8 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import io.agora.rtc.example.utils.Utils;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
 
@@ -159,6 +162,9 @@ public class AgoraTest {
                 + " testTask:" + testTask + " testTime:" + testTime);
         synchronized (taskCountLock) {
             testTaskCount.incrementAndGet();
+            System.out.println(Utils.formatTimestamp(System.currentTimeMillis())
+                    + " testTaskCount:" + testTaskCount.get() + " testTask:" + testTask + " channelId:" + channelId
+                    + " userId:" + userId);
             SampleLogger.log("test start testTaskCount:" + testTaskCount.get());
 
             if (ArgsConfig.maxTestTaskCount != 0 && testTaskCount.get() > ArgsConfig.maxTestTaskCount) {
