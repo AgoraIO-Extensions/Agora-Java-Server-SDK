@@ -12,6 +12,7 @@ public class SampleCommon {
     public static AgoraService createAndInitAgoraService(int enableAudioDevice, int enableAudioProcessor,
             int enableVideo,
             int useStringUid, String appId) {
+        SampleLogger.log("createAndInitAgoraService AgoraService.getSdkVersion=" + AgoraService.getSdkVersion());
         AgoraService service = new AgoraService();
         AgoraServiceConfig config = new AgoraServiceConfig();
         config.setAppId(appId);
@@ -27,9 +28,10 @@ public class SampleCommon {
             return null;
         }
 
-        SampleLogger.log("createAndInitAgoraService created log file at:" + DEFAULT_LOG_PATH);
+        SampleLogger.log("createAndInitAgoraService created log file at:" + DEFAULT_LOG_PATH + " logFilter:"
+                + ArgsConfig.logFilter);
         ret = service.setLogFile(DEFAULT_LOG_PATH, DEFAULT_LOG_SIZE);
-        service.setLogFilter(Constants.LOG_FILTER_DEBUG);
+        service.setLogFilter(ArgsConfig.logFilter);
         if (ret != 0) {
             SampleLogger.log("createAndInitAgoraService AgoraService.setLogFile fail ret=%d" + ret);
             return null;

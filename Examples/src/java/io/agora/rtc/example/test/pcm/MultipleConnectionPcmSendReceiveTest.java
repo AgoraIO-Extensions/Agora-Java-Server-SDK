@@ -33,18 +33,27 @@ public class MultipleConnectionPcmSendReceiveTest extends AgoraTest {
         ArgsConfig.maxTestTaskCount = ArgsConfig.connectionCount * 2;
 
         if (ArgsConfig.connectionCount == 1) {
+            ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
             createConnectionAndTest(ccfg, ArgsConfig.channelId, ArgsConfig.userId, TestTask.SEND_PCM,
                     ArgsConfig.testTime);
             String connUserId = ArgsConfig.userId.equals("0") ? ArgsConfig.userId : ArgsConfig.userId + "1";
+            ccfg.setClientRoleType(Constants.CLIENT_ROLE_AUDIENCE);
             createConnectionAndTest(ccfg, ArgsConfig.channelId, connUserId, TestTask.RECEIVE_PCM,
                     ArgsConfig.testTime);
         } else {
             for (int i = 0; i < ArgsConfig.connectionCount; i++) {
+                ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
                 createConnectionAndTest(ccfg, ArgsConfig.channelId + i, ArgsConfig.userId, TestTask.SEND_PCM,
                         ArgsConfig.testTime);
                 String connUserId = ArgsConfig.userId.equals("0") ? ArgsConfig.userId : ArgsConfig.userId + i;
+                ccfg.setClientRoleType(Constants.CLIENT_ROLE_AUDIENCE);
                 createConnectionAndTest(ccfg, ArgsConfig.channelId + i, connUserId, TestTask.RECEIVE_PCM,
                         ArgsConfig.testTime);
+                try {
+                    Thread.sleep((long) (ArgsConfig.sleepTime * 1000));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
 

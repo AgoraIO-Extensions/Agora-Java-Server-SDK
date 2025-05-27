@@ -36,6 +36,11 @@ public class MultipleConnectionPcmSendTest extends AgoraTest {
                     String connUserId = ArgsConfig.userId.equals("0") ? ArgsConfig.userId : ArgsConfig.userId + i;
                     createConnectionAndTest(ccfg, ArgsConfig.channelId + i, connUserId, TestTask.SEND_PCM,
                             ArgsConfig.testTime);
+                    try {
+                        Thread.sleep((long) (ArgsConfig.sleepTime * 1000));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }

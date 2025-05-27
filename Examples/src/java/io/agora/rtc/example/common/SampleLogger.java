@@ -61,6 +61,10 @@ public class SampleLogger {
         enableLog = enable;
     }
 
+    public static boolean isEnableLog() {
+        return enableLog;
+    }
+
     public static void release() {
         singleExecutorService.shutdown();
     }

@@ -30,11 +30,21 @@ public class MultipleConnectionYuvSendTest extends AgoraTest {
                     String connUserId = ArgsConfig.userId.equals("0") ? ArgsConfig.userId : ArgsConfig.userId + i;
                     createConnectionAndTest(ccfg, ArgsConfig.channelId, connUserId, TestTask.SEND_YUV,
                             ArgsConfig.testTime);
+                    try {
+                        Thread.sleep((long) (ArgsConfig.sleepTime * 1000));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             } else {
                 for (int i = 0; i < ArgsConfig.connectionCount; i++) {
                     createConnectionAndTest(ccfg, ArgsConfig.channelId + i, ArgsConfig.userId,
                             TestTask.SEND_YUV, ArgsConfig.testTime);
+                    try {
+                        Thread.sleep((long) (ArgsConfig.sleepTime * 1000));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }

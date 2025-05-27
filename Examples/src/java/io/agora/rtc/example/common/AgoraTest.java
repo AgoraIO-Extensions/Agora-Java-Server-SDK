@@ -5,6 +5,8 @@ import io.agora.rtc.AgoraRtcConn;
 import io.agora.rtc.AgoraService;
 import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
+import io.agora.rtc.AgoraParameter;
+
 import java.io.File;
 import java.util.List;
 import java.util.Scanner;
@@ -16,6 +18,8 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import io.agora.rtc.example.utils.Utils;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
 
@@ -136,6 +140,11 @@ public class AgoraTest {
 
         mediaNodeFactory = service.createMediaNodeFactory();
 
+        AgoraParameter parameter = service.getAgoraParameter();
+        parameter.setParameters("{\"rtc.enable_nasa2\":false}");
+        parameter.setParameters("{\"che.video.useSimpleParser\":true}");
+        parameter.setParameters("{\"rtc.video.enable_periodic_strategy\":false}");
+
         // AgoraParameter parameter = service.getAgoraParameter();
         // parameter.setParameters("{\"che.audio.custom_payload_type\":78}");
         // parameter.setParameters("{\"che.audio.aec.enable\":false}");
@@ -153,6 +162,9 @@ public class AgoraTest {
                 + " testTask:" + testTask + " testTime:" + testTime);
         synchronized (taskCountLock) {
             testTaskCount.incrementAndGet();
+            System.out.println(Utils.formatTimestamp(System.currentTimeMillis())
+                    + " testTaskCount:" + testTaskCount.get() + " testTask:" + testTask + " channelId:" + channelId
+                    + " userId:" + userId);
             SampleLogger.log("test start testTaskCount:" + testTaskCount.get());
 
             if (ArgsConfig.maxTestTaskCount != 0 && testTaskCount.get() > ArgsConfig.maxTestTaskCount) {
@@ -255,14 +267,14 @@ public class AgoraTest {
                             ArgsConfig.fps, Constants.VIDEO_STREAM_HIGH, true);
                     break;
                 case SEND_H264:
-                    connTask.sendH264Task(ArgsConfig.videoFile, 1000 / ArgsConfig.fps, 0, 0,
-                            Constants.VIDEO_STREAM_HIGH, true);
+                    connTask.sendH264Task(ArgsConfig.videoFile, 1000 / ArgsConfig.fps, ArgsConfig.height,
+                            ArgsConfig.width, Constants.VIDEO_STREAM_HIGH, true);
                     break;
                 case SEND_H264_DUAL_STREAM:
-                    connTask.sendH264Task(ArgsConfig.highVideoFile, 1000 / ArgsConfig.fps, 0, 0,
-                            Constants.VIDEO_STREAM_HIGH, false);
-                    connTask.sendH264Task(ArgsConfig.lowVideoFile, 1000 / ArgsConfig.fps, 0, 0,
-                            Constants.VIDEO_STREAM_LOW, true);
+                    connTask.sendH264Task(ArgsConfig.highVideoFile, 1000 / ArgsConfig.fps, ArgsConfig.height,
+                            ArgsConfig.width, Constants.VIDEO_STREAM_HIGH, false);
+                    connTask.sendH264Task(ArgsConfig.lowVideoFile, 1000 / ArgsConfig.fps, ArgsConfig.height,
+                            ArgsConfig.width, Constants.VIDEO_STREAM_LOW, true);
                     break;
                 case SEND_RGBA_PCM:
                     connTask.sendPcmTask(ArgsConfig.audioFile, 10, ArgsConfig.numOfChannels, ArgsConfig.sampleRate,

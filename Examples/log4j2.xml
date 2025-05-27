@@ -9,59 +9,40 @@
             <PatternLayout pattern="%d{HH:mm:ss.SSS}[%t]%-5level:%msg%n" />
         </Console>
 
-        <!-- 异步控制台输出，提高性能 -->
-        <Async name="AsyncConsole">
-            <AppenderRef ref="Console" />
-            <BufferSize>1024</BufferSize>
-        </Async>
 
         <!-- 文件输出 -->
         <RollingFile name="RollingFile" fileName="logs/${sys:log.filename}.log"
             filePattern="logs/${sys:log.filename}-%d{yyyyMMdd_HHmmss}-%i.log.gz">
             <PatternLayout pattern="%d{HH:mm:ss.SSS}[%t]%-5level:%msg%n" />
             <Policies>
-                <SizeBasedTriggeringPolicy size="10 MB" />
-                <DeleteAction basePath="logs" maxDepth="1">
-                    <IfFileName glob="*.gz">
-                        <IfLastModified age="5d">
-                            <Delete />
-                        </IfLastModified>
-                    </IfFileName>
-                </DeleteAction>
-                <DeleteAction basePath="logs" maxDepth="1">
-                    <IfFileName glob="*.gz">
-                        <IfAccumulatedFileCount exceeds="100">
-                            <Delete basePath="logs" maxDepth="1">
-                                <IfFileName glob="*.gz">
-                                    <IfLastModified age="1d">
-                                        <Delete />
-                                    </IfLastModified>
-                                </IfFileName>
-                            </Delete>
-                        </IfAccumulatedFileCount>
-                    </IfFileName>
-                </DeleteAction>
+                <SizeBasedTriggeringPolicy size="1024 MB" />
             </Policies>
-            <DefaultRolloverStrategy max="10" />
+            <DefaultRolloverStrategy max="10">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfFileName glob="*.gz" />
+                    <IfLastModified age="5d" />
+                </Delete>
+                <Delete basePath="logs" maxDepth="1">
+                    <IfFileName glob="*.gz" />
+                    <IfAccumulatedFileCount exceeds="100" />
+                    <IfLastModified age="1d" />
+                </Delete>
+            </DefaultRolloverStrategy>
         </RollingFile>
 
-        <!-- 异步文件输出 -->
-        <Async name="AsyncFile">
-            <AppenderRef ref="RollingFile" />
-            <BufferSize>1024</BufferSize>
-        </Async>
+
     </Appenders>
 
     <Loggers>
         <!-- Agora日志配置 -->
         <Logger name="agora" level="info" additivity="false">
-            <AppenderRef ref="AsyncConsole" />
-            <AppenderRef ref="AsyncFile" />
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="RollingFile" />
         </Logger>
 
         <!-- 根日志配置 -->
         <Root level="info">
-            <AppenderRef ref="AsyncConsole" />
+            <AppenderRef ref="Console" />
         </Root>
     </Loggers>
 </Configuration>

@@ -35,7 +35,7 @@ public class ArgsConfig {
     public static int connectionCount = 1;
     public static String fileType = "pcm";
     public static int testTime = 0;
-    public static int sleepTime = 1;
+    public static float sleepTime = 1;
     public static boolean enableLog = true;
     public static int enableEncryptionMode = 0;
     public static int encryptionMode = Constants.ENCRYPTION_MODE_SM4_128_ECB;
@@ -52,6 +52,7 @@ public class ArgsConfig {
     public static int isStressTest = 0;
     public static int timeForStressLeave = 5;// seconds
     public static int maxTestTaskCount = 1;
+    public static int logFilter = Constants.LOG_FILTER_DEBUG;
 
     public static void handleOptions(String[] args) {
         SampleLogger.log(Arrays.toString(args));
@@ -136,6 +137,8 @@ public class ArgsConfig {
                 "singleChannel");
         org.apache.commons.cli.Option optIsStressTest = new org.apache.commons.cli.Option("isStressTest", true,
                 "isStressTest");
+        org.apache.commons.cli.Option optLogFilter = new org.apache.commons.cli.Option("logFilter", true,
+                "logFilter");
 
         options.addOption(optToken);
         options.addOption(optChannelId);
@@ -174,6 +177,7 @@ public class ArgsConfig {
         options.addOption(optEnableSendAudioMetaData);
         options.addOption(optSingleChannel);
         options.addOption(optIsStressTest);
+        options.addOption(optLogFilter);
 
         CommandLine commandLine = null;
         CommandLineParser parser = new DefaultParser();
@@ -351,7 +355,7 @@ public class ArgsConfig {
 
         if (commandLine.hasOption(optSleepTime)) {
             try {
-                sleepTime = Integer.parseInt(commandLine.getOptionValue("sleepTime"));
+                sleepTime = Float.parseFloat(commandLine.getOptionValue("sleepTime"));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -464,6 +468,14 @@ public class ArgsConfig {
         if (commandLine.hasOption(optIsStressTest)) {
             try {
                 isStressTest = Integer.parseInt(commandLine.getOptionValue("isStressTest"));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (commandLine.hasOption(optLogFilter)) {
+            try {
+                logFilter = Integer.parseInt(commandLine.getOptionValue("logFilter"));
             } catch (Exception e) {
                 e.printStackTrace();
             }

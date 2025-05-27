@@ -5,7 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-public abstract class FileSender extends Thread {
+public abstract class FileSender implements Runnable {
     private String filePath;
     private int interval;// in ms
     private boolean sending = false;
@@ -26,7 +26,6 @@ public abstract class FileSender extends Thread {
 
     @Override
     public void run() {
-        super.run();
         if (handleFile) {
             try {
                 fos = new FileInputStream(new File(filePath));
@@ -44,10 +43,17 @@ public abstract class FileSender extends Thread {
             byte[] data = readOneFrame(fos);
             try {
                 while (System.currentTimeMillis() < nextSendTime) {
-                    sleep(1);
+                    Thread.sleep(1);
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                SampleLogger.log("FileSender thread interrupted, stopping.");
+                sending = false; // Ensure loop terminates on interruption
+                Thread.currentThread().interrupt(); // Preserve interrupt status
+                break; // Exit loop
+            } catch (Exception e) {
+                SampleLogger.log("Exception during wait: " + e.getMessage());
+                sending = false; // Stop on other exceptions too
+                break;
             }
             sendOneFrame(data, nextSendTime);
             if (lastSendTime == 0) {
@@ -70,15 +76,8 @@ public abstract class FileSender extends Thread {
         }
     }
 
-    public void release(boolean withJoin) {
+    public void release() {
         sending = false;
-        if (withJoin) {
-            try {
-                this.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
         if (fos != null) {
             try {
                 fos.close();

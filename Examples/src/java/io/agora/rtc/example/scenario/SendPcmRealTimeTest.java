@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SendPcmRealTimeTest {
@@ -42,6 +44,7 @@ public class SendPcmRealTimeTest {
     private static long testTime = 60 * 1000;
 
     private final static AtomicBoolean connConnected = new AtomicBoolean(false);
+    private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
 
     private static void parseArgs(String[] args) {
         SampleLogger.log("parseArgs args:" + Arrays.toString(args));
@@ -182,7 +185,7 @@ public class SendPcmRealTimeTest {
                     SampleLogger.log("send pcm " + consumeFrameCount + " frame data to channelId:"
                             + channelId + " from userId:" + userId);
                 } else {
-                    release(false);
+                    release();
                 }
             }
 
@@ -209,8 +212,8 @@ public class SendPcmRealTimeTest {
             }
 
             @Override
-            public void release(boolean withJoin) {
-                super.release(withJoin);
+            public void release() {
+                super.release();
                 if (null != audioConsumerUtils) {
                     audioConsumerUtils.release();
                     audioConsumerUtils = null;
@@ -225,7 +228,7 @@ public class SendPcmRealTimeTest {
                 e.printStackTrace();
             }
         }
-        pcmSendThread.start();
+        testTaskExecutorService.execute(pcmSendThread);
 
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < testTime) {
@@ -248,6 +251,7 @@ public class SendPcmRealTimeTest {
         }
 
         connConnected.set(false);
+        testTaskExecutorService.shutdown();
 
         if (null != mediaNodeFactory) {
             mediaNodeFactory.destroy();

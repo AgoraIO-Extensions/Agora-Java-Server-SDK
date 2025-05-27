@@ -56,6 +56,7 @@ public class SendH264Test {
     private final static AtomicBoolean connConnected = new AtomicBoolean(false);
 
     private static final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
+    private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
 
     private static void parseArgs(String[] args) {
         SampleLogger.log("parseArgs args:" + Arrays.toString(args));
@@ -221,19 +222,16 @@ public class SendH264Test {
                     return;
                 }
                 EncodedVideoFrameInfo info = new EncodedVideoFrameInfo();
-                long currentTime = timestamp;
                 info.setFrameType(lastFrameType);
                 info.setStreamType(
                         streamType.equals("high") ? Constants.VIDEO_STREAM_HIGH : Constants.VIDEO_STREAM_LOW);
                 info.setWidth(width);
                 info.setHeight(height);
                 info.setCodecType(Constants.VIDEO_CODEC_H264);
-                info.setCaptureTimeMs(currentTime);
-                info.setDecodeTimeMs(currentTime);
                 info.setFramesPerSecond(fps);
                 info.setRotation(0);
 
-                customEncodedImageSender.send(data, data.length, info);
+                customEncodedImageSender.sendEncodedVideoImage(data, info);
                 frameIndex++;
 
                 singleExecutorService.execute(() -> {
@@ -257,8 +255,8 @@ public class SendH264Test {
             }
 
             @Override
-            public void release(boolean withJoin) {
-                super.release(withJoin);
+            public void release() {
+                super.release();
                 if (null != h264Reader) {
                     h264Reader.close();
                 }
@@ -273,7 +271,7 @@ public class SendH264Test {
             }
         }
 
-        h264SendThread.start();
+        testTaskExecutorService.execute(h264SendThread);
 
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < testTime) {
@@ -326,6 +324,7 @@ public class SendH264Test {
         conn = null;
 
         singleExecutorService.shutdown();
+        testTaskExecutorService.shutdown();
 
         SampleLogger.log("Disconnected from Agora channel successfully");
     }

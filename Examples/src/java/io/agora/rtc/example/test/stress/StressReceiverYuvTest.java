@@ -32,7 +32,7 @@ public class StressReceiverYuvTest extends AgoraTest {
         testStartTime = System.currentTimeMillis();
 
         RtcConnConfig ccfg = new RtcConnConfig();
-        ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
+        ccfg.setClientRoleType(Constants.CLIENT_ROLE_AUDIENCE);
         ccfg.setAutoSubscribeAudio(0);
         ccfg.setAutoSubscribeVideo(0);
         ccfg.setChannelProfile(Constants.CHANNEL_PROFILE_LIVE_BROADCASTING);
@@ -44,7 +44,7 @@ public class StressReceiverYuvTest extends AgoraTest {
             testTaskExecutorService.execute(() -> {
                 int index = 0;
                 while (checkTestTime()) {
-                    int t1 = random.nextInt(ArgsConfig.sleepTime - ArgsConfig.timeForStressLeave) + 1;
+                    int t1 = random.nextInt((int) (ArgsConfig.sleepTime - ArgsConfig.timeForStressLeave)) + 1;
                     String channel = ArgsConfig.connectionCount == 1 ? ArgsConfig.channelId
                             : ArgsConfig.channelId + threadId;
                     String connUserId = ArgsConfig.userId.equals("0") ? ArgsConfig.userId
@@ -52,7 +52,7 @@ public class StressReceiverYuvTest extends AgoraTest {
                     createConnectionAndTest(ccfg, channel, connUserId, TestTask.RECEIVE_YUV, t1);
 
                     try {
-                        Thread.sleep(ArgsConfig.sleepTime * 1000);
+                        Thread.sleep((long) (ArgsConfig.sleepTime * 1000));
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }

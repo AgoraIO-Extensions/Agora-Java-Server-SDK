@@ -7,21 +7,22 @@ import io.agora.rtc.AgoraMediaNodeFactory;
 import io.agora.rtc.AgoraRtcConn;
 import io.agora.rtc.AgoraService;
 import io.agora.rtc.AgoraServiceConfig;
-import io.agora.rtc.AgoraVideoFrameSender;
-import io.agora.rtc.DefaultRtcConnObserver;
-import io.agora.rtc.ExternalVideoFrame;
 import io.agora.rtc.AgoraVideoEncodedImageSender;
-import io.agora.rtc.SenderOptions;
-import io.agora.rtc.EncodedVideoFrameInfo;
-import io.agora.rtc.RtcConnConfig;
+import io.agora.rtc.AgoraVideoFrameSender;
+import io.agora.rtc.AudioFrame;
 import io.agora.rtc.Constants;
+import io.agora.rtc.DefaultRtcConnObserver;
+import io.agora.rtc.EncodedVideoFrameInfo;
+import io.agora.rtc.ExternalVideoFrame;
+import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
+import io.agora.rtc.SenderOptions;
 import io.agora.rtc.VideoDimensions;
 import io.agora.rtc.VideoEncoderConfig;
 import io.agora.rtc.example.common.SampleLogger;
-import io.agora.rtc.example.utils.Utils;
 import io.agora.rtc.example.ffmpegutils.MediaDecode;
 import io.agora.rtc.example.ffmpegutils.MediaDecodeUtils;
+import io.agora.rtc.example.utils.Utils;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -177,6 +178,7 @@ public class SendMp4Test {
         boolean initRet = mediaDecodeUtils.init(filePath, 50, -1, decodedMediaType,
                 new MediaDecodeUtils.MediaDecodeCallback() {
                     private ByteBuffer byteBuffer;
+                    private final AudioFrame audioFrame = new AudioFrame();
 
                     @Override
                     public void onAudioFrame(MediaDecode.MediaFrame frame) {
@@ -186,11 +188,13 @@ public class SendMp4Test {
                             customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
                             conn.getLocalUser().publishAudio(customAudioTrack);
                         }
-
-                        int ret = audioFrameSender.send(frame.buffer, (int) (frame.pts),
-                                frame.samples, frame.bytesPerSample,
-                                frame.channels,
-                                frame.sampleRate);
+                        audioFrame.setBuffer(ByteBuffer.wrap(frame.buffer));
+                        audioFrame.setRenderTimeMs(frame.pts);
+                        audioFrame.setSamplesPerChannel(frame.samples);
+                        audioFrame.setBytesPerSample(frame.bytesPerSample);
+                        audioFrame.setChannels(frame.channels);
+                        audioFrame.setSamplesPerSec(frame.sampleRate);
+                        int ret = audioFrameSender.sendAudioPcmData(audioFrame);
                         SampleLogger.log("SendPcmData frame.pts:" + frame.pts + " ret:" + ret + " samples:"
                                 + frame.samples
                                 + " bytesPerSample:" + frame.bytesPerSample + " channels:" + frame.channels
@@ -228,7 +232,7 @@ public class SendMp4Test {
                             info.setDecodeTimeMs(frame.pts);
                             info.setFramesPerSecond(frame.fps);
                             info.setRotation(0);
-                            int ret = customEncodedImageSender.send(frame.buffer, frame.bufferSize, info);
+                            int ret = customEncodedImageSender.sendEncodedVideoImage(frame.buffer, info);
                             SampleLogger.log("SendEncodedVideoFrame frame.pts:" + frame.pts + " ret:" + ret + " width:"
                                     + frame.width + " height:" + frame.height + " fps:" + frame.fps + " isKeyFrame:"
                                     + frame.isKeyFrame + " buffer:" + frame.buffer.length);
@@ -264,7 +268,7 @@ public class SendMp4Test {
                             externalVideoFrame.setFormat(Constants.EXTERNAL_VIDEO_FRAME_PIXEL_FORMAT_I420);
                             externalVideoFrame.setType(Constants.EXTERNAL_VIDEO_FRAME_BUFFER_TYPE_RAW_DATA);
                             externalVideoFrame.setTimestamp(frame.pts);
-                            int ret = videoFrameSender.send(externalVideoFrame);
+                            int ret = videoFrameSender.sendVideoFrame(externalVideoFrame);
 
                         }
                     }

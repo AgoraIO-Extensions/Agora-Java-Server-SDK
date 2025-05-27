@@ -2799,13 +2799,13 @@ public interface IRtcConnObserver {
 public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason)
 ```
 
-Triggered when a connection is successfully established.
+Occurs when the connection state between the SDK and the Agora channel changes to `CONNECTION_STATE_CONNECTED`(3).
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `connInfo`: Connection information.
-- `reason`: Reason for connection success (`Constants.CONNECTION_CHANGED_REASON_TYPE`).
+- `agoraRtcConn`: The connection object.
+- `connInfo`: The information of the connection. See [`RtcConnInfo`](#rtcconninfo).
+- `reason`: The reason of the connection state change. See [`ConnectionChangedReasonType`](#connectionchangedreasontype).
 
 ##### onDisconnected
 
@@ -2813,13 +2813,13 @@ Triggered when a connection is successfully established.
 public void onDisconnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason)
 ```
 
-Triggered when a connection is disconnected.
+Occurs when the connection state between the SDK and the Agora channel changes to `CONNECTION_STATE_DISCONNECTED`(1).
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `connInfo`: Connection information.
-- `reason`: Reason for disconnection (`Constants.CONNECTION_CHANGED_REASON_TYPE`).
+- `agoraRtcConn`: The connection object.
+- `connInfo`: The information of the connection. See [`RtcConnInfo`](#rtcconninfo).
+- `reason`: The reason of the connection state change. See [`ConnectionChangedReasonType`](#connectionchangedreasontype).
 
 ##### onConnecting
 
@@ -2827,13 +2827,13 @@ Triggered when a connection is disconnected.
 public void onConnecting(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason)
 ```
 
-Triggered when the SDK is trying to connect to the server.
+Occurs when the connection state between the SDK and the Agora channel changes to `CONNECTION_STATE_CONNECTING`(2).
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `connInfo`: Connection information.
-- `reason`: Reason for connection state change (`Constants.CONNECTION_CHANGED_REASON_TYPE`).
+- `agoraRtcConn`: The connection object.
+- `connInfo`: The information of the connection. See [`RtcConnInfo`](#rtcconninfo).
+- `reason`: The reason of the connection state change. See [`ConnectionChangedReasonType`](#connectionchangedreasontype).
 
 ##### onReconnecting
 
@@ -2841,27 +2841,30 @@ Triggered when the SDK is trying to connect to the server.
 public void onReconnecting(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason)
 ```
 
-Triggered when the SDK is trying to reconnect to the server.
+Occurs when the connection state between the SDK and the Agora channel changes to `CONNECTION_STATE_RECONNECTING`(4).
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `connInfo`: Connection information.
-- `reason`: Reason for connection state change (`Constants.CONNECTION_CHANGED_REASON_TYPE`).
+- `agoraRtcConn`: The connection object.
+- `connInfo`: The information of the connection. See [`RtcConnInfo`](#rtcconninfo).
+- `reason`: The reason of the connection state change. See [`ConnectionChangedReasonType`](#connectionchangedreasontype).
 
-##### onReconnected
+##### onReconnected (Deprecated)
 
 ```java
+@Deprecated
 public void onReconnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason)
 ```
 
-Triggered when the SDK successfully reconnects to the server.
+Occurs when the connection is reestablished after a disconnection.
+
+**Deprecated**: Use `onConnected` with reason `CONNECTION_CHANGED_REJOIN_SUCCESS` instead.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `connInfo`: Connection information.
-- `reason`: Reason for connection state change (`Constants.CONNECTION_CHANGED_REASON_TYPE`).
+- `agoraRtcConn`: The connection object.
+- `connInfo`: The information of the connection. See [`RtcConnInfo`](#rtcconninfo).
+- `reason`: The reason of the connection state change. See [`ConnectionChangedReasonType`](#connectionchangedreasontype).
 
 ##### onConnectionLost
 
@@ -2869,12 +2872,12 @@ Triggered when the SDK successfully reconnects to the server.
 public void onConnectionLost(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo)
 ```
 
-Triggered when a connection is lost, indicating that the SDK has lost connection to the server and cannot automatically recover.
+Occurs when the SDK loses connection with the Agora channel.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `connInfo`: Connection information.
+- `agoraRtcConn`: The connection object.
+- `connInfo`: The information of the connection. See [`RtcConnInfo`](#rtcconninfo).
 
 ##### onLastmileQuality
 
@@ -2882,12 +2885,12 @@ Triggered when a connection is lost, indicating that the SDK has lost connection
 public void onLastmileQuality(AgoraRtcConn agoraRtcConn, int quality)
 ```
 
-Reports the quality of the last mile (client to edge server).
+Reports the quality of the last-mile network. The SDK triggers this callback within two seconds after the app calls `startLastmileProbeTest`.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `quality`: Network quality, refer to `Constants.QUALITY_TYPE`.
+- `agoraRtcConn`: The connection object.
+- `quality`: Quality of the last-mile network. See [`QualityType`](#qualitytype).
 
 ##### onLastmileProbeResult
 
@@ -2895,12 +2898,12 @@ Reports the quality of the last mile (client to edge server).
 public void onLastmileProbeResult(AgoraRtcConn agoraRtcConn, LastmileProbeResult result)
 ```
 
-Reports the result of the last-mile network probe test.
+Reports the result of the last-mile network probe test. The SDK triggers this callback within 30 seconds after the app calls `startLastmileProbeTest`.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `result`: Probe result (`LastmileProbeResult`).
+- `agoraRtcConn`: The connection object.
+- `result`: The result of the last-mile network probe test. See [`LastmileProbeResult`](#lastmileproberesult).
 
 ##### onTokenPrivilegeWillExpire
 
@@ -2908,12 +2911,12 @@ Reports the result of the last-mile network probe test.
 public void onTokenPrivilegeWillExpire(AgoraRtcConn agoraRtcConn, String token)
 ```
 
-Triggered when the token is about to expire (typically 30 seconds before expiration).
+Occurs when the token expires in 30 seconds. The SDK triggers this callback to remind the app to get a new token before the token privilege expires. Upon receiving this callback, you must generate a new token on your server and call `renewToken` to pass the new token to the SDK.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `token`: The token that is about to expire.
+- `agoraRtcConn`: The connection object.
+- `token`: The token that expires in 30 seconds.
 
 ##### onTokenPrivilegeDidExpire
 
@@ -2921,11 +2924,11 @@ Triggered when the token is about to expire (typically 30 seconds before expirat
 public void onTokenPrivilegeDidExpire(AgoraRtcConn agoraRtcConn)
 ```
 
-Triggered when the token has expired.
+Occurs when the token has expired. Upon receiving this callback, you must generate a new token on your server and call `renewToken` to pass the new token to the SDK.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
+- `agoraRtcConn`: The connection object.
 
 ##### onConnectionFailure
 
@@ -2933,13 +2936,13 @@ Triggered when the token has expired.
 public void onConnectionFailure(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason)
 ```
 
-Triggered when the connection fails (distinct from `onDisconnected`, this usually refers to initial connection failure).
+Occurs when the connection state between the SDK and the Agora channel changes to `CONNECTION_STATE_FAILED`(5).
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `connInfo`: Connection information.
-- `reason`: Reason for connection failure (`Constants.CONNECTION_CHANGED_REASON_TYPE`).
+- `agoraRtcConn`: The connection object.
+- `connInfo`: The connection information. See [`RtcConnInfo`](#rtcconninfo).
+- `reason`: The reason of the connection state change. See [`ConnectionChangedReasonType`](#connectionchangedreasontype).
 
 ##### onConnectionLicenseValidationFailure
 
@@ -2947,13 +2950,13 @@ Triggered when the connection fails (distinct from `onDisconnected`, this usuall
 public void onConnectionLicenseValidationFailure(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason)
 ```
 
-Triggered when license validation fails.
+Occurs when connection license verification fails.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `connInfo`: Connection information.
-- `reason`: Reason code for the failure.
+- `agoraRtcConn`: The connection object.
+- `connInfo`: The connection information. See [`RtcConnInfo`](#rtcconninfo).
+- `reason`: The reason for the license validation failure.
 
 ##### onUserJoined
 
@@ -2961,12 +2964,12 @@ Triggered when license validation fails.
 public void onUserJoined(AgoraRtcConn agoraRtcConn, String userId)
 ```
 
-Triggered when a remote user joins the channel.
+Occurs when a remote user joins the channel. You can get the ID of the remote user in this callback.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `userId`: The ID of the user who joined the channel.
+- `agoraRtcConn`: The connection object.
+- `userId`: The ID of the remote user who joins the channel.
 
 ##### onUserLeft
 
@@ -2974,13 +2977,13 @@ Triggered when a remote user joins the channel.
 public void onUserLeft(AgoraRtcConn agoraRtcConn, String userId, int reason)
 ```
 
-Triggered when a remote user leaves the channel.
+Occurs when a remote user leaves the channel. You can know why the user leaves the channel through the `reason` parameter.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `userId`: The ID of the user who left the channel.
-- `reason`: Reason for the user leaving (`Constants.USER_OFFLINE_REASON_TYPE`).
+- `agoraRtcConn`: The connection object.
+- `userId`: The ID of the user who leaves the channel.
+- `reason`: The reason why the remote user leaves the channel. See [`UserOfflineReasonType`](#userofflinereasontype).
 
 ##### onTransportStats
 
@@ -2988,12 +2991,12 @@ Triggered when a remote user leaves the channel.
 public void onTransportStats(AgoraRtcConn agoraRtcConn, RtcStats stats)
 ```
 
-Reports the current call statistics, usually triggered every 2 seconds.
+Reports the transport statistics of the connection. The SDK triggers this callback once every two seconds when the connection state is `CONNECTION_STATE_CONNECTED`.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `stats`: Call statistics data (`RtcStats`). Remember to destroy this object after use if necessary (check `AgoraRtcConn.destroyTransportStats`).
+- `agoraRtcConn`: The connection object.
+- `stats`: The transport statistics. See [`RtcStats`](#rtcstats).
 
 ##### onChangeRoleSuccess
 
@@ -3001,13 +3004,13 @@ Reports the current call statistics, usually triggered every 2 seconds.
 public void onChangeRoleSuccess(AgoraRtcConn agoraRtcConn, int oldRole, int newRole)
 ```
 
-Triggered when the user role switch is successful.
+Occurs when the role of the local user changes successfully.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `oldRole`: The previous role.
-- `newRole`: The new role after the switch.
+- `agoraRtcConn`: The connection object.
+- `oldRole`: The previous role of the local user. See [`ClientRoleType`](#clientroletype).
+- `newRole`: The current role of the local user. See [`ClientRoleType`](#clientroletype).
 
 ##### onChangeRoleFailure
 
@@ -3015,11 +3018,11 @@ Triggered when the user role switch is successful.
 public void onChangeRoleFailure(AgoraRtcConn agoraRtcConn)
 ```
 
-Triggered when the user role switch fails.
+Occurs when the local user fails to change the user role.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
+- `agoraRtcConn`: The connection object.
 
 ##### onUserNetworkQuality
 
@@ -3027,14 +3030,14 @@ Triggered when the user role switch fails.
 public void onUserNetworkQuality(AgoraRtcConn agoraRtcConn, String userId, int txQuality, int rxQuality)
 ```
 
-Reports the network quality of the specified user.
+Reports the network quality of each user. The SDK triggers this callback once every two seconds to report the uplink and downlink network conditions of each user in the channel, including the local user.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `userId`: User ID. If null, it refers to the local user.
-- `txQuality`: Uplink network quality of the user (`Constants.QUALITY_TYPE`).
-- `rxQuality`: Downlink network quality of the user (`Constants.QUALITY_TYPE`).
+- `agoraRtcConn`: The connection object.
+- `userId`: The ID of the user. If `userId` is empty, this callback reports the network quality of the local user.
+- `txQuality`: The uplink network quality. See [`QualityType`](#qualitytype).
+- `rxQuality`: The downlink network quality. See [`QualityType`](#qualitytype).
 
 ##### onNetworkTypeChanged
 
@@ -3042,12 +3045,12 @@ Reports the network quality of the specified user.
 public void onNetworkTypeChanged(AgoraRtcConn agoraRtcConn, int type)
 ```
 
-Triggered when the network type changes.
+Occurs when the network type is changed.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `type`: The new network type (`Constants.NETWORK_TYPE`).
+- `agoraRtcConn`: The connection object.
+- `type`: The current network type. See [`NetworkType`](#networktype).
 
 ##### onApiCallExecuted
 
@@ -3055,14 +3058,14 @@ Triggered when the network type changes.
 public void onApiCallExecuted(AgoraRtcConn agoraRtcConn, int err, String api, String result)
 ```
 
-Triggered after an SDK API call is executed.
+Reports the result of an API call execution. This is usually used for asynchronous operations.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `err`: Error code.
-- `api`: The name of the API called.
-- `result`: JSON string result of the API execution.
+- `agoraRtcConn`: The connection object.
+- `err`: The error code returned by the API call. See [`ErrorCodeType`](#errorcodetype).
+- `api`: The API name that was called.
+- `result`: The result string of the API call.
 
 ##### onContentInspectResult
 
@@ -3070,12 +3073,12 @@ Triggered after an SDK API call is executed.
 public void onContentInspectResult(AgoraRtcConn agoraRtcConn, int result)
 ```
 
-Callback for content inspection results.
+Reports the result of content inspection.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `result`: Inspection result (`Constants.CONTENT_INSPECT_RESULT`).
+- `agoraRtcConn`: The connection object.
+- `result`: The content inspection result. See [`ContentInspectResult`](#contentinspectresult).
 
 ##### onSnapshotTaken
 
@@ -3083,17 +3086,17 @@ Callback for content inspection results.
 public void onSnapshotTaken(AgoraRtcConn agoraRtcConn, String channel, int userId, String filePath, int width, int height, int errCode)
 ```
 
-Triggered when a snapshot operation is completed.
+Occurs when a snapshot is successfully taken.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `channel`: Channel name.
-- `userId`: User ID.
-- `filePath`: Path where the snapshot file is saved.
-- `width`: Snapshot width.
-- `height`: Snapshot height.
-- `errCode`: Error code, 0 indicates success.
+- `agoraRtcConn`: The connection object.
+- `channel`: The channel name.
+- `userId`: The user ID. If the user ID is 0, the snapshot is for the local user.
+- `filePath`: The local path of the snapshot file.
+- `width`: The width (pixels) of the snapshot.
+- `height`: The height (pixels) of the snapshot.
+- `errCode`: The error code. 0 means success.
 
 ##### onError
 
@@ -3101,13 +3104,13 @@ Triggered when a snapshot operation is completed.
 public void onError(AgoraRtcConn agoraRtcConn, int error, String msg)
 ```
 
-Triggered when an internal SDK error occurs. Usually indicates an unrecoverable error.
+Reports an error during SDK runtime.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `error`: Error code (`Constants.ERROR_CODE_TYPE`).
-- `msg`: Error description message.
+- `agoraRtcConn`: The connection object.
+- `error`: The error code. See [`ErrorCodeType`](#errorcodetype).
+- `msg`: The error message.
 
 ##### onWarning
 
@@ -3115,13 +3118,13 @@ Triggered when an internal SDK error occurs. Usually indicates an unrecoverable 
 public void onWarning(AgoraRtcConn agoraRtcConn, int warning, String msg)
 ```
 
-Triggered when an internal SDK warning occurs. Usually indicates a problem that might be recoverable.
+Reports a warning during SDK runtime.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `warning`: Warning code (`Constants.WARN_CODE_TYPE`).
-- `msg`: Warning description message.
+- `agoraRtcConn`: The connection object.
+- `warning`: The warning code. See [Warning Codes](#warning-codes).
+- `msg`: The warning message.
 
 ##### onChannelMediaRelayStateChanged
 
@@ -3129,13 +3132,13 @@ Triggered when an internal SDK warning occurs. Usually indicates a problem that 
 public void onChannelMediaRelayStateChanged(AgoraRtcConn agoraRtcConn, int state, int code)
 ```
 
-Triggered when the state of cross-channel media stream relay changes.
+Occurs when the state of the channel media relay changes.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `state`: The current relay state (`Constants.CHANNEL_MEDIA_RELAY_STATE`).
-- `code`: Related error or status code (`Constants.CHANNEL_MEDIA_RELAY_ERROR`).
+- `agoraRtcConn`: The connection object.
+- `state`: The state code. See [Channel Media Relay State](#channel-media-relay-state).
+- `code`: The error code. See [Channel Media Relay Error Code](#channel-media-relay-error-code).
 
 ##### onLocalUserRegistered
 
@@ -3143,13 +3146,13 @@ Triggered when the state of cross-channel media stream relay changes.
 public void onLocalUserRegistered(AgoraRtcConn agoraRtcConn, int uid, String userAccount)
 ```
 
-Triggered when the local user successfully registers a User Account.
+Occurs when the local user successfully registers a user account by calling the `joinChannelWithUserAccount` method. This callback reports the user ID and user account of the local user.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `uid`: The user's UID.
-- `userAccount`: The user's User Account.
+- `agoraRtcConn`: The connection object.
+- `uid`: The ID of the local user.
+- `userAccount`: The user account of the local user.
 
 ##### onUserAccountUpdated
 
@@ -3157,13 +3160,13 @@ Triggered when the local user successfully registers a User Account.
 public void onUserAccountUpdated(AgoraRtcConn agoraRtcConn, int uid, String userAccount)
 ```
 
-Triggered when a user's User Account information is updated.
+Occurs when the user account information is updated. Technical Preview, please do not depend on this event.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `uid`: The user's UID.
-- `userAccount`: The updated User Account.
+- `agoraRtcConn`: The connection object.
+- `uid`: The ID of the local user.
+- `userAccount`: The user account of the local user.
 
 ##### onStreamMessageError
 
@@ -3171,16 +3174,16 @@ Triggered when a user's User Account information is updated.
 public void onStreamMessageError(AgoraRtcConn agoraRtcConn, String userId, int streamId, int code, int missed, int cached)
 ```
 
-Triggered when sending a data stream message (`sendStreamMessage`) fails.
+Reports the error that occurs when receiving data stream messages.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `userId`: The user ID of the receiver.
-- `streamId`: The data stream ID.
-- `code`: Error code.
-- `missed`: Number of messages that failed to send.
-- `cached`: Number of messages currently cached.
+- `agoraRtcConn`: The connection object.
+- `userId`: The ID of the user sending the data stream.
+- `streamId`: The ID of the data stream.
+- `code`: The error code. See [`ErrorCodeType`](#errorcodetype).
+- `missed`: The number of lost messages.
+- `cached`: The number of incoming cached messages when the data stream is interrupted.
 
 ##### onEncryptionError
 
@@ -3188,12 +3191,12 @@ Triggered when sending a data stream message (`sendStreamMessage`) fails.
 public void onEncryptionError(AgoraRtcConn agoraRtcConn, int errorType)
 ```
 
-Triggered when an encryption error occurs.
+Occurs when an encryption error happens during the transmission.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `errorType`: Encryption error type (`Constants.ENCRYPTION_ERROR_TYPE`).
+- `agoraRtcConn`: The connection object.
+- `errorType`: The type of the encryption error. See [`EncryptionErrorType`](#encryptionerrortype).
 
 ##### onUploadLogResult
 
@@ -3201,14 +3204,14 @@ Triggered when an encryption error occurs.
 public void onUploadLogResult(AgoraRtcConn agoraRtcConn, String requestId, int success, int reason)
 ```
 
-Triggered when the result of calling `uploadLogFile` is available.
+Reports the user log upload result.
 
 **Parameters**:
 
-- `agoraRtcConn`: The RTC connection instance.
-- `requestId`: The ID of the upload request.
-- `success`: Whether the upload was successful (`1` for success, `0` for failure).
-- `reason`: Reason for the upload result (`Constants.UPLOAD_ERROR_REASON`).
+- `agoraRtcConn`: The connection object.
+- `requestId`: Request ID of the upload.
+- `success`: Whether the upload was successful (1 for success, 0 for failure).
+- `reason`: Reason for the upload result. See [`UploadErrorReason`](#uploaderrorreason).
 
 ### ILocalUserObserver
 

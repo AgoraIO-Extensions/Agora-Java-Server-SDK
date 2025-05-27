@@ -26,6 +26,11 @@ public class MultipleConnectionH264DualStreamSendTest extends AgoraTest {
             for (int i = 0; i < ArgsConfig.connectionCount; i++) {
                 createConnectionAndTest(ccfg, ArgsConfig.channelId + i, ArgsConfig.userId,
                         TestTask.SEND_H264_DUAL_STREAM, ArgsConfig.testTime);
+                try {
+                    Thread.sleep((long) (ArgsConfig.sleepTime * 1000));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
 
