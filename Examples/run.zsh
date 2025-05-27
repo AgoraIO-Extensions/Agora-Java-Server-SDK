@@ -47,7 +47,7 @@ fi
 DEBUG_OPTS="-XX:+UnlockDiagnosticVMOptions -XX:+PreserveFramePointer  -XX:NativeMemoryTracking=detail -XX:+PrintCommandLineFlags"
 CRASH_OPTS="-XX:ErrorFile=./logs/hs_err_pid%p.log -XX:LogFile=./logs/jvm.log -XX:+CreateMinidumpOnCrash -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./logs/"
 
-# -XX:MaxJNILocalCapacity=4096
+# -Xcheck:jni -Xss4m -XX:MaxJNILocalCapacity=4096 -Xms512m -Xmx2048m -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=512m
 JAVA_OPTS="$DEBUG_OPTS $CRASH_OPTS $JNI_OPTS"
 
 # Set core dump related configuration
@@ -94,5 +94,4 @@ fi
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 
 # Execute Java command with updated java.library.path
-java -cp $CLASSPATH $JAVA_OPTS $JAVA_LIBRARY_PATH -Dlog.filename=app-$TIMESTAMP -Dlog4j.configurationFile=file:./log4j2.xml $CLASS $* |
-    grep -v "WARNING in native method: JNI call made without checking exceptions"
+java -cp $CLASSPATH $JAVA_OPTS $JAVA_LIBRARY_PATH -Dlog.filename=app-$TIMESTAMP -Dlog4j.configurationFile=file:./log4j2.xml $CLASS $*

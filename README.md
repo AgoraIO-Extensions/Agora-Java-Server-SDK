@@ -41,7 +41,7 @@
      - [Classes and Methods](#classes-and-methods)
      - [Usage Example](#usage-example)
 7. [Changelog](#changelog)
-   - [v4.4.32 (2025-05-12)](#v4432-2025-05-12)
+   - [v4.4.32 (2025-05-27)](#v4432-2025-05-27)
    - [v4.4.31.4 (2025-03-21)](#v44314-2025-03-21)
    - [v4.4.31.3 (2025-02-26)](#v44313-2025-02-26)
    - [v4.4.31.2 (2025-02-19)](#v44312-2025-02-19)
@@ -88,7 +88,7 @@ The Agora Linux Server Java SDK (v4.4.32) provides powerful real-time audio and 
 
 ### CDN Download
 
-[Agora-Linux-Java-SDK-v4.4.31.4-x86_64-491956-341b4be9b9-20250402_171133](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.31.4-x86_64-491956-341b4be9b9-20250402_171133.zip)
+[Agora-Linux-Java-SDK-v4.4.32-x86_64-675656-ccd9be501d-20250526_180235](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32-x86_64-675656-ccd9be501d-20250526_180235.zip)
 
 ## Integrate the SDK
 
@@ -592,7 +592,7 @@ public class Main {
 
 ## Changelog
 
-### v4.4.32 (2025-05-12)
+### v4.4.32 (2025-05-27)
 
 #### API Changes
 
