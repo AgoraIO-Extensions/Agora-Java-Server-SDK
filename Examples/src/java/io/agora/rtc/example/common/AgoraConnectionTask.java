@@ -1767,12 +1767,12 @@ public class AgoraConnectionTask {
                 }
 
                 if (canLog) {
-                    SampleLogger.log(
-                            "onPlaybackAudioFrameBeforeMixing frame:" + frame + " audioFrame size " + byteArray.length
-                                    + " channelId:"
-                                    + channelId + " userId:" + userId + " with current channelId:"
-                                    + currentChannelId
-                                    + " currentUserId:" + currentUserId);
+                    SampleLogger.log("onPlaybackAudioFrameBeforeMixing frame:" + frame);
+                    SampleLogger.log("onPlaybackAudioFrameBeforeMixing audioFrame size " + byteArray.length
+                            + " channelId:"
+                            + channelId + " userId:" + userId + " with current channelId:"
+                            + currentChannelId
+                            + " currentUserId:" + currentUserId);
                     if (isStressTest) {
                         canLog = false;
                     }
@@ -1790,11 +1790,9 @@ public class AgoraConnectionTask {
                             canLog = false;
                         }
                     }
-                    if (enableSaveFile) {
-                        singleExecutorService.execute(() -> {
-                            writeAudioFrameToFile(vadResult.getOutFrame(), audioOutFile + "_vad.pcm");
-                        });
-                    }
+                    singleExecutorService.execute(() -> {
+                        writeAudioFrameToFile(vadResult.getOutFrame(), audioOutFile + "_vad.pcm");
+                    });
                 }
                 return 1;
             }

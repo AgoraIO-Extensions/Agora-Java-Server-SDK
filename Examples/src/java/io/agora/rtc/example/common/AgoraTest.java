@@ -139,8 +139,6 @@ public class AgoraTest {
 
         AgoraParameter parameter = service.getAgoraParameter();
         parameter.setParameters("{\"rtc.enable_nasa2\":false}");
-        parameter.setParameters("{\"che.video.useSimpleParser\":true}");
-        parameter.setParameters("{\"rtc.video.enable_periodic_strategy\":false}");
 
         // AgoraParameter parameter = service.getAgoraParameter();
         // parameter.setParameters("{\"che.audio.custom_payload_type\":78}");

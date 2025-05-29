@@ -2785,13 +2785,15 @@ public int getString(String key, Out value)
 
 ### AgoraAudioProcessor
 
-`AgoraAudioProcessor` 类提供上行音频处理接口，包括 AEC (声学回声消除)、ANS (自动噪声抑制)、AGC (自动增益控制) 和 BGHVS (背景谐波人声抑制)。
+`AgoraAudioProcessor` 类提供了上行音频处理的接口，包括 AEC、ANS、AGC 和 BGHVS 功能。
 
 **主要方法:**
 
 - `AgoraAudioProcessor()`: 构造函数。
-- `int init(String appId, String license, IAgoraAudioProcessorEventHandler eventHandler, AgoraAudioProcessorConfig config)`: 使用给定配置初始化处理器。
-- `AgoraAudioFrame process(AgoraAudioFrame frame)`: 处理音频帧并返回处理后的帧。
+- `static String getSdkVersion()`: 获取 SDK 版本号。
+- `int init(String appId, String license, IAgoraAudioProcessorEventHandler eventHandler, AgoraAudioProcessorConfig config)`: 使用给定的配置初始化处理器。
+- `AgoraAudioFrame process(AgoraAudioFrame nearIn)`: 处理近端音频帧（例如用于 ANS、AGC），并返回处理后的帧。当仅需要处理近端音频或不需要 AEC 时使用此方法。
+- `AgoraAudioFrame process(AgoraAudioFrame nearIn, AgoraAudioFrame farIn)`: 处理近端和远端音频帧（例如用于 AEC、ANS、AGC），并返回处理后的近端音频帧。当需要 AEC 处理时使用此方法。
 - `int release()`: 释放处理器及相关资源。
 
 **注意:** 此类使用原生方法进行实际处理。

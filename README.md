@@ -630,13 +630,23 @@ public int init(String appId, String license, IAgoraAudioProcessorEventHandler e
 - **Returns**: `int`, 0 for success, other values indicate failure.
 
 ```java
-public AgoraAudioFrame process(AgoraAudioFrame audioFrame)
+public AgoraAudioFrame process(AgoraAudioFrame nearIn)
 ```
 
-- **Description**: Performs 3A processing on the input audio frame.
+- **Description**: Performs 3A processing (e.g., ANS, AGC) on the input near-end audio frame. Use this method when processing only near-end audio or when AEC is not required.
 - **Parameters**:
-  - `audioFrame`: `io.agora.rtc.audio3a.AgoraAudioFrame`, the frame object containing PCM audio data to be processed.
+  - `nearIn`: `io.agora.rtc.audio3a.AgoraAudioFrame`, the frame object containing near-end PCM audio data to be processed.
 - **Returns**: `io.agora.rtc.audio3a.AgoraAudioFrame`, the processed audio frame. May return `null` if processing fails.
+
+```java
+public AgoraAudioFrame process(AgoraAudioFrame nearIn, AgoraAudioFrame farIn)
+```
+
+- **Description**: Performs 3A processing (e.g., AEC, ANS, AGC) on the input near-end and far-end audio frames. Use this method when Acoustic Echo Cancellation (AEC) or other processing that requires both near-end and far-end audio is needed.
+- **Parameters**:
+  - `nearIn`: `io.agora.rtc.audio3a.AgoraAudioFrame`, the frame object containing near-end PCM audio data to be processed.
+  - `farIn`: `io.agora.rtc.audio3a.AgoraAudioFrame`, the frame object containing far-end PCM audio data for reference, primarily used for Acoustic Echo Cancellation (AEC).
+- **Returns**: `io.agora.rtc.audio3a.AgoraAudioFrame`, the processed near-end audio frame. May return `null` if processing fails.
 
 ```java
 public int release()
@@ -775,32 +785,50 @@ public class Audio3AProcessingExample {
         System.out.println("AgoraAudioProcessor initialized successfully.");
 
         // 4. Prepare audio frame (AgoraAudioFrame)
-        // Example parameters: 16kHz, mono, 10ms audio frame
-        int sampleRate = 16000;
+        // Example parameters: 48kHz, mono, 10ms audio frame
+        int sampleRate = 48000;
         int channels = 1;
-        int samplesPerChannel = sampleRate / 100; // 10ms frame -> 160 samples
+        int samplesPerChannel = sampleRate / 100; // 10ms frame -> 480 samples
         int bytesPerSample = Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue(); // PCM16
-
-        AgoraAudioFrame inputFrame = new AgoraAudioFrame();
-        inputFrame.setType(Constants.AudioFrameType.PCM16.getValue());
-        inputFrame.setSampleRate(sampleRate);
-        inputFrame.setChannels(channels);
-        inputFrame.setSamplesPerChannel(samplesPerChannel);
-        inputFrame.setBytesPerSample(bytesPerSample);
-
-        // Create and populate the audio data ByteBuffer
-        // In a real application, pcmData would come from an audio source like a microphone or file
         int bufferSize = samplesPerChannel * channels * bytesPerSample;
-        byte[] pcmData = new byte[bufferSize];
-        // ... Fill pcmData with dummy data here ...
-        // Example: Arrays.fill(pcmData, (byte) 10); // For demonstration only
-        ByteBuffer audioBuffer = ByteBuffer.allocateDirect(bufferSize);
-        audioBuffer.put(pcmData);
-        audioBuffer.flip(); // Switch to read mode
-        inputFrame.setBuffer(audioBuffer);
+
+        // Create near-end audio frame
+        AgoraAudioFrame nearInFrame = new AgoraAudioFrame();
+        nearInFrame.setType(Constants.AudioFrameType.PCM16.getValue());
+        nearInFrame.setSampleRate(sampleRate);
+        nearInFrame.setChannels(channels);
+        nearInFrame.setSamplesPerChannel(samplesPerChannel);
+        nearInFrame.setBytesPerSample(bytesPerSample);
+        // In a real application, pcmDataNear would come from a near-end audio source
+        byte[] pcmDataNear = new byte[bufferSize]; 
+        // ... Fill pcmDataNear with dummy data here ...
+        ByteBuffer nearAudioBuffer = ByteBuffer.allocateDirect(bufferSize);
+        nearAudioBuffer.put(pcmDataNear);
+        nearAudioBuffer.flip();
+        nearInFrame.setBuffer(nearAudioBuffer);
+
+        // Create far-end audio frame (for AEC)
+        AgoraAudioFrame farInFrame = new AgoraAudioFrame();
+        farInFrame.setType(Constants.AudioFrameType.PCM16.getValue());
+        farInFrame.setSampleRate(sampleRate);
+        farInFrame.setChannels(channels);
+        farInFrame.setSamplesPerChannel(samplesPerChannel);
+        farInFrame.setBytesPerSample(bytesPerSample);
+        // In a real application, pcmDataFar would come from a far-end audio source
+        byte[] pcmDataFar = new byte[bufferSize]; 
+        // ... Fill pcmDataFar with dummy data here ...
+        ByteBuffer farAudioBuffer = ByteBuffer.allocateDirect(bufferSize);
+        farAudioBuffer.put(pcmDataFar);
+        farAudioBuffer.flip();
+        farInFrame.setBuffer(farAudioBuffer);
 
         // 5. Process the audio frame
-        AgoraAudioFrame outputFrame = audioProcessor.process(inputFrame);
+        // If you only need to process the near-end audio (e.g., only ANS, AGC), 
+        // you can call the single-parameter process method:
+        // AgoraAudioFrame outputFrame = audioProcessor.process(nearInFrame);
+
+        // If AEC processing is required, pass both near-end and far-end audio frames
+        AgoraAudioFrame outputFrame = audioProcessor.process(nearInFrame, farInFrame);
 
         if (outputFrame != null && outputFrame.getBuffer() != null) {
             System.out.println("Audio frame processed successfully.");

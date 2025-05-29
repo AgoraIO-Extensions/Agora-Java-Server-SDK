@@ -626,13 +626,23 @@ public int init(String appId, String license, IAgoraAudioProcessorEventHandler e
 - **返回**：`int` 类型，0 表示成功，其他值表示失败。
 
 ```java
-public AgoraAudioFrame process(AgoraAudioFrame audioFrame)
+public AgoraAudioFrame process(AgoraAudioFrame nearIn)
 ```
 
-- **描述**：对输入的音频帧进行 3A 处理。
+- **描述**：对输入的近端音频帧进行 3A 处理（如 ANS、AGC）。当仅处理近端音频，或不需要 AEC 处理时使用此方法。
 - **参数**：
-  - `audioFrame`：`io.agora.rtc.audio3a.AgoraAudioFrame` 类型，包含待处理 PCM 音频数据的帧对象。
+  - `nearIn`：`io.agora.rtc.audio3a.AgoraAudioFrame` 类型，包含待处理的近端 PCM 音频数据的帧对象。
 - **返回**：`io.agora.rtc.audio3a.AgoraAudioFrame` 类型，处理后的音频帧。如果处理失败，可能返回 `null`。
+
+```java
+public AgoraAudioFrame process(AgoraAudioFrame nearIn, AgoraAudioFrame farIn)
+```
+
+- **描述**：对输入的近端和远端音频帧进行 3A 处理（如 AEC、ANS、AGC）。当需要进行回声消除 (AEC) 等同时处理近端和远端音频的场景时使用此方法。
+- **参数**：
+  - `nearIn`：`io.agora.rtc.audio3a.AgoraAudioFrame` 类型，包含待处理的近端 PCM 音频数据的帧对象。
+  - `farIn`：`io.agora.rtc.audio3a.AgoraAudioFrame` 类型，包含参考的远端 PCM 音频数据的帧对象，主要用于声学回声消除 (AEC)。
+- **返回**：`io.agora.rtc.audio3a.AgoraAudioFrame` 类型，处理后的近端音频帧。如果处理失败，可能返回 `null`。
 
 ```java
 public int release()
@@ -771,32 +781,49 @@ public class Audio3AProcessingExample {
         System.out.println("AgoraAudioProcessor initialized successfully.");
 
         // 4. 准备音频帧 (AgoraAudioFrame)
-        // 示例参数：16kHz, 单声道, 10ms 音频帧
-        int sampleRate = 16000;
+        // 示例参数：48kHz, 单声道, 10ms 音频帧
+        int sampleRate = 48000;
         int channels = 1;
-        int samplesPerChannel = sampleRate / 100; // 10ms frame -> 160 samples
+        int samplesPerChannel = sampleRate / 100; // 10ms frame -> 480 samples
         int bytesPerSample = Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue(); // PCM16
-
-        AgoraAudioFrame inputFrame = new AgoraAudioFrame();
-        inputFrame.setType(Constants.AudioFrameType.PCM16.getValue());
-        inputFrame.setSampleRate(sampleRate);
-        inputFrame.setChannels(channels);
-        inputFrame.setSamplesPerChannel(samplesPerChannel);
-        inputFrame.setBytesPerSample(bytesPerSample);
-
-        // 创建并填充音频数据 ByteBuffer
-        // 实际应用中，这里的 pcmData 来自音频源，如麦克风或文件
         int bufferSize = samplesPerChannel * channels * bytesPerSample;
-        byte[] pcmData = new byte[bufferSize];
-        // ... 此处用虚拟数据填充 pcmData ...
-        // 例如：Arrays.fill(pcmData, (byte) 10); // 仅为示例
-        ByteBuffer audioBuffer = ByteBuffer.allocateDirect(bufferSize);
-        audioBuffer.put(pcmData);
-        audioBuffer.flip(); // 切换到读模式
-        inputFrame.setBuffer(audioBuffer);
+
+        // 创建近端音频帧
+        AgoraAudioFrame nearInFrame = new AgoraAudioFrame();
+        nearInFrame.setType(Constants.AudioFrameType.PCM16.getValue());
+        nearInFrame.setSampleRate(sampleRate);
+        nearInFrame.setChannels(channels);
+        nearInFrame.setSamplesPerChannel(samplesPerChannel);
+        nearInFrame.setBytesPerSample(bytesPerSample);
+        // 实际应用中，这里的 pcmDataNear 来自近端音频源
+        byte[] pcmDataNear = new byte[bufferSize]; 
+        // ... 此处用虚拟数据填充 pcmDataNear ...
+        ByteBuffer nearAudioBuffer = ByteBuffer.allocateDirect(bufferSize);
+        nearAudioBuffer.put(pcmDataNear);
+        nearAudioBuffer.flip();
+        nearInFrame.setBuffer(nearAudioBuffer);
+
+        // 创建远端音频帧 (用于 AEC)
+        AgoraAudioFrame farInFrame = new AgoraAudioFrame();
+        farInFrame.setType(Constants.AudioFrameType.PCM16.getValue());
+        farInFrame.setSampleRate(sampleRate);
+        farInFrame.setChannels(channels);
+        farInFrame.setSamplesPerChannel(samplesPerChannel);
+        farInFrame.setBytesPerSample(bytesPerSample);
+        // 实际应用中，这里的 pcmDataFar 来自远端音频源
+        byte[] pcmDataFar = new byte[bufferSize]; 
+        // ... 此处用虚拟数据填充 pcmDataFar ...
+        ByteBuffer farAudioBuffer = ByteBuffer.allocateDirect(bufferSize);
+        farAudioBuffer.put(pcmDataFar);
+        farAudioBuffer.flip();
+        farInFrame.setBuffer(farAudioBuffer);
 
         // 5. 处理音频帧
-        AgoraAudioFrame outputFrame = audioProcessor.process(inputFrame);
+        // 如果只需要处理近端音频（例如仅 ANS, AGC），可以调用单参数的 process 方法:
+        // AgoraAudioFrame outputFrame = audioProcessor.process(nearInFrame);
+ 
+        // 如果需要 AEC 处理，同时传入近端和远端音频帧
+        AgoraAudioFrame outputFrame = audioProcessor.process(nearInFrame, farInFrame);
 
         if (outputFrame != null && outputFrame.getBuffer() != null) {
             System.out.println("Audio frame processed successfully.");

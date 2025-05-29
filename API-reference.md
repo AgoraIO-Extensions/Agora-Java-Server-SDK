@@ -18,7 +18,7 @@ This document provides a reference for the main classes and methods of the Agora
   - [AgoraVideoEncodedImageSender](#agoravideoencodedimagesender)
   - [AgoraAudioEncodedFrameSender](#agoraaudioencodedframesender)
   - [AgoraParameter](#agoraparameter)
-  - [AgoraAudioProcessor](#agoraudioprocessor)
+  - [AgoraAudioProcessor](#agoraaudioprocessor)
 - [Observer Interfaces](#observer-interfaces)
   - [IRtcConnObserver](#irtcconnobserver)
   - [ILocalUserObserver](#ilocaluserobserver)
@@ -2794,8 +2794,10 @@ The `AgoraAudioProcessor` class provides an interface for uplink audio processin
 **Main Methods:**
 
 - `AgoraAudioProcessor()`: Constructor.
+- `static String getSdkVersion()`: Gets the SDK version.
 - `int init(String appId, String license, IAgoraAudioProcessorEventHandler eventHandler, AgoraAudioProcessorConfig config)`: Initializes the processor with the given configuration.
-- `AgoraAudioFrame process(AgoraAudioFrame frame)`: Processes an audio frame and returns the processed frame.
+- `AgoraAudioFrame process(AgoraAudioFrame nearIn)`: Processes a near-end audio frame (e.g., for ANS, AGC) and returns the processed frame. Use this when only near-end processing is needed or AEC is not required.
+- `AgoraAudioFrame process(AgoraAudioFrame nearIn, AgoraAudioFrame farIn)`: Processes near-end and far-end audio frames (e.g., for AEC, ANS, AGC) and returns the processed near-end frame. Use this when AEC is required.
 - `int release()`: Releases the processor and associated resources.
 
 **Note:** This class uses native methods for actual processing.

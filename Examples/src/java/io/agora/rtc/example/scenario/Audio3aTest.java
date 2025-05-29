@@ -20,10 +20,11 @@ import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.Utils;
 
 public class Audio3aTest {
-    private static int sampleRate = 16000;
+    private static int sampleRate = 48000;
     private static int numOfChannels = 1;
-    private static String audioFile = "test_data/nearin_power.pcm";
-    private static String audioOutFile = "test_data_out/recv_nearin_power_3a.pcm";
+    private static String nearAudioFile = "test_data/nearin_power.pcm";
+    private static String farAudioFile = "test_data/farin_power.pcm";
+    private static String audioOutFile = "test_data_out/recv_near_out_3a.pcm";
     // 10ms one frame
     private static final int INTERVAL = 10; // ms
 
@@ -53,8 +54,11 @@ public class Audio3aTest {
         if (parsedArgs.containsKey("numOfChannels")) {
             numOfChannels = Integer.parseInt(parsedArgs.get("numOfChannels"));
         }
-        if (parsedArgs.containsKey("audioFile")) {
-            audioFile = parsedArgs.get("audioFile");
+        if (parsedArgs.containsKey("nearAudioFile")) {
+            nearAudioFile = parsedArgs.get("nearAudioFile");
+        }
+        if (parsedArgs.containsKey("farAudioFile")) {
+            farAudioFile = parsedArgs.get("farAudioFile");
         }
         if (parsedArgs.containsKey("audioOutFile")) {
             audioOutFile = parsedArgs.get("audioOutFile");
@@ -67,12 +71,14 @@ public class Audio3aTest {
         String appId = keys[0];
         String license = keys[1];
         SampleLogger.log("read appId: " + appId + " license: " + license + " from .keys_3a");
+        SampleLogger.log("AgoraAudioProcessor version: " + AgoraAudioProcessor.getSdkVersion());
 
         AgoraAudioProcessor audioProcessor = new AgoraAudioProcessor();
         // use default config
         AgoraAudioProcessorConfig config = new AgoraAudioProcessorConfig();
         // set model path
         config.setModelPath("./resources/model/");
+
         int ret = audioProcessor.init(appId, license,
                 new IAgoraAudioProcessorEventHandler() {
                     @Override
@@ -90,19 +96,28 @@ public class Audio3aTest {
 
         final int bufferSize = sampleRate / 1000 * INTERVAL * numOfChannels
                 * Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue();
-        AgoraAudioFrame audioFrame = new AgoraAudioFrame();
-        audioFrame.setType(Constants.AudioFrameType.PCM16.getValue());
-        audioFrame.setSampleRate(sampleRate);
-        audioFrame.setChannels(numOfChannels);
-        audioFrame.setSamplesPerChannel(sampleRate / 1000 * INTERVAL);
-        audioFrame.setBytesPerSample(Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue());
+        AgoraAudioFrame nearAudioFrame = new AgoraAudioFrame();
+        nearAudioFrame.setType(Constants.AudioFrameType.PCM16.getValue());
+        nearAudioFrame.setSampleRate(sampleRate);
+        nearAudioFrame.setChannels(numOfChannels);
+        nearAudioFrame.setSamplesPerChannel(sampleRate / 1000 * INTERVAL);
+        nearAudioFrame.setBytesPerSample(Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue());
 
-        ByteBuffer audioBuffer = ByteBuffer.allocateDirect(bufferSize);
+        AgoraAudioFrame farAudioFrame = new AgoraAudioFrame();
+        farAudioFrame.setType(Constants.AudioFrameType.PCM16.getValue());
+        farAudioFrame.setSampleRate(sampleRate);
+        farAudioFrame.setChannels(numOfChannels);
+        farAudioFrame.setSamplesPerChannel(sampleRate / 1000 * INTERVAL);
+        farAudioFrame.setBytesPerSample(Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue());
+
+        ByteBuffer nearAudioBuffer = ByteBuffer.allocateDirect(bufferSize);
+        ByteBuffer farAudioBuffer = ByteBuffer.allocateDirect(bufferSize);
 
         audioReadExecutor.execute(() -> {
-            File file = new File(audioFile);
-            if (!file.exists()) {
-                SampleLogger.log("Audio file does not exist: " + audioFile);
+            File nearFile = new File(nearAudioFile);
+            File farFile = new File(farAudioFile);
+            if (!nearFile.exists() || !farFile.exists()) {
+                SampleLogger.log("Audio file does not exist: " + nearAudioFile + " or " + farAudioFile);
                 taskFinishLatch.countDown();
                 return;
             }
@@ -110,25 +125,33 @@ public class Audio3aTest {
             if (outFile.exists()) {
                 outFile.delete();
             }
-            try (FileInputStream fis = new FileInputStream(file);
+            try (FileInputStream nearFis = new FileInputStream(nearFile);
+                    FileInputStream farFis = new FileInputStream(farFile);
                     FileOutputStream fos = new FileOutputStream(audioOutFile, true)) {
-                byte[] buffer = new byte[bufferSize];
+                byte[] nearBuffer = new byte[bufferSize];
+                byte[] farBuffer = new byte[bufferSize];
                 int readLen;
-                while ((readLen = fis.read(buffer)) != -1) {
+                while ((readLen = nearFis.read(nearBuffer)) != -1) {
+                    farFis.read(farBuffer);
                     byte[] dataToPut;
                     if (readLen < bufferSize) {
                         dataToPut = new byte[bufferSize];
-                        System.arraycopy(buffer, 0, dataToPut, 0, readLen);
+                        System.arraycopy(nearBuffer, 0, dataToPut, 0, readLen);
                     } else {
-                        dataToPut = buffer;
+                        dataToPut = nearBuffer;
                     }
 
-                    audioBuffer.clear();
-                    audioBuffer.put(dataToPut);
-                    audioBuffer.flip();
-                    audioFrame.setBuffer(audioBuffer);
+                    nearAudioBuffer.clear();
+                    nearAudioBuffer.put(dataToPut);
+                    nearAudioBuffer.flip();
+                    nearAudioFrame.setBuffer(nearAudioBuffer);
 
-                    AgoraAudioFrame outFrame = audioProcessor.process(audioFrame);
+                    farAudioBuffer.clear();
+                    farAudioBuffer.put(farBuffer);
+                    farAudioBuffer.flip();
+                    farAudioFrame.setBuffer(farAudioBuffer);
+
+                    AgoraAudioFrame outFrame = audioProcessor.process(nearAudioFrame, farAudioFrame);
                     if (null != outFrame && outFrame.getBuffer() != null) {
                         SampleLogger.log("outFrame: " + Arrays.toString(outFrame.getBuffer().array()));
                         audioWriteExecutor.execute(() -> {
@@ -167,7 +190,8 @@ public class Audio3aTest {
             e.printStackTrace();
         }
 
-        audioBuffer.clear();
+        nearAudioBuffer.clear();
+        farAudioBuffer.clear();
 
         try {
             audioProcessor.release();
@@ -182,5 +206,8 @@ public class Audio3aTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        SampleLogger.log("Audio3aTest finished");
+        System.exit(0);
     }
 }
