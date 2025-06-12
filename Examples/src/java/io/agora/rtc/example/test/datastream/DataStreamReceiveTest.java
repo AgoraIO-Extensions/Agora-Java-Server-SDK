@@ -25,8 +25,8 @@ public class DataStreamReceiveTest extends AgoraTest {
         createConnectionAndTest(ccfg, ArgsConfig.channelId, ArgsConfig.userId, TestTask.NONE, ArgsConfig.testTime);
     }
 
-    protected void onStreamMessageReceive(String userId, int streamId, String data, long length) {
-        super.onStreamMessageReceive(userId, streamId, data, length);
+    protected void onStreamMessageReceive(String userId, int streamId, byte[] data) {
+        super.onStreamMessageReceive(userId, streamId, data);
 
     }
 

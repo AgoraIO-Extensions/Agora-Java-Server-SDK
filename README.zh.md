@@ -52,7 +52,7 @@
 
 ## 简介
 
-Agora Linux Server Java SDK (v4.4.32) 为您提供了强大的实时音视频通信能力，可无缝集成到 Linux 服务器端 Java 应用程序中。借助此 SDK，您的服务器可以作为数据源或处理节点加入 Agora 频道，实时获取和处理音视频流，从而实现多种业务相关的其他高级功能。
+Agora Linux Server Java SDK (v4.4.32.1) 为您提供了强大的实时音视频通信能力，可无缝集成到 Linux 服务器端 Java 应用程序中。借助此 SDK，您的服务器可以作为数据源或处理节点加入 Agora 频道，实时获取和处理音视频流，从而实现多种业务相关的其他高级功能。
 
 ## 开发环境要求
 
@@ -80,13 +80,13 @@ Agora Linux Server Java SDK (v4.4.32) 为您提供了强大的实时音视频通
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32</version>
+    <version>4.4.32.1</version>
 </dependency>
 ```
 
 ### CDN 下载
 
-[Agora-Linux-Java-SDK-v4.4.32-x86_64-675656-ccd9be501d-20250526_180235](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32-x86_64-675656-ccd9be501d-20250526_180235.zip)
+[Agora-Linux-Java-SDK-v4.4.32.1-x86_64-675656-1c0b814025-20250612_105900](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.1-x86_64-675656-1c0b814025-20250612_105900.zip)
 
 ## 集成 SDK
 
@@ -105,7 +105,7 @@ Maven 集成是最简单的方式，可以自动管理 Java 依赖关系。
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32</version>
+    <version>4.4.32.1</version>
 </dependency>
 ```
 
@@ -140,7 +140,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32 \
+  -Dversion=4.4.32.1 \
   -Dpackaging=jar \
   -DgeneratePom=true
 ```
@@ -152,7 +152,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32 \
+  -Dversion=4.4.32.1 \
   -Dpackaging=jar \
   -DgeneratePom=true \
   -Djavadoc=sdk/agora-sdk-javadoc.jar
@@ -164,7 +164,7 @@ mvn install:install-file \
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32</version>
+    <version>4.4.32.1</version>
 </dependency>
 ```
 
@@ -213,7 +213,7 @@ Agora Linux Server Java SDK 依赖于底层的 C++ 原生库（`.so` 文件）�
     jar xvf agora-sdk.jar
 
     # 如果使用 Maven 集成方式，JAR 文件在 Maven 缓存中，例如：
-    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32/linux-java-sdk-4.4.32.jar
+    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.1/linux-java-sdk-4.4.32.1.jar
     ```
 
 3.  提取后，`libs` 目录下会生成 `native/linux/x86_64` 子目录，其中包含所需的 `.so` 文件：
@@ -587,6 +587,16 @@ public class Main {
 ```
 
 ## 更新日志
+
+### v4.4.32.1（2025-06-12）
+
+#### API 变更
+
+- 优化 `ILocalUserObserver` 接口的 `onStreamMessage` 回调参数，将原有的 `onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data, long length)` 修改为 `onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, byte[] data)`，提升消息处理的灵活性和效率。
+
+#### 改进与优化
+
+- 修复了 `AgoraServiceConfig` 的 `setLogFileSize` 方法，单位为 KB 时实际生效单位为 Byte 的问题，现已正确按 KB 设置日志文件大小。
 
 ### v4.4.32（2025-05-27）
 

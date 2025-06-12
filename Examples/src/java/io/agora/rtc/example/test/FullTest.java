@@ -43,9 +43,9 @@ public class FullTest extends AgoraTest {
                     }
 
                     @Override
-                    public void onStreamMessage(String userId, int streamId, String data, long length) {
+                    public void onStreamMessage(String userId, int streamId, byte[] data) {
                         SampleLogger.log("FullTest onStreamMessage userId: " + userId + " streamId: " + streamId
-                                + " data: " + data + " length: " + length);
+                                + " data: " + new String(data));
                     }
                 });
                 connTask.createConnection(ccfg, ArgsConfig.channelId, ArgsConfig.userId);

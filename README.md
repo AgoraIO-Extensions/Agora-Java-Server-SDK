@@ -54,7 +54,7 @@
 
 ## Introduction
 
-The Agora Linux Server Java SDK (v4.4.32) provides powerful real-time audio and video communication capabilities that can be seamlessly integrated into Linux server-side Java applications. With this SDK, your server can join Agora channels as a data source or processing node, accessing and processing audio and video streams in real-time to implement various business-related advanced features.
+The Agora Linux Server Java SDK (v4.4.32.1) provides powerful real-time audio and video communication capabilities that can be seamlessly integrated into Linux server-side Java applications. With this SDK, your server can join Agora channels as a data source or processing node, accessing and processing audio and video streams in real-time to implement various business-related advanced features.
 
 ## Development Environment Requirements
 
@@ -82,13 +82,13 @@ The Agora Linux Server Java SDK (v4.4.32) provides powerful real-time audio and 
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32</version>
+    <version>4.4.32.1</version>
 </dependency>
 ```
 
 ### CDN Download
 
-[Agora-Linux-Java-SDK-v4.4.32-x86_64-675656-ccd9be501d-20250526_180235](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32-x86_64-675656-ccd9be501d-20250526_180235.zip)
+[Agora-Linux-Java-SDK-v4.4.32.1-x86_64-675656-1c0b814025-20250612_105900](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.1-x86_64-675656-1c0b814025-20250612_105900.zip)
 
 ## Integrate the SDK
 
@@ -107,7 +107,7 @@ Add the following dependency to your project's `pom.xml` file:
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32</version>
+    <version>4.4.32.1</version>
 </dependency>
 ```
 
@@ -142,7 +142,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32 \
+  -Dversion=4.4.32.1 \
   -Dpackaging=jar \
   -DgeneratePom=true
 ```
@@ -154,7 +154,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32 \
+  -Dversion=4.4.32.1 \
   -Dpackaging=jar \
   -DgeneratePom=true \
   -Djavadoc=sdk/agora-sdk-javadoc.jar
@@ -166,7 +166,7 @@ After installation, add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32</version>
+    <version>4.4.32.1</version>
 </dependency>
 ```
 
@@ -215,7 +215,7 @@ The `.so` files are contained within the `agora-sdk.jar` or `linux-java-sdk-x.x.
     jar xvf agora-sdk.jar
 
     # If using Maven integration, the JAR file is in the Maven cache, e.g.:
-    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32/linux-java-sdk-4.4.32.jar
+    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.1/linux-java-sdk-4.4.32.1.jar
     ```
 
 3.  After extraction, a `native/linux/x86_64` subdirectory will be generated within the `libs` directory, containing the required `.so` files:
@@ -591,6 +591,16 @@ public class Main {
 ```
 
 ## Changelog
+
+### v4.4.32.1 (2025-06-12)
+
+#### API Changes
+
+- Optimized the `onStreamMessage` callback parameters in the `ILocalUserObserver` interface. The original method `onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data, long length)` has been changed to `onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, byte[] data)` to improve flexibility and efficiency in message handling.
+
+#### Improvements & Optimizations
+
+- Fixed an issue in the `setLogFileSize` method of `AgoraServiceConfig` where the unit was incorrectly applied as bytes when set in KB. The log file size is now correctly set in KB.
 
 ### v4.4.32 (2025-05-27)
 

@@ -129,7 +129,7 @@ public class AgoraConnectionTask {
 
         }
 
-        default void onStreamMessage(String userId, int streamId, String data, long length) {
+        default void onStreamMessage(String userId, int streamId, byte[] data) {
 
         }
 
