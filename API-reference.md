@@ -3669,7 +3669,7 @@ public void onRemoteSubscribeFallbackToAudioOnly(AgoraLocalUser agoraLocalUser, 
 ##### onStreamMessage
 
 ```java
-public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data, long length)
+public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, byte[] data)
 ```
 
 当收到远端用户通过数据流 (`sendStreamMessage`) 发送的消息时触发。

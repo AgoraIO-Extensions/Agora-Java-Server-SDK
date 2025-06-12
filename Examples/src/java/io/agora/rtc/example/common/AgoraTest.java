@@ -203,8 +203,8 @@ public class AgoraTest {
                 }
 
                 @Override
-                public void onStreamMessage(String userId, int streamId, String data, long length) {
-                    onStreamMessageReceive(userId, streamId, data, length);
+                public void onStreamMessage(String userId, int streamId, byte[] data) {
+                    onStreamMessageReceive(userId, streamId, data);
                 }
             });
             try {
@@ -400,7 +400,7 @@ public class AgoraTest {
         SampleLogger.log("onConnected for task:" + testTask + " channelId:" + channelId + " userId:" + userId);
     }
 
-    protected void onStreamMessageReceive(String userId, int streamId, String data, long length) {
+    protected void onStreamMessageReceive(String userId, int streamId, byte[] data) {
     }
 
     public void cleanup() {
