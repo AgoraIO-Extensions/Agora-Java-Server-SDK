@@ -37,14 +37,19 @@
 6. [API Reference](#api-reference)
    - [API Documentation Reference](#api-documentation-reference)
    - [VAD Module](#vad-module)
-     - [Introduction](#introduction-1)
-     - [Classes and Methods](#classes-and-methods)
-     - [Usage Example](#usage-example)
+     - [VadV1 Module](#vadv1-module)
+       - [Introduction](#introduction-1)
+       - [Classes and Methods](#classes-and-methods)
+       - [Usage Example](#usage-example)
+     - [VadV2 Module](#vadv2-module)
+       - [Introduction](#introduction-2)
+       - [Classes and Methods](#classes-and-methods-1)
+       - [Usage Example](#usage-example-1)
    - [Audio 3A Module](#audio-3a-module)
-     - [Introduction](#introduction-2)
-     - [Classes and Methods](#classes-and-methods-1)
+     - [Introduction](#introduction-3)
+     - [Classes and Methods](#classes-and-methods-2)
 7. [Changelog](#changelog)
-   - [v4.4.32 (2025-05-12)](#v4432-2025-05-12)
+   - [v4.4.32 (2025-05-27)](#v4432-2025-05-27)
    - [v4.4.31.4 (2025-03-21)](#v44314-2025-03-21)
    - [v4.4.31.3 (2025-02-26)](#v44313-2025-02-26)
    - [v4.4.31.2 (2025-02-19)](#v44312-2025-02-19)
@@ -57,7 +62,7 @@
 
 ## Introduction
 
-The Agora Linux Server Java SDK (v4.4.32) provides powerful real-time audio and video communication capabilities that can be seamlessly integrated into Linux server-side Java applications. With this SDK, your server can join Agora channels as a data source or processing node, accessing and processing audio and video streams in real-time to implement various business-related advanced features.
+The Agora Linux Server Java SDK (v4.4.32.1) provides powerful real-time audio and video communication capabilities that can be seamlessly integrated into Linux server-side Java applications. With this SDK, your server can join Agora channels as a data source or processing node, accessing and processing audio and video streams in real-time to implement various business-related advanced features.
 
 ## Development Environment Requirements
 
@@ -85,13 +90,13 @@ The Agora Linux Server Java SDK (v4.4.32) provides powerful real-time audio and 
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32</version>
+    <version>4.4.32.1</version>
 </dependency>
 ```
 
 ### CDN Download
 
-[Agora-Linux-Java-SDK-v4.4.31.4-x86_64-491956-341b4be9b9-20250402_171133](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.31.4-x86_64-491956-341b4be9b9-20250402_171133.zip)
+[Agora-Linux-Java-SDK-v4.4.32.1-x86_64-675656-1c0b814025-20250612_105900](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.1-x86_64-675656-1c0b814025-20250612_105900.zip)
 
 ## Integrate the SDK
 
@@ -110,7 +115,7 @@ Add the following dependency to your project's `pom.xml` file:
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32</version>
+    <version>4.4.32.1</version>
 </dependency>
 ```
 
@@ -145,7 +150,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32 \
+  -Dversion=4.4.32.1 \
   -Dpackaging=jar \
   -DgeneratePom=true
 ```
@@ -157,7 +162,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32 \
+  -Dversion=4.4.32.1 \
   -Dpackaging=jar \
   -DgeneratePom=true \
   -Djavadoc=sdk/agora-sdk-javadoc.jar
@@ -169,7 +174,7 @@ After installation, add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32</version>
+    <version>4.4.32.1</version>
 </dependency>
 ```
 
@@ -218,7 +223,7 @@ The `.so` files are contained within the `agora-sdk.jar` or `linux-java-sdk-x.x.
     jar xvf agora-sdk.jar
 
     # If using Maven integration, the JAR file is in the Maven cache, e.g.:
-    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32/linux-java-sdk-4.4.32.jar
+    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.1/linux-java-sdk-4.4.32.1.jar
     ```
 
 3.  After extraction, a `native/linux/x86_64` subdirectory will be generated within the `libs` directory, containing the required `.so` files:
@@ -479,15 +484,128 @@ For complete API documentation, refer to the following resources:
 
 ### VAD Module
 
-#### Introduction
+#### VadV1 Module
 
-`AgoraAudioVadV2` is a Voice Activity Detection (VAD) module for processing audio frames. It detects speech activity in an audio stream and processes it based on configuration parameters.
+##### Introduction
 
-#### Classes and Methods
+`AgoraAudioVad` is a Voice Activity Detection (VAD) module for processing audio frames. It detects speech activity in an audio stream and processes it based on configuration parameters. This module is the first version of VAD, providing basic voice activity detection functionality.
 
-##### AgoraAudioVadV2 Class
+##### Classes and Methods
 
-###### Constructor
+###### AgoraAudioVad Class
+
+**Constructor**
+
+```java
+public AgoraAudioVad()
+```
+
+- **Description**: Constructs an `AgoraAudioVad` instance.
+
+**Methods**
+
+```java
+public int initialize(AgoraAudioVadConfig config)
+```
+
+- **Description**: Initializes the VAD module. This must be called before using other methods.
+- **Parameters**:
+  - `config`: `AgoraAudioVadConfig` type, VAD configuration.
+- **Returns**: `int`, 0 for success, -1 for failure.
+
+```java
+public VadProcessResult processPcmFrame(byte[] frame)
+```
+
+- **Description**: Processes PCM audio frames.
+- **Parameters**:
+  - `frame`: `byte[]` type, PCM audio data.
+- **Returns**: `VadProcessResult` type, VAD processing result.
+
+```java
+public synchronized void destroy()
+```
+
+- **Description**: Destroys the VAD module and releases resources.
+
+###### AgoraAudioVadConfig Class
+
+**Main Properties**
+
+| Property Name          | Type  | Description                                           | Default | Range                  |
+| ---------------------- | ----- | ----------------------------------------------------- | ------- | ---------------------- |
+| fftSz                  | int   | FFT size, supports only 128, 256, 512, 1024           | 1024    | [128, 256, 512, 1024]  |
+| hopSz                  | int   | FFT hop size, used for checking                       | 160     | [1, Integer.MAX_VALUE] |
+| anaWindowSz            | int   | FFT window size, used for calculating RMS             | 768     | [1, Integer.MAX_VALUE] |
+| voiceProbThr           | float | Voice probability threshold                           | 0.8     | [0.0, 1.0]             |
+| rmsThr                 | float | RMS threshold (dB)                                    | -40.0   | [-100.0, 0.0]          |
+| jointThr               | float | Joint threshold (dB)                                  | 0.0     | [-100.0, 100.0]        |
+| aggressive             | float | Aggressive factor, higher value means more aggressive | 5.0     | [0.0, 10.0]            |
+| startRecognizeCount    | int   | Start recognition count                               | 10      | [1, Integer.MAX_VALUE] |
+| stopRecognizeCount     | int   | Stop recognition count                                | 6       | [1, Integer.MAX_VALUE] |
+| preStartRecognizeCount | int   | Pre-start recognition count                           | 10      | [0, Integer.MAX_VALUE] |
+| activePercent          | float | Active percentage                                     | 0.6     | [0.0, 1.0]             |
+| inactivePercent        | float | Inactive percentage                                   | 0.2     | [0.0, 1.0]             |
+
+##### Usage Example
+
+Here is a simple example showing how to use `AgoraAudioVad` for audio frame processing:
+
+```java
+import io.agora.rtc.AgoraAudioVad;
+import io.agora.rtc.AgoraAudioVadConfig;
+import io.agora.rtc.VadProcessResult;
+import java.io.FileInputStream;
+
+public class VadV1Example {
+    public static void main(String[] args) {
+        // Create VAD instance
+        AgoraAudioVad audioVad = new AgoraAudioVad();
+        
+        // Create configuration
+        AgoraAudioVadConfig config = new AgoraAudioVadConfig();
+        // Configure parameters as needed, recommend using default values
+        
+        // Initialize VAD
+        int ret = audioVad.initialize(config);
+        if (ret != 0) {
+            System.err.println("Failed to initialize VAD: " + ret);
+            return;
+        }
+        
+        // Process audio frames
+        try {
+            // Assume we have PCM audio data
+            byte[] pcmData = new byte[320]; // 10ms 16kHz mono PCM16 data
+            
+            VadProcessResult result = audioVad.processPcmFrame(pcmData);
+            if (result != null) {
+                System.out.println("VAD State: " + result.getState());
+                if (result.getOutFrame() != null) {
+                    System.out.println("Output Frame Length: " + result.getOutFrame().length);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        // Destroy VAD instance
+        audioVad.destroy();
+    }
+}
+```
+
+#### VadV2 Module
+
+##### Introduction
+
+`AgoraAudioVadV2` is the second version of the Voice Activity Detection (VAD) module for processing audio frames. It detects speech activity in an audio stream and processes it based on configuration parameters. Compared to VadV1, VadV2 provides more refined parameter control and better performance.
+
+##### Classes and Methods
+
+###### AgoraAudioVadV2 Class
+
+**Constructor**
 
 ```java
 public AgoraAudioVadV2(AgoraAudioVadConfigV2 config)
@@ -551,7 +669,7 @@ public VadProcessResult(byte[] result, Constants.VadState state)
   - `result`: `byte[]` type, the processed audio data.
   - `state`: `Constants.VadState` type, the current VAD state.
 
-#### Usage Example
+##### Usage Example
 
 Here is a simple example showing how to use `AgoraAudioVadV2` for audio frame processing:
 
@@ -562,7 +680,7 @@ import io.agora.rtc.Constants;
 import io.agora.rtc.AudioFrame;
 import io.agora.rtc.VadProcessResult;
 
-public class Main {
+public class VadV2Example {
     public static void main(String[] args) {
         // Create VAD configuration
         AgoraAudioVadConfigV2 config = new AgoraAudioVadConfigV2();
@@ -601,7 +719,7 @@ public class Main {
 
 #### Introduction
 
-The `AgoraAudioProcessor` is a module designed for Audio 3A processing, which includes Acoustic Echo Cancellation (AEC), Automatic Noise Suppression (ANS), and Automatic Gain Control (AGC). It processes audio frames to enhance audio quality by mitigating echo, reducing noise, and normalizing volume levels. This module requires corresponding model files to perform its processing tasks.
+The `AgoraAudioProcessor` is a module designed for Audio 3A processing and Background Human Voice Suppression (BGHVS), which includes Acoustic Echo Cancellation (AEC), Automatic Noise Suppression (ANS), Automatic Gain Control (AGC), and Background Human Voice Suppression (BGHVS). It processes audio frames to enhance audio quality by mitigating echo, reducing noise, normalizing volume levels, and suppressing background human voices. This module requires corresponding model files to perform its processing tasks.
 
 #### Classes and Methods
 
@@ -669,11 +787,67 @@ public void setModelPath(String modelPath)
 - **Parameters**:
   - `modelPath`: `String`, the directory path where model files are located. For example, `./resources/model/`.
 
+```java
+public void setAecConfig(AecConfig aecConfig)
+public AecConfig getAecConfig()
+```
+
+- **Description**: Sets and gets the Acoustic Echo Cancellation (AEC) configuration.
+- **Parameters**:
+  - `aecConfig`: `AecConfig` type, the AEC configuration object.
+
+```java
+public void setAnsConfig(AnsConfig ansConfig)
+public AnsConfig getAnsConfig()
+```
+
+- **Description**: Sets and gets the Automatic Noise Suppression (ANS) configuration.
+- **Parameters**:
+  - `ansConfig`: `AnsConfig` type, the ANS configuration object.
+
+```java
+public void setAgcConfig(AgcConfig agcConfig)
+public AgcConfig getAgcConfig()
+```
+
+- **Description**: Sets and gets the Automatic Gain Control (AGC) configuration.
+- **Parameters**:
+  - `agcConfig`: `AgcConfig` type, the AGC configuration object.
+
+```java
+public void setBghvsConfig(BghvsConfig bghvsConfig)
+public BghvsConfig getBghvsConfig()
+```
+
+- **Description**: Sets and gets the Background Human Voice Suppression (BGHVS) configuration.
+- **Parameters**:
+  - `bghvsConfig`: `BghvsConfig` type, the BGHVS configuration object.
+
 ###### Example
 
 ```java
 AgoraAudioProcessorConfig config = new AgoraAudioProcessorConfig();
 config.setModelPath("./resources/model/"); // Set according to the actual model file location
+
+// Configure AEC
+AecConfig aecConfig = new AecConfig();
+aecConfig.setEnabled(true);
+config.setAecConfig(aecConfig);
+
+// Configure ANS
+AnsConfig ansConfig = new AnsConfig();
+ansConfig.setEnabled(true);
+config.setAnsConfig(ansConfig);
+
+// Configure AGC
+AgcConfig agcConfig = new AgcConfig();
+agcConfig.setEnabled(true);
+config.setAgcConfig(agcConfig);
+
+// Configure BGHVS
+BghvsConfig bghvsConfig = new BghvsConfig();
+bghvsConfig.setEnabled(true);
+config.setBghvsConfig(bghvsConfig);
 ```
 
 ##### IAgoraAudioProcessorEventHandler Interface
@@ -697,6 +871,7 @@ public void onError(int errorCode)
 - **Description**: Reports errors that occur during processor operation.
 - **Parameters**:
   - `errorCode`: `int`, the error code indicating the specific error that occurred.
+
 
 ##### io.agora.rtc.audio3a.AgoraAudioFrame Class
 
@@ -744,6 +919,10 @@ import io.agora.rtc.audio3a.AgoraAudioProcessor;
 import io.agora.rtc.audio3a.AgoraAudioProcessorConfig;
 import io.agora.rtc.audio3a.IAgoraAudioProcessorEventHandler;
 import io.agora.rtc.audio3a.AgoraAudioFrame; // Use AgoraAudioFrame from the audio3a package
+import io.agora.rtc.audio3a.AecConfig;
+import io.agora.rtc.audio3a.AnsConfig;
+import io.agora.rtc.audio3a.AgcConfig;
+import io.agora.rtc.audio3a.BghvsConfig;
 import io.agora.rtc.Constants; // SDK's constants class
 import java.nio.ByteBuffer;
 import java.util.Arrays; // For printing data in example
@@ -762,6 +941,22 @@ public class Audio3AProcessingExample {
         // Set the model file path, usually in resources/model/ of the SDK package
         // Ensure the path is correct, otherwise initialization might fail
         config.setModelPath("./resources/model/"); // Modify according to your actual path
+
+        // Configure AEC (Acoustic Echo Cancellation)
+        AecConfig aecConfig = config.getAecConfig();
+        aecConfig.setEnabled(true); // Enable AEC
+        
+        // Configure ANS (Automatic Noise Suppression)
+        AnsConfig ansConfig = config.getAnsConfig();
+        ansConfig.setEnabled(true); // Enable ANS
+        
+        // Configure AGC (Automatic Gain Control)
+        AgcConfig agcConfig = config.getAgcConfig();
+        agcConfig.setEnabled(true); // Enable AGC
+        
+        // Configure BGHVS (Background Human Voice Suppression)
+        BghvsConfig bghvsConfig = config.getBghvsConfig();
+        bghvsConfig.setEnabled(true); // Enable BGHVS
 
         // 3. Initialize AgoraAudioProcessor
         int initRet = audioProcessor.init(appId, license,
@@ -833,7 +1028,12 @@ public class Audio3AProcessingExample {
         if (outputFrame != null && outputFrame.getBuffer() != null) {
             System.out.println("Audio frame processed successfully.");
             ByteBuffer processedBuffer = outputFrame.getBuffer();
-            // processedBuffer contains the 3A-processed audio data
+            // processedBuffer contains the 3A + BGHVS-processed audio data
+            // The processed audio will have the following optimizations:
+            // - AEC: Acoustic echo cancellation
+            // - ANS: Background noise suppression
+            // - AGC: Automatic gain control
+            // - BGHVS: Background human voice suppression
             // You can write this data to a file, send it over the network, or perform other operations
             // Example: Get processed byte data:
             // byte[] processedBytes = new byte[processedBuffer.remaining()];
@@ -858,7 +1058,17 @@ public class Audio3AProcessingExample {
 
 ## Changelog
 
-### v4.4.32 (2025-05-12)
+### v4.4.32.1 (2025-06-12)
+
+#### API Changes
+
+- Optimized the `onStreamMessage` callback parameters in the `ILocalUserObserver` interface. The original method `onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data, long length)` has been changed to `onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, byte[] data)` to improve flexibility and efficiency in message handling.
+
+#### Improvements & Optimizations
+
+- Fixed an issue in the `setLogFileSize` method of `AgoraServiceConfig` where the unit was incorrectly applied as bytes when set in KB. The log file size is now correctly set in KB.
+
+### v4.4.32 (2025-05-27)
 
 #### API Changes
 

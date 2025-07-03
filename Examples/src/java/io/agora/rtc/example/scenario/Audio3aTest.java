@@ -1,13 +1,15 @@
 package io.agora.rtc.example.scenario;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import io.agora.rtc.Constants;
+import io.agora.rtc.audio3a.AgoraAudioFrame;
 import io.agora.rtc.audio3a.AgoraAudioProcessor;
 import io.agora.rtc.audio3a.AgoraAudioProcessorConfig;
 import io.agora.rtc.audio3a.IAgoraAudioProcessorEventHandler;
-import io.agora.rtc.audio3a.AgoraAudioFrame;
-import io.agora.rtc.Constants;
+import io.agora.rtc.example.common.SampleLogger;
+import io.agora.rtc.example.utils.Utils;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -15,9 +17,6 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import io.agora.rtc.example.common.SampleLogger;
-import io.agora.rtc.example.utils.Utils;
 
 public class Audio3aTest {
     private static int sampleRate = 48000;
@@ -70,7 +69,8 @@ public class Audio3aTest {
         String[] keys = Utils.readAppIdAndLicense(".keys_3a");
         String appId = keys[0];
         String license = keys[1];
-        SampleLogger.log("read appId: " + appId + " license: " + license + " from .keys_3a");
+        String maskedLicense = license.length() > 5 ? license.substring(0, 5) + "xxxxx" : license;
+        SampleLogger.log("read appId: " + appId + " license: " + maskedLicense + " from .keys_3a");
         SampleLogger.log("AgoraAudioProcessor version: " + AgoraAudioProcessor.getSdkVersion());
 
         AgoraAudioProcessor audioProcessor = new AgoraAudioProcessor();
@@ -78,6 +78,8 @@ public class Audio3aTest {
         AgoraAudioProcessorConfig config = new AgoraAudioProcessorConfig();
         // set model path
         config.setModelPath("./resources/model/");
+
+        SampleLogger.log("config: " + config.toString());
 
         int ret = audioProcessor.init(appId, license,
                 new IAgoraAudioProcessorEventHandler() {
@@ -124,6 +126,9 @@ public class Audio3aTest {
             File outFile = new File(audioOutFile);
             if (outFile.exists()) {
                 outFile.delete();
+            }
+            if (!outFile.getParentFile().exists()) {
+                outFile.getParentFile().mkdirs();
             }
             try (FileInputStream nearFis = new FileInputStream(nearFile);
                     FileInputStream farFis = new FileInputStream(farFile);

@@ -20,6 +20,7 @@ CONFIG_FILE="run_config"
 ENABLE_JNI_CHECK=false
 # Default: ASAN is disabled
 ENABLE_ASAN=false
+ENABLE_VAD1=false
 
 if [ -f "$CONFIG_FILE" ]; then
     echo "Reading configuration from $CONFIG_FILE"
@@ -29,6 +30,8 @@ if [ -f "$CONFIG_FILE" ]; then
             ENABLE_JNI_CHECK=$value
         elif [ "$key" = "enable_asan" ]; then
             ENABLE_ASAN=$value
+        elif [ "$key" = "enable_vad1" ]; then
+            ENABLE_VAD1=$value
         fi
         # You can read more configuration items here
     done <"$CONFIG_FILE"
@@ -43,10 +46,20 @@ else
     JNI_OPTS="-Xcheck:jni"
 fi
 
+if [ "$ENABLE_VAD1" = "false" ]; then
+    echo "VAD1 is disabled"
+    if [[ "$CLASS" == *"VadV1Test"* ]]; then
+        echo "Error: Cannot run VadV1Test when VAD1 is disabled (enable_vad1=false in run_config)"
+        echo "Please set enable_vad1=true in run_config or run a different test"
+        exit 1
+    fi
+fi
+
 # Define common Java runtime parameters
 DEBUG_OPTS="-XX:+UnlockDiagnosticVMOptions -XX:+PreserveFramePointer  -XX:NativeMemoryTracking=detail -XX:+PrintCommandLineFlags"
 CRASH_OPTS="-XX:ErrorFile=./logs/hs_err_pid%p.log -XX:LogFile=./logs/jvm.log -XX:+CreateMinidumpOnCrash -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./logs/"
 
+# -Xcheck:jni -Xss4m -XX:MaxJNILocalCapacity=4096 -Xms512m -Xmx2048m -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=512m
 JAVA_OPTS="$DEBUG_OPTS $CRASH_OPTS $JNI_OPTS"
 
 # Set core dump related configuration
@@ -93,5 +106,4 @@ fi
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 
 # Execute Java command with updated java.library.path
-java -cp $CLASSPATH $JAVA_OPTS $JAVA_LIBRARY_PATH -Dlog.filename=app-$TIMESTAMP -Dlog4j.configurationFile=file:./log4j2.xml $CLASS $* |
-    grep -v "WARNING in native method: JNI call made without checking exceptions"
+java -cp $CLASSPATH $JAVA_OPTS $JAVA_LIBRARY_PATH -Dlog.filename=app-$TIMESTAMP -Dlog4j.configurationFile=file:./log4j2.xml $CLASS $*

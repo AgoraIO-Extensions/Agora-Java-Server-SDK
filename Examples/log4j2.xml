@@ -9,7 +9,6 @@
             <PatternLayout pattern="%d{HH:mm:ss.SSS}[%t]%-5level:%msg%n" />
         </Console>
 
-       
 
         <!-- 文件输出 -->
         <RollingFile name="RollingFile" fileName="logs/${sys:log.filename}.log"
@@ -17,31 +16,21 @@
             <PatternLayout pattern="%d{HH:mm:ss.SSS}[%t]%-5level:%msg%n" />
             <Policies>
                 <SizeBasedTriggeringPolicy size="1024 MB" />
-                <DeleteAction basePath="logs" maxDepth="1">
-                    <IfFileName glob="*.gz">
-                        <IfLastModified age="5d">
-                            <Delete />
-                        </IfLastModified>
-                    </IfFileName>
-                </DeleteAction>
-                <DeleteAction basePath="logs" maxDepth="1">
-                    <IfFileName glob="*.gz">
-                        <IfAccumulatedFileCount exceeds="100">
-                            <Delete basePath="logs" maxDepth="1">
-                                <IfFileName glob="*.gz">
-                                    <IfLastModified age="1d">
-                                        <Delete />
-                                    </IfLastModified>
-                                </IfFileName>
-                            </Delete>
-                        </IfAccumulatedFileCount>
-                    </IfFileName>
-                </DeleteAction>
             </Policies>
-            <DefaultRolloverStrategy max="10" />
+            <DefaultRolloverStrategy max="10">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfFileName glob="*.gz" />
+                    <IfLastModified age="5d" />
+                </Delete>
+                <Delete basePath="logs" maxDepth="1">
+                    <IfFileName glob="*.gz" />
+                    <IfAccumulatedFileCount exceeds="100" />
+                    <IfLastModified age="1d" />
+                </Delete>
+            </DefaultRolloverStrategy>
         </RollingFile>
 
-       
+
     </Appenders>
 
     <Loggers>

@@ -6,6 +6,7 @@ import io.agora.rtc.AgoraService;
 import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.AgoraParameter;
+
 import java.io.File;
 import java.util.List;
 import java.util.Scanner;
@@ -17,6 +18,8 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import io.agora.rtc.example.utils.Utils;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
 
@@ -139,6 +142,8 @@ public class AgoraTest {
 
         AgoraParameter parameter = service.getAgoraParameter();
         parameter.setParameters("{\"rtc.enable_nasa2\":false}");
+        parameter.setParameters("{\"che.video.useSimpleParser\":true}");
+        parameter.setParameters("{\"rtc.video.enable_periodic_strategy\":false}");
 
         // AgoraParameter parameter = service.getAgoraParameter();
         // parameter.setParameters("{\"che.audio.custom_payload_type\":78}");
@@ -157,6 +162,9 @@ public class AgoraTest {
                 + " testTask:" + testTask + " testTime:" + testTime);
         synchronized (taskCountLock) {
             testTaskCount.incrementAndGet();
+            System.out.println(Utils.formatTimestamp(System.currentTimeMillis())
+                    + " testTaskCount:" + testTaskCount.get() + " testTask:" + testTask + " channelId:" + channelId
+                    + " userId:" + userId);
             SampleLogger.log("test start testTaskCount:" + testTaskCount.get());
 
             if (ArgsConfig.maxTestTaskCount != 0 && testTaskCount.get() > ArgsConfig.maxTestTaskCount) {
@@ -195,8 +203,8 @@ public class AgoraTest {
                 }
 
                 @Override
-                public void onStreamMessage(String userId, int streamId, String data, long length) {
-                    onStreamMessageReceive(userId, streamId, data, length);
+                public void onStreamMessage(String userId, int streamId, byte[] data) {
+                    onStreamMessageReceive(userId, streamId, data);
                 }
             });
             try {
@@ -392,7 +400,7 @@ public class AgoraTest {
         SampleLogger.log("onConnected for task:" + testTask + " channelId:" + channelId + " userId:" + userId);
     }
 
-    protected void onStreamMessageReceive(String userId, int streamId, String data, long length) {
+    protected void onStreamMessageReceive(String userId, int streamId, byte[] data) {
     }
 
     public void cleanup() {

@@ -19,6 +19,8 @@ This document provides a reference for the main classes and methods of the Agora
   - [AgoraAudioEncodedFrameSender](#agoraaudioencodedframesender)
   - [AgoraParameter](#agoraparameter)
   - [AgoraAudioProcessor](#agoraaudioprocessor)
+  - [AgoraAudioVad](#agoraaudiovad)
+  - [AgoraAudioVadV2](#agoraaudiovadev2)
 - [Observer Interfaces](#observer-interfaces)
   - [IRtcConnObserver](#irtcconnobserver)
   - [ILocalUserObserver](#ilocaluserobserver)
@@ -47,6 +49,7 @@ This document provides a reference for the main classes and methods of the Agora
   - [UserInfo](#userinfo)
   - [VadProcessResult](#vadprocessresult)
   - [AgoraAudioVadConfigV2](#agoraaudiovadconfigv2)
+  - [AgoraAudioVadConfig](#agoraaudiovadconfig)
   - [LocalAudioTrackStats](#localaudiotrackstats)
   - [LocalVideoTrackStats](#localvideotrackstats)
   - [RemoteAudioTrackStats](#remoteaudiotrackstats)
@@ -2802,7 +2805,98 @@ The `AgoraAudioProcessor` class provides an interface for uplink audio processin
 
 **Note:** This class uses native methods for actual processing.
 
-### 观察者接口
+### AgoraAudioVad
+
+The `AgoraAudioVad` class provides voice activity detection (VAD) functionality based on native implementation.
+
+```java
+public class AgoraAudioVad {
+    // Constructor
+    public AgoraAudioVad()
+}
+```
+
+#### Methods
+
+##### initialize
+
+```java
+public int initialize(AgoraAudioVadConfig config)
+```
+
+Initializes the VAD module with the specified configuration.
+
+**Parameters**:
+
+- `config`: The configuration for the VAD module (`AgoraAudioVadConfig`).
+
+**Returns**:
+
+- 0: Success
+- -1: Failure
+
+##### processPcmFrame
+
+```java
+public VadProcessResult processPcmFrame(byte[] frame)
+```
+
+Processes a PCM audio frame and returns the VAD processing result.
+
+**Parameters**:
+
+- `frame`: The PCM audio frame data (`byte[]`).
+
+**Returns**:
+
+- `VadProcessResult`: The VAD processing result containing processed audio data and state. Returns null if input is invalid.
+
+##### destroy
+
+```java
+public synchronized void destroy()
+```
+
+Destroys the VAD module and releases resources.
+
+### AgoraAudioVadV2
+
+The `AgoraAudioVadV2` class provides voice activity detection (VAD) functionality based on Java implementation (V2 version).
+
+```java
+public class AgoraAudioVadV2 {
+    // Constructor
+    public AgoraAudioVadV2(AgoraAudioVadConfigV2 config)
+}
+```
+
+#### Methods
+
+##### processFrame
+
+```java
+public VadProcessResult processFrame(AudioFrame frame)
+```
+
+Processes an audio frame and returns the VAD processing result.
+
+**Parameters**:
+
+- `frame`: The audio frame (`AudioFrame`).
+
+**Returns**:
+
+- `VadProcessResult`: The VAD processing result containing processed audio data and current state. Returns null if input is invalid.
+
+##### destroy
+
+```java
+public void destroy()
+```
+
+Destroys the VAD module and releases resources.
+
+## Observer Interfaces
 
 ### IRtcConnObserver
 
@@ -3692,7 +3786,7 @@ Triggered when the remote subscribed stream falls back to audio-only due to poor
 ##### onStreamMessage
 
 ```java
-public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data, long length)
+public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, byte[] data)
 ```
 
 Triggered when a message sent by a remote user via data stream (`sendStreamMessage`) is received.
@@ -4556,7 +4650,7 @@ The `VadProcessResult` class provides the result of a Voice Activity Detection (
 
 ### AgoraAudioVadConfigV2
 
-Configuration class for Agora Audio Voice Activity Detection (VAD) V2. Used when registering `IAudioFrameObserver` with VAD enabled.
+Configuration class for Agora Audio Voice Activity Detection (VAD) V2 version. Used when registering `IAudioFrameObserver` with VAD enabled.
 
 #### Main Properties
 
@@ -4569,6 +4663,67 @@ Configuration class for Agora Audio Voice Activity Detection (VAD) V2. Used when
 - **stopVoiceProb**: Voice probability threshold to trigger the end phase (transition towards `STOP_SPEAKING`). A higher value makes it easier to end. Default: 70. Range: [0, 100].
 - **startRmsThreshold**: RMS threshold (dBFS) to trigger the start phase. A higher value is more sensitive (starts earlier). Default: -50. Range: [-100, 0]. In quiet environments, -50 might be suitable. In noisy environments, consider -40 to -30.
 - **stopRmsThreshold**: RMS threshold (dBFS) to trigger the end phase. A higher value is more sensitive (ends later). Default: -50. Range: [-100, 0].
+
+### AgoraAudioVadConfig
+
+The `AgoraAudioVadConfig` class configures audio VAD parameters.
+
+#### Main Properties
+
+- **fftSz**: FFT size (`int`). Only supports 128, 256, 512, 1024. Default: 1024.
+- **hopSz**: FFT hop size (`int`). Used for verification. Default: 160.
+- **anaWindowSz**: FFT window size (`int`). Used for RMS calculation. Default: 768.
+- **frqInputAvailableFlag**: Whether external frequency power spectra are included (`int`). Default: 0.
+- **useCVersionAIModule**: Whether to use the C version of AI submodules (`int`). Default: 0.
+- **voiceProbThr**: Voice probability threshold (`float`). Range: 0.0f ~ 1.0f. Default: 0.8.
+- **rmsThr**: RMS threshold in dB (`float`). Default: -40.0.
+- **jointThr**: Joint threshold in dB (`float`). Default: 0.0.
+- **aggressive**: Aggressive factor (`float`). Higher values mean more aggressive. Default: 5.0.
+- **startRecognizeCount**: Start recognition count (`int`). Buffer size for 10ms 16KHz 16bit mono PCM. Default: 10.
+- **stopRecognizeCount**: Stop recognition count (`int`). Buffer size for 10ms 16KHz 16bit mono PCM. Default: 6.
+- **preStartRecognizeCount**: Pre-start recognition count (`int`). Buffer size for 10ms 16KHz 16bit mono PCM. Default: 10.
+- **activePercent**: Active percentage (`float`). Exceeding this percentage is recognized as speaking. Default: 0.6.
+- **inactivePercent**: Inactive percentage (`float`). Below this percentage is recognized as non-speaking. Default: 0.2.
+
+#### Constructors
+
+##### AgoraAudioVadConfig
+
+```java
+public AgoraAudioVadConfig()
+```
+
+Creates an `AgoraAudioVadConfig` instance with default values.
+
+```java
+public AgoraAudioVadConfig(int fftSz, int hopSz, int anaWindowSz, int frqInputAvailableFlag,
+                          int useCVersionAIModule, float voiceProbThr, float rmsThr, float jointThr, 
+                          float aggressive, int startRecognizeCount, int stopRecognizeCount, 
+                          int preStartRecognizeCount, float activePercent, float inactivePercent)
+```
+
+Creates an `AgoraAudioVadConfig` instance with specified parameters.
+
+**Parameters**:
+
+- `fftSz`: FFT size.
+- `hopSz`: Hop size.
+- `anaWindowSz`: Analysis window size.
+- `frqInputAvailableFlag`: Frequency input available flag.
+- `useCVersionAIModule`: Whether to use C version AI module.
+- `voiceProbThr`: Voice probability threshold.
+- `rmsThr`: RMS threshold.
+- `jointThr`: Joint threshold.
+- `aggressive`: Aggressive factor.
+- `startRecognizeCount`: Start recognition count.
+- `stopRecognizeCount`: Stop recognition count.
+- `preStartRecognizeCount`: Pre-start recognition count.
+- `activePercent`: Active percentage.
+- `inactivePercent`: Inactive percentage.
+
+#### Methods
+
+This class provides getter and setter methods for all properties, as well as a `toString()` method for debugging.
 
 ### LocalAudioTrackStats
 

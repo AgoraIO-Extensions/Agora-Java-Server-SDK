@@ -7,7 +7,7 @@ import io.agora.rtc.Constants;
 public class SampleCommon {
 
     public static String DEFAULT_LOG_PATH = "logs/agora_logs/agorasdk.log";
-    public static int DEFAULT_LOG_SIZE = 5 * 1024 * 1024; // default log size is 5 mb
+    public static int DEFAULT_LOG_SIZE = 5 * 1024; // default log size is 5 mb
 
     public static AgoraService createAndInitAgoraService(int enableAudioDevice, int enableAudioProcessor,
             int enableVideo,
@@ -21,19 +21,14 @@ public class SampleCommon {
         config.setEnableVideo(enableVideo);
         config.setUseStringUid(useStringUid);
         config.setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
+        
+        config.setLogFilePath(DEFAULT_LOG_PATH);
+        config.setLogFileSize(DEFAULT_LOG_SIZE);
+        config.setLogFilters(ArgsConfig.logFilter);
 
         int ret = service.initialize(config);
         if (ret != 0) {
             SampleLogger.log("createAndInitAgoraService AgoraService.initialize fail ret=" + ret);
-            return null;
-        }
-
-        SampleLogger.log("createAndInitAgoraService created log file at:" + DEFAULT_LOG_PATH + " logFilter:"
-                + ArgsConfig.logFilter);
-        ret = service.setLogFile(DEFAULT_LOG_PATH, DEFAULT_LOG_SIZE);
-        service.setLogFilter(ArgsConfig.logFilter);
-        if (ret != 0) {
-            SampleLogger.log("createAndInitAgoraService AgoraService.setLogFile fail ret=%d" + ret);
             return null;
         }
 

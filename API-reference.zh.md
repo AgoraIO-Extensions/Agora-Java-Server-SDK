@@ -19,6 +19,8 @@
   - [AgoraAudioEncodedFrameSender](#agoraaudioencodedframesender)
   - [AgoraParameter](#agoraparameter)
   - [AgoraAudioProcessor](#agoraprocessor)
+  - [AgoraAudioVad](#agoraaudiovad)
+  - [AgoraAudioVadV2](#agoraaudiovadev2)
 - [观察者接口](#观察者接口)
   - [IRtcConnObserver](#irtcconnobserver)
   - [ILocalUserObserver](#ilocaluserobserver)
@@ -47,6 +49,7 @@
   - [UserInfo](#userinfo)
   - [VadProcessResult](#vadprocessresult)
   - [AgoraAudioVadConfigV2](#agoraaudiovadconfigv2)
+  - [AgoraAudioVadConfig](#agoraaudiovadconfig)
   - [LocalAudioTrackStats](#localaudiotrackstats)
   - [LocalVideoTrackStats](#localvideotrackstats)
   - [RemoteAudioTrackStats](#remoteaudiotrackstats)
@@ -3688,7 +3691,7 @@ public void onRemoteSubscribeFallbackToAudioOnly(AgoraLocalUser agoraLocalUser, 
 ##### onStreamMessage
 
 ```java
-public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data, long length)
+public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, byte[] data)
 ```
 
 当收到远端用户通过数据流 (`sendStreamMessage`) 发送的消息时触发。
@@ -4518,7 +4521,7 @@ public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int user
 
 ### AgoraAudioVadConfigV2
 
-`AgoraAudioVadConfigV2` 类配置音频 VAD 参数。
+`AgoraAudioVadConfigV2` 类配置音频 VAD 参数的 V2 版本。
 
 #### 主要属性
 
@@ -4531,6 +4534,67 @@ public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int user
 - **stopVoiceProb**：停止语音概率 (int)。
 - **startRmsThreshold**：开始 RMS 阈值 (int)。
 - **stopRmsThreshold**：停止 RMS 阈值 (int)。
+
+### AgoraAudioVadConfig
+
+`AgoraAudioVadConfig` 类配置音频 VAD 参数。
+
+#### 主要属性
+
+- **fftSz**：FFT 大小 (int)。仅支持 128、256、512、1024，默认值为 1024。
+- **hopSz**：FFT 跳跃大小 (int)。用于检查，默认值为 160。
+- **anaWindowSz**：FFT 窗口大小 (int)。用于计算 RMS，默认值为 768。
+- **frqInputAvailableFlag**：是否包含外部频率功率谱 (int)。默认值为 0。
+- **useCVersionAIModule**：是否使用 C 版本的 AI 子模块 (int)。默认值为 0。
+- **voiceProbThr**：语音概率阈值 (float)。范围 0.0f ~ 1.0f，默认值为 0.8。
+- **rmsThr**：RMS 阈值 (float)。单位为 dB，默认值为 -40.0。
+- **jointThr**：联合阈值 (float)。单位为 dB，默认值为 0.0。
+- **aggressive**：激进因子 (float)。值越大越激进，默认值为 5.0。
+- **startRecognizeCount**：开始识别计数 (int)。10ms 16KHz 16bit 单通道 PCM 的缓冲区大小，默认值为 10。
+- **stopRecognizeCount**：停止识别计数 (int)。10ms 16KHz 16bit 单通道 PCM 的缓冲区大小，默认值为 6。
+- **preStartRecognizeCount**：预开始识别计数 (int)。10ms 16KHz 16bit 单通道 PCM 的缓冲区大小，默认值为 10。
+- **activePercent**：活跃百分比 (float)。超过此百分比将被识别为说话，默认值为 0.6。
+- **inactivePercent**：非活跃百分比 (float)。低于此百分比将被识别为非说话，默认值为 0.2。
+
+#### 构造方法
+
+##### AgoraAudioVadConfig
+
+```java
+public AgoraAudioVadConfig()
+```
+
+使用默认值创建 `AgoraAudioVadConfig` 实例。
+
+```java
+public AgoraAudioVadConfig(int fftSz, int hopSz, int anaWindowSz, int frqInputAvailableFlag,
+                          int useCVersionAIModule, float voiceProbThr, float rmsThr, float jointThr, 
+                          float aggressive, int startRecognizeCount, int stopRecognizeCount, 
+                          int preStartRecognizeCount, float activePercent, float inactivePercent)
+```
+
+使用指定参数创建 `AgoraAudioVadConfig` 实例。
+
+**参数**：
+
+- `fftSz`：FFT 大小。
+- `hopSz`：跳跃大小。
+- `anaWindowSz`：分析窗口大小。
+- `frqInputAvailableFlag`：频率输入可用标志。
+- `useCVersionAIModule`：是否使用 C 版本 AI 模块。
+- `voiceProbThr`：语音概率阈值。
+- `rmsThr`：RMS 阈值。
+- `jointThr`：联合阈值。
+- `aggressive`：激进因子。
+- `startRecognizeCount`：开始识别计数。
+- `stopRecognizeCount`：停止识别计数。
+- `preStartRecognizeCount`：预开始识别计数。
+- `activePercent`：活跃百分比。
+- `inactivePercent`：非活跃百分比。
+
+#### 方法
+
+该类提供所有属性的 Getter 和 Setter 方法，以及 `toString()` 方法用于调试。
 
 ### LocalAudioTrackStats
 
@@ -4788,6 +4852,97 @@ public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int user
 **方法:**
 
 - 所有属性的 Getters 和 Setters。
+
+### AgoraAudioVad
+
+`AgoraAudioVad` 类提供基于原生实现的语音活动检测（VAD）功能。
+
+```java
+public class AgoraAudioVad {
+    // 构造方法
+    public AgoraAudioVad()
+}
+```
+
+#### 方法
+
+##### initialize
+
+```java
+public int initialize(AgoraAudioVadConfig config)
+```
+
+使用指定的配置初始化 VAD 模块。
+
+**参数**：
+
+- `config`：VAD 模块的配置 (`AgoraAudioVadConfig`)。
+
+**返回值**：
+
+- 0：成功
+- -1：失败
+
+##### processPcmFrame
+
+```java
+public VadProcessResult processPcmFrame(byte[] frame)
+```
+
+处理 PCM 音频帧并返回 VAD 处理结果。
+
+**参数**：
+
+- `frame`：PCM 音频帧数据 (`byte[]`)。
+
+**返回值**：
+
+- `VadProcessResult`：VAD 处理结果，包含处理后的音频数据和状态。如果输入无效则返回 null。
+
+##### destroy
+
+```java
+public synchronized void destroy()
+```
+
+销毁 VAD 模块并释放资源。
+
+### AgoraAudioVadV2
+
+`AgoraAudioVadV2` 类提供基于 Java 实现的语音活动检测（VAD）功能的 V2 版本。
+
+```java
+public class AgoraAudioVadV2 {
+    // 构造方法
+    public AgoraAudioVadV2(AgoraAudioVadConfigV2 config)
+}
+```
+
+#### 方法
+
+##### processFrame
+
+```java
+public VadProcessResult processFrame(AudioFrame frame)
+```
+
+处理音频帧并返回 VAD 处理结果。
+
+**参数**：
+
+- `frame`：音频帧 (`AudioFrame`)。
+
+**返回值**：
+
+- `VadProcessResult`：VAD 处理结果，包含处理后的音频数据和当前状态。如果输入无效则返回 null。
+
+##### destroy
+
+```java
+public void destroy()
+```
+
+销毁 VAD 模块并释放资源。
 
 ## 工具类
 

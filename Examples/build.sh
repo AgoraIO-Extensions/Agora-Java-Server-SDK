@@ -63,7 +63,29 @@ if $build_mediaUtils; then
     cp -f "$OUT/libmedia_utils.so" "third_party/libmedia_utils.so"
 fi
 
-find src -name "*.java" >build/test_source.txt
+# 读取配置文件
+CONFIG_FILE="run_config"
+ENABLE_VAD1=false
+
+if [ -f "$CONFIG_FILE" ]; then
+    echo "Reading configuration from $CONFIG_FILE"
+    # 读取配置文件中的设置
+    while IFS='=' read -r key value; do
+        if [ "$key" = "enable_vad1" ]; then
+            ENABLE_VAD1=$value
+        fi
+    done < "$CONFIG_FILE"
+fi
+
+# 根据VAD1配置决定是否排除VadV1Test.java
+find_java_cmd="find src -name '*.java'"
+if [ "$ENABLE_VAD1" = "false" ]; then
+    echo "VAD1 is disabled, excluding VadV1Test.java from compilation"
+    find_java_cmd+=" | grep -v 'VadV1Test.java'"
+fi
+
+# 执行find命令并生成source文件
+eval "$find_java_cmd" > build/test_source.txt
 
 # 编译 Java 文件
 javac -g -cp .:third_party/log4j-api-2.24.3.jar:third_party/log4j-core-2.24.3.jar:third_party/commons-cli-1.5.0.jar:third_party/junit-4.13.2.jar:libs/agora-sdk.jar -encoding utf-8 @build/test_source.txt -d build -XDignore.symbol.file -Xlint:-options

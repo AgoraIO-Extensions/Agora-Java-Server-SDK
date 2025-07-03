@@ -25,7 +25,7 @@ public class SendReceiverStreamMessageTest {
     private static String appId;
     private static String token;
     private final static String DEFAULT_LOG_PATH = "logs/agora_logs/agorasdk.log";
-    private final static int DEFAULT_LOG_SIZE = 5 * 1024 * 1024; // default log size is 5 mb
+    private final static int DEFAULT_LOG_SIZE = 5 * 1024; // default log size is 5 mb
 
     private static AgoraService service;
 
@@ -83,18 +83,13 @@ public class SendReceiverStreamMessageTest {
         config.setEnableVideo(1);
         config.setUseStringUid(0);
         config.setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
+        config.setLogFilePath(DEFAULT_LOG_PATH);
+        config.setLogFileSize(DEFAULT_LOG_SIZE);
+        config.setLogFilters(Constants.LOG_FILTER_DEBUG);
 
         int ret = service.initialize(config);
         if (ret != 0) {
             SampleLogger.log("createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
-            return;
-        }
-
-        ret = service.setLogFile(DEFAULT_LOG_PATH, DEFAULT_LOG_SIZE);
-        service.setLogFilter(Constants.LOG_FILTER_DEBUG);
-        if (ret != 0) {
-            SampleLogger.log("createAndInitAgoraService AgoraService.setLogFile fail ret:" + ret);
-            releaseAgoraService();
             return;
         }
 
@@ -258,11 +253,11 @@ public class SendReceiverStreamMessageTest {
 
         conn.getLocalUser().registerObserver(new DefaultLocalUserObserver() {
             @Override
-            public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data,
-                    long length) {
-                SampleLogger.log("onStreamMessage userId:" + userId + " streamId:" + streamId + " data:" + data
-                        + " length:" + length);
+            public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, byte[] data) {
+                SampleLogger.log("onStreamMessage userId:" + userId + " streamId:" + streamId
+                        + " decoded message:" + new String(data));
             }
+
         });
 
         ret = conn.connect(token, channelId, userId);

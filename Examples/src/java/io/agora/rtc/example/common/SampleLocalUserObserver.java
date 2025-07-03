@@ -75,10 +75,9 @@ public class SampleLocalUserObserver extends DefaultLocalUserObserver {
         }
     }
 
-    public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data,
-            long length) {
+    public void onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, byte[] data) {
         if (ArgsConfig.isStressTest == 0) {
-            SampleLogger.log("onStreamMessage success " + userId + " " + streamId + " " + data + " " + length);
+            SampleLogger.log("onStreamMessage success " + userId + " " + streamId + " " + new String(data));
         }
     }
 
