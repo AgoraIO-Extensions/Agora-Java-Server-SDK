@@ -19,8 +19,7 @@ import java.util.regex.Pattern;
 public class Utils {
     public static boolean areFilesIdentical(String file1Path, String file2Path) {
         try (FileInputStream fis1 = new FileInputStream(file1Path);
-                FileInputStream fis2 = new FileInputStream(file2Path)) {
-
+            FileInputStream fis2 = new FileInputStream(file2Path)) {
             // 比较文件大小
             if (fis1.available() != fis2.available()) {
                 return false;
@@ -71,28 +70,80 @@ public class Utils {
 
     public static String[] readAppIdAndToken(String filePath) {
         if (filePath == null || filePath.isEmpty()) {
-            return new String[] { null, null };
+            return new String[] {"", ""};
         }
-        String appId = null;
-        String token = null;
+
+        String appId = "";
+        String token = "";
+
         try {
             List<String> lines = Files.readAllLines(Paths.get(filePath));
 
             Pattern appIdPattern = Pattern.compile("APP_ID=(.*)");
             Pattern tokenPattern = Pattern.compile("TOKEN=(.*)");
 
+            boolean foundAppId = false;
+            boolean foundToken = false;
+
+            for (String line : lines) {
+                line = line.trim();
+
+                if (!foundAppId) {
+                    Matcher appIdMatcher = appIdPattern.matcher(line);
+                    if (appIdMatcher.find()) {
+                        appId = appIdMatcher.group(1).trim();
+                        foundAppId = true;
+                    }
+                }
+
+                if (!foundToken) {
+                    Matcher tokenMatcher = tokenPattern.matcher(line);
+                    if (tokenMatcher.find()) {
+                        token = tokenMatcher.group(1).trim();
+                        foundToken = true;
+                    }
+                }
+
+                if (foundAppId && foundToken) {
+                    break;
+                }
+            }
+
+            if (!foundAppId || appId.isEmpty()) {
+                return new String[] {"", ""};
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return new String[] {appId, token};
+    }
+
+    public static String[] readAppIdAndLicense(String filePath) {
+        if (filePath == null || filePath.isEmpty()) {
+            return new String[] {null, null};
+        }
+        String appId = null;
+        String license = null;
+        try {
+            List<String> lines = Files.readAllLines(Paths.get(filePath));
+
+            Pattern appIdPattern = Pattern.compile("APP_ID=(.*)");
+            Pattern licensePattern = Pattern.compile("LICENSE=(.*)");
+
             for (String line : lines) {
                 Matcher appIdMatcher = appIdPattern.matcher(line);
-                Matcher tokenMatcher = tokenPattern.matcher(line);
+                Matcher licenseMatcher = licensePattern.matcher(line);
 
                 if (appIdMatcher.find()) {
                     appId = appIdMatcher.group(1);
                 }
-                if (tokenMatcher.find()) {
-                    token = tokenMatcher.group(1);
+                if (licenseMatcher.find()) {
+                    license = licenseMatcher.group(1);
                 }
 
-                if (appId != null && token != null) {
+                if (appId != null && license != null) {
                     break;
                 }
             }
@@ -100,7 +151,7 @@ public class Utils {
             e.printStackTrace();
         }
 
-        return new String[] { appId, token };
+        return new String[] {appId, license};
     }
 
     public static boolean isNullOrEmpty(String str) {

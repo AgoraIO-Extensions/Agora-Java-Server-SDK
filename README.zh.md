@@ -4,56 +4,112 @@
 
 ## 目录
 
-1. [简介](#简介)
-2. [开发环境要求](#开发环境要求)
-   - [硬件环境](#硬件环境)
-   - [软件环境](#软件环境)
-3. [SDK 下载](#sdk-下载)
-   - [Maven 下载](#maven-下载)
-   - [CDN 下载](#cdn-下载)
-4. [集成 SDK](#集成-sdk)
-   - [1. Maven 集成](#1-maven-集成)
-     - [1.1 添加 Maven 依赖](#11-添加-maven-依赖)
-     - [1.2 集成 so 库文件](#12-集成-so-库文件)
-   - [2. 本地 SDK 集成](#2-本地-sdk-集成)
-     - [2.1 SDK 包结构](#21-sdk-包结构)
-     - [2.2 集成 JAR 文件](#22-集成-jar-文件)
-     - [2.3 集成 so 库文件](#23-集成-so-库文件)
-   - [3. 加载原生库 (.so 文件)](#3-加载原生库-so-文件)
-     - [3.1 提取 so 库文件](#31-提取-so-库文件)
-     - [3.2 配置加载路径](#32-配置加载路径)
-5. [快速开始](#快速开始)
-   - [官方示例文档](#官方示例文档)
-   - [开通服务](#开通服务)
-   - [跑通 Examples](#跑通-examples)
-     - [环境准备](#环境准备)
-     - [项目配置](#项目配置)
-     - [编译过程](#编译过程)
-     - [运行示例](#运行示例)
-     - [测试 case](#测试-case)
-     - [常见问题](#常见问题)
-6. [API 参考](#api-参考)
-   - [API 文档参考](#api-文档参考)
-   - [VAD 模块](#vad-模块)
-     - [介绍](#介绍)
-     - [类和方法](#类和方法)
-     - [使用示例](#使用示例)
-7. [更新日志](#更新日志)
-   - [v4.4.32.1（2025-06-12）](#v443212025-06-12)
-   - [v4.4.32（2025-05-27）](#v44322025-05-27)
-   - [v4.4.31.4（2025-03-21）](#v443142025-03-21)
-   - [v4.4.31.3（2025-02-26）](#v443132025-02-26)
-   - [v4.4.31.2（2025-02-19）](#v443122025-02-19)
-   - [v4.4.31.1（2025-01-06）](#v443112025-01-06)
-   - [v4.4.31（2024-12-23）](#v44312024-12-23)
-   - [v4.4.30.2（2024-11-20）](#v443022024-11-20)
-   - [v4.4.30.1（2024-11-12）](#v443012024-11-12)
-   - [v4.4.30（2024-10-24）](#v44302024-10-24)
-8. [其他参考](#其他参考)
+- [Agora Linux Server Java SDK](#agora-linux-server-java-sdk)
+  - [目录](#目录)
+  - [简介](#简介)
+  - [开发环境要求](#开发环境要求)
+    - [硬件环境](#硬件环境)
+    - [软件环境](#软件环境)
+  - [SDK 下载](#sdk-下载)
+    - [Maven 下载](#maven-下载)
+    - [CDN 下载](#cdn-下载)
+  - [集成 SDK](#集成-sdk)
+    - [1. Maven 集成](#1-maven-集成)
+      - [1.1 添加 Maven 依赖](#11-添加-maven-依赖)
+      - [1.2 集成 so 库文件](#12-集成-so-库文件)
+    - [2. 本地 SDK 集成](#2-本地-sdk-集成)
+      - [2.1 SDK 包结构](#21-sdk-包结构)
+      - [2.2 集成 JAR 文件](#22-集成-jar-文件)
+          - [本地 Maven 仓库方法](#本地-maven-仓库方法)
+          - [直接引用方法](#直接引用方法)
+      - [2.3 集成 so 库文件](#23-集成-so-库文件)
+    - [3. 加载原生库 (.so 文件)](#3-加载原生库-so-文件)
+      - [3.1 提取 so 库文件](#31-提取-so-库文件)
+      - [3.2 配置加载路径](#32-配置加载路径)
+  - [快速开始](#快速开始)
+    - [官方示例文档](#官方示例文档)
+    - [开通服务](#开通服务)
+    - [运行 Examples 示例工程](#运行-examples-示例工程)
+      - [环境准备](#环境准备)
+        - [安装 FFmpeg（可选，用于 MP4 相关测试）](#安装-ffmpeg可选用于-mp4-相关测试)
+      - [项目配置](#项目配置)
+      - [编译过程](#编译过程)
+      - [运行示例](#运行示例)
+      - [测试 case](#测试-case)
+      - [常见问题](#常见问题)
+    - [运行 Examples-Mvn 示例工程](#运行-examples-mvn-示例工程)
+      - [环境准备](#环境准备-1)
+      - [项目配置](#项目配置-1)
+      - [编译构建](#编译构建)
+      - [运行示例](#运行示例-1)
+      - [测试 case](#测试-case-1)
+  - [API 参考](#api-参考)
+    - [API 文档参考](#api-文档参考)
+    - [VAD 模块](#vad-模块)
+      - [VadV1 模块（仅支持Gateway SDK）](#vadv1-模块仅支持gateway-sdk)
+        - [介绍](#介绍)
+        - [类和方法](#类和方法)
+          - [AgoraAudioVad 类](#agoraaudiovad-类)
+          - [AgoraAudioVadConfig 类](#agoraaudiovadconfig-类)
+        - [使用示例](#使用示例)
+      - [VadV2 模块](#vadv2-模块)
+        - [介绍](#介绍-1)
+        - [类和方法](#类和方法-1)
+          - [AgoraAudioVadV2 类](#agoraaudiovadv2-类)
+          - [AgoraAudioVadConfigV2 属性](#agoraaudiovadconfigv2-属性)
+          - [注意事项](#注意事项)
+          - [方法](#方法)
+        - [VadProcessResult](#vadprocessresult)
+          - [构造方法](#构造方法)
+        - [使用示例](#使用示例-1)
+    - [Audio 3A 模块（仅支持Gateway SDK）](#audio-3a-模块仅支持gateway-sdk)
+      - [介绍](#介绍-2)
+      - [类和方法](#类和方法-2)
+        - [AgoraAudioProcessor 类](#agoraaudioprocessor-类)
+          - [构造方法](#构造方法-1)
+          - [方法](#方法-1)
+        - [AgoraAudioProcessorConfig 类](#agoraaudioprocessorconfig-类)
+          - [方法](#方法-2)
+          - [示例](#示例)
+        - [IAgoraAudioProcessorEventHandler 接口](#iagoraaudioprocessoreventhandler-接口)
+          - [方法](#方法-3)
+        - [io.agora.rtc.audio3a.AgoraAudioFrame 类](#ioagorartcaudio3aagoraaudioframe-类)
+          - [关键属性](#关键属性)
+          - [主要方法 (Setters/Getters)](#主要方法-settersgetters)
+      - [使用示例](#使用示例-2)
+  - [更新日志](#更新日志)
+    - [v4.4.32.1（2025-06-12）](#v443212025-06-12)
+      - [API 变更](#api-变更)
+      - [改进与优化](#改进与优化)
+    - [v4.4.32（2025-05-27）](#v44322025-05-27)
+      - [API 变更](#api-变更-1)
+      - [改进与优化](#改进与优化-1)
+    - [v4.4.31.4（2025-03-21）](#v443142025-03-21)
+      - [改进与优化](#改进与优化-2)
+    - [v4.4.31.3（2025-02-26）](#v443132025-02-26)
+      - [改进与优化](#改进与优化-3)
+    - [v4.4.31.2（2025-02-19）](#v443122025-02-19)
+      - [API 变更](#api-变更-2)
+      - [改进与优化](#改进与优化-4)
+    - [v4.4.31.1（2025-01-06）](#v443112025-01-06)
+      - [改进与优化](#改进与优化-5)
+    - [v4.4.31（2024-12-23）](#v44312024-12-23)
+      - [API 变更](#api-变更-3)
+      - [改进与优化](#改进与优化-6)
+    - [v4.4.30.2（2024-11-20）](#v443022024-11-20)
+      - [API 变更](#api-变更-4)
+      - [改进与优化](#改进与优化-7)
+    - [v4.4.30.1（2024-11-12）](#v443012024-11-12)
+      - [API 变更](#api-变更-5)
+      - [改进与优化](#改进与优化-8)
+    - [v4.4.30（2024-10-24）](#v44302024-10-24)
+  - [其他参考](#其他参考)
 
 ## 简介
 
 Agora Linux Server Java SDK (v4.4.32.1) 为您提供了强大的实时音视频通信能力，可无缝集成到 Linux 服务器端 Java 应用程序中。借助此 SDK，您的服务器可以作为数据源或处理节点加入 Agora 频道，实时获取和处理音视频流，从而实现多种业务相关的其他高级功能。
+
+Agora Linux Gateway SDK 暂未发布，相关功能暂未支持。
 
 ## 开发环境要求
 
@@ -310,7 +366,7 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
 
 参考 [官网开通服务](https://doc.shengwang.cn/doc/rtc-server-sdk/java/get-started/enable-service)
 
-### 跑通 Examples
+### 运行 Examples 示例工程
 
 #### 环境准备
 
@@ -364,6 +420,13 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
    TOKEN=
    ```
 
+   如果支持Gateway SDK，则需要创建 `.keys_gateway` 文件，添加：
+
+   ```
+   APP_ID=your_app_id
+   LICENSE=your_license
+   ```
+
 3. 准备 SDK 文件：
 
    - 重命名 JAR 为 `agora-sdk.jar`
@@ -389,6 +452,38 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
    ```
 
    注意：确保所有 .so 文件都被正确提取，这些文件是 SDK 的核心组件。
+
+5. **运行时配置 (run_config)**
+
+   `run_config` 文件用于配置运行时的各种选项，位于 `Examples/run_config`。您可以根据需要修改以下配置：
+
+   | 配置项           | 类型    | 默认值 | 描述                                                              |
+   | ---------------- | ------- | ------ | ----------------------------------------------------------------- |
+   | enable_jni_check | boolean | false  | 是否启用 JNI 检查，用于调试 JNI 相关问题                          |
+   | enable_asan      | boolean | false  | 是否启用 AddressSanitizer，用于内存错误检测                       |
+   | enable_aed_vad   | boolean | false  | 是否启用 AED VAD (Audio Event Detection Voice Activity Detection) |
+   | enable_gateway   | boolean | false  | 是否启用 Gateway SDK 模式，启用后可使用 VAD 和 Audio 3A 等功能    |
+
+   **配置示例：**
+
+   ```bash
+   # 启用 Gateway SDK 功能
+   enable_gateway=true
+   
+   # 启用 JNI 检查（调试模式）
+   enable_jni_check=true
+   
+   # 启用内存检查（调试模式）
+   enable_asan=true
+   
+   # 启用 AED VAD 功能
+   enable_aed_vad=true
+   ```
+
+   > **注意**：
+   > - 启用 `enable_gateway=true` 后，可以使用 VAD 和 Audio 3A 等高级功能
+   > - 启用 `enable_jni_check=true` 或 `enable_asan=true` 会影响性能，仅建议在调试时使用
+   > - 修改配置后需要重新编译项目
 
 #### 编译过程
 
@@ -453,12 +548,182 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
 
   参考 `Examples/src/java/io/agora/rtc/example/scenario/SendReceiverStreamMessageTest.java`,实现发送接收流消息
 
+- VadV1 模块（仅支持Gateway SDK）
+
+  参考 `Examples/src/java/io/agora/rtc/example/scenario/VadV1Test.java`,实现 VadV1 模块
+
+- 音频 3A 处理（仅支持Gateway SDK）
+
+  参考 `Examples/src/java/io/agora/rtc/example/scenario/Audio3aTest.java`,实现音频 3A 处理
+
 #### 常见问题
 
 - 确保 Java 环境正确安装和配置
 - 验证 `agora-sdk.jar` 版本兼容性
 - 运行前检查 `APP_ID` 和 `TOKEN` 配置
 - 按顺序执行步骤，避免依赖问题
+
+### 运行 Examples-Mvn 示例工程
+
+**Examples-Mvn** 是基于 Spring Boot 框架构建的 Maven 示例工程，提供了完整的 RESTful API 服务来演示 Agora Linux Server Java SDK 的各种功能特性。
+
+#### 环境准备
+
+安装 Maven 构建工具，参考 [Maven 安装指南](https://maven.apache.org/install.html)
+
+#### 项目配置
+
+1. 进入 `Examples-Mvn` 目录：
+
+   ```bash
+   cd Examples-Mvn
+   ```
+
+2. 创建 `.keys` 文件，添加：
+
+   ```
+   APP_ID=your_app_id
+   TOKEN=your_token
+   ```
+
+   _如果未开启证书，TOKEN 值可为空，例如：_
+
+   ```
+   APP_ID=abcd1234
+   TOKEN=
+   ```
+
+   如果支持Gateway SDK，则需要创建 `.keys_gateway` 文件，添加：
+
+   ```
+   APP_ID=your_app_id
+   LICENSE=your_license
+   ```
+
+3. **运行时配置 (run_config)**
+
+   `run_config` 文件用于配置运行时的各种选项，位于 `Examples-Mvn/run_config`。您可以根据需要修改以下配置：
+
+   | 配置项           | 类型    | 默认值 | 描述                                                              |
+   | ---------------- | ------- | ------ | ----------------------------------------------------------------- |
+   | enable_jni_check | boolean | false  | 是否启用 JNI 检查，用于调试 JNI 相关问题                          |
+   | enable_asan      | boolean | false  | 是否启用 AddressSanitizer，用于内存错误检测                       |
+   | enable_aed_vad   | boolean | false  | 是否启用 AED VAD (Audio Event Detection Voice Activity Detection) |
+   | enable_gateway   | boolean | false  | 是否启用 Gateway SDK 模式，启用后可使用 VAD 和 Audio 3A 等功能    |
+
+   **配置示例：**
+
+   ```bash
+   # 启用 Gateway SDK 功能
+   enable_gateway=true
+   
+   # 启用 JNI 检查（调试模式）
+   enable_jni_check=true
+   
+   # 启用内存检查（调试模式）
+   enable_asan=true
+   
+   # 启用 AED VAD 功能
+   enable_aed_vad=true
+   ```
+
+   > **注意**：
+   > - 启用 `enable_gateway=true` 后，可以使用 VAD 和 Audio 3A 等高级功能
+   > - 启用 `enable_jni_check=true` 或 `enable_asan=true` 会影响性能，仅建议在调试时使用
+   > - 修改配置后需要重新编译项目
+
+#### 编译构建
+
+执行编译脚本：
+
+```bash
+./build_mvn.sh [-start]
+```
+
+默认情况下仅编译项目，使用 `-start` 选项可编译并启动示例服务。
+
+#### 运行示例
+
+启动服务后，使用浏览器或 Postman 访问以下接口地址，测试各种功能：
+
+**基础配置接口：**
+```
+http://localhost:18080/api/server/start?configFileName=mixed_audio_multiple_conn_recv.json
+```
+
+**功能测试接口：**
+```
+http://localhost:18080/api/server/basic?taskName=ReceiverPcmDirectSendTest
+http://localhost:18080/api/server/basic?taskName=ReceiverPcmH264Test
+http://localhost:18080/api/server/basic?taskName=ReceiverPcmVadTest
+http://localhost:18080/api/server/basic?taskName=ReceiverPcmYuvTest
+http://localhost:18080/api/server/basic?taskName=SendH264Test
+http://localhost:18080/api/server/basic?taskName=SendMp4Test
+http://localhost:18080/api/server/basic?taskName=SendOpusTest
+http://localhost:18080/api/server/basic?taskName=SendPcmFileTest
+http://localhost:18080/api/server/basic?taskName=SendPcmRealTimeTest
+http://localhost:18080/api/server/basic?taskName=SendReceiverStreamMessageTest
+http://localhost:18080/api/server/basic?taskName=SendYuvTest
+```
+
+**Gateway SDK 专属功能：**
+```
+http://localhost:18080/api/server/basic?taskName=VadV1Test
+http://localhost:18080/api/server/basic?taskName=Audio3aTest
+```
+
+> **注意**：请将 `localhost:18080` 替换为您的实际服务器地址和端口。
+
+
+#### 测试 case
+
+- 发送 PCM 音频
+
+  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendPcmFileTest.java`,实现循环发送 pcm 文件
+
+  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendPcmRealTimeTest.java`,实现发送流式 pcm 数据
+
+- 发送 YUV 视频
+
+  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendYuvTest.java`,实现流式发送 yuv 数据
+
+- 发送 H264 视频
+
+  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendH264Test.java`,实现流式发送 h264 数据
+
+- 发送 Opus 音频
+
+  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendOpusTest.java`,实现流式发送 opus 数据
+
+- 发送 MP4 音视频
+
+  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendMp4Test.java`,实现发送 MP4 文件
+
+- 接收 PCM 音频
+
+  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmVadTest.java`,实现接收 pcm 数据并携带 VAD 数据
+
+  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmDirectSendTest.java`,实现接收 pcm 数据并直接返回发送
+
+- 接收 PCM&H264 音视频
+
+  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmH264Test.java`,实现接收 pcm&h264 数据
+
+- 接收 PCM&YUV 音视频
+
+  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmYuvTest.java`,实现接收 pcm&yuv 数据
+
+- 发送接收流消息
+
+  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendReceiverStreamMessageTest.java`,实现发送接收流消息
+
+- VadV1 模块（仅支持Gateway SDK）
+
+  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/VadV1Test.java`,实现 VadV1 模块
+
+- 音频 3A 处理（仅支持Gateway SDK）
+
+  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/Audio3aTest.java`,实现音频 3A 处理
 
 ## API 参考
 
@@ -471,15 +736,128 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
 
 ### VAD 模块
 
-#### 介绍
+#### VadV1 模块（仅支持Gateway SDK）
 
-`AgoraAudioVadV2` 是一个用于处理音频帧的语音活动检测 (VAD) 模块。它可以检测音频流中的语音活动，并根据配置参数进行处理。
+##### 介绍
 
-#### 类和方法
+`AgoraAudioVad` 是一个用于处理音频帧的语音活动检测 (VAD) 模块。它可以检测音频流中的语音活动，并根据配置参数进行处理。该模块是 VAD 的第一个版本，提供基础的语音活动检测功能。
 
-##### AgoraAudioVadV2 类
+##### 类和方法
 
-###### 构造方法
+###### AgoraAudioVad 类
+
+**构造方法**
+
+```java
+public AgoraAudioVad()
+```
+
+- **描述**：构造一个 `AgoraAudioVad` 实例。
+
+**方法**
+
+```java
+public int initialize(AgoraAudioVadConfig config)
+```
+
+- **描述**：初始化 VAD 模块。必须在使用其他方法前调用。
+- **参数**：
+  - `config`：`AgoraAudioVadConfig` 类型，VAD 配置。
+- **返回**：`int` 类型，0 表示成功，-1 表示失败。
+
+```java
+public VadProcessResult processPcmFrame(byte[] frame)
+```
+
+- **描述**：处理 PCM 音频帧。
+- **参数**：
+  - `frame`：`byte[]` 类型，PCM 音频数据。
+- **返回**：`VadProcessResult` 类型，VAD 处理结果。
+
+```java
+public synchronized void destroy()
+```
+
+- **描述**：销毁 VAD 模块，释放资源。
+
+###### AgoraAudioVadConfig 类
+
+**主要属性**
+
+| 属性名                 | 类型  | 描述                                 | 默认值 | 取值范围               |
+| ---------------------- | ----- | ------------------------------------ | ------ | ---------------------- |
+| fftSz                  | int   | FFT 大小，仅支持 128、256、512、1024 | 1024   | [128, 256, 512, 1024]  |
+| hopSz                  | int   | FFT 跳跃大小，用于检查               | 160    | [1, Integer.MAX_VALUE] |
+| anaWindowSz            | int   | FFT 窗口大小，用于计算 RMS           | 768    | [1, Integer.MAX_VALUE] |
+| voiceProbThr           | float | 语音概率阈值                         | 0.8    | [0.0, 1.0]             |
+| rmsThr                 | float | RMS 阈值（dB）                       | -40.0  | [-100.0, 0.0]          |
+| jointThr               | float | 联合阈值（dB）                       | 0.0    | [-100.0, 100.0]        |
+| aggressive             | float | 激进因子，值越大越激进               | 5.0    | [0.0, 10.0]            |
+| startRecognizeCount    | int   | 开始识别计数                         | 10     | [1, Integer.MAX_VALUE] |
+| stopRecognizeCount     | int   | 停止识别计数                         | 6      | [1, Integer.MAX_VALUE] |
+| preStartRecognizeCount | int   | 预开始识别计数                       | 10     | [0, Integer.MAX_VALUE] |
+| activePercent          | float | 活跃百分比                           | 0.6    | [0.0, 1.0]             |
+| inactivePercent        | float | 非活跃百分比                         | 0.2    | [0.0, 1.0]             |
+
+##### 使用示例
+
+下面是一个简单的示例代码，展示如何使用 `AgoraAudioVad` 进行音频帧处理：
+
+```java
+import io.agora.rtc.AgoraAudioVad;
+import io.agora.rtc.AgoraAudioVadConfig;
+import io.agora.rtc.VadProcessResult;
+import java.io.FileInputStream;
+
+public class VadV1Example {
+    public static void main(String[] args) {
+        // 创建 VAD 实例
+        AgoraAudioVad audioVad = new AgoraAudioVad();
+        
+        // 创建配置
+        AgoraAudioVadConfig config = new AgoraAudioVadConfig();
+        // 可以根据需要调整配置参数，建议使用默认值
+        
+        // 初始化 VAD
+        int ret = audioVad.initialize(config);
+        if (ret != 0) {
+            System.err.println("Failed to initialize VAD: " + ret);
+            return;
+        }
+        
+        // 处理音频帧
+        try {
+            // 假设有 PCM 音频数据
+            byte[] pcmData = new byte[320]; // 10ms 16kHz 单声道 PCM16 数据
+            
+            VadProcessResult result = audioVad.processPcmFrame(pcmData);
+            if (result != null) {
+                System.out.println("VAD State: " + result.getState());
+                if (result.getOutFrame() != null) {
+                    System.out.println("Output Frame Length: " + result.getOutFrame().length);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        // 销毁 VAD 实例
+        audioVad.destroy();
+    }
+}
+```
+
+#### VadV2 模块
+
+##### 介绍
+
+`AgoraAudioVadV2` 是一个用于处理音频帧的语音活动检测 (VAD) 模块的第二个版本。它可以检测音频流中的语音活动，并根据配置参数进行处理。
+
+##### 类和方法
+
+###### AgoraAudioVadV2 类
+
+**构造方法**
 
 ```java
 public AgoraAudioVadV2(AgoraAudioVadConfigV2 config)
@@ -543,7 +921,7 @@ public VadProcessResult(byte[] result, Constants.VadState state)
   - `result`：`byte[]` 类型，处理后的音频数据。
   - `state`：`Constants.VadState` 类型，当前 VAD 状态。
 
-#### 使用示例
+##### 使用示例
 
 下面是一个简单的示例代码，展示如何使用 `AgoraAudioVadV2` 进行音频帧处理：
 
@@ -554,7 +932,7 @@ import io.agora.rtc.Constants;
 import io.agora.rtc.AudioFrame;
 import io.agora.rtc.VadProcessResult;
 
-public class Main {
+public class VadV2Example {
     public static void main(String[] args) {
         // 创建 VAD 配置
         AgoraAudioVadConfigV2 config = new AgoraAudioVadConfigV2();
@@ -583,6 +961,346 @@ public class Main {
 
         // 销毁 VAD 实例
         vad.destroy();
+    }
+}
+```
+
+### Audio 3A 模块（仅支持Gateway SDK）
+
+#### 介绍
+
+`AgoraAudioProcessor` 是一个用于音频 3A（AEC、ANS、AGC）以及背景人声抑制（BGHVS）处理的模块。它可以对音频帧进行声学回声消除 (AEC)、自动噪声抑制 (ANS)、自动增益控制 (AGC) 和背景人声抑制 (BGHVS)，以提升音频质量。该模块需要相应的模型文件来执行处理。
+
+#### 类和方法
+
+##### AgoraAudioProcessor 类
+
+###### 构造方法
+
+```java
+public AgoraAudioProcessor()
+```
+
+- **描述**：构造一个 `AgoraAudioProcessor` 实例。
+
+###### 方法
+
+```java
+public int init(String appId, String license, IAgoraAudioProcessorEventHandler eventHandler, AgoraAudioProcessorConfig config)
+```
+
+- **描述**：初始化音频处理器。必须在使用其他方法前调用。
+- **参数**：
+  - `appId`：`String` 类型，声网后台获取的 App ID。
+  - `license`：`String` 类型，声网后台获取的 License。
+  - `eventHandler`：`IAgoraAudioProcessorEventHandler` 类型，用于接收处理器事件和错误的回调处理器。
+  - `config`：`AgoraAudioProcessorConfig` 类型，3A 处理器配置对象，用于配置模型路径等。
+- **返回**：`int` 类型，0 表示成功，其他值表示失败。
+
+```java
+public AgoraAudioFrame process(AgoraAudioFrame nearIn)
+```
+
+- **描述**：对输入的近端音频帧进行 3A 处理（如 ANS、AGC）。当仅处理近端音频，或不需要 AEC 处理时使用此方法。
+- **参数**：
+  - `nearIn`：`io.agora.rtc.audio3a.AgoraAudioFrame` 类型，包含待处理的近端 PCM 音频数据的帧对象。
+- **返回**：`io.agora.rtc.audio3a.AgoraAudioFrame` 类型，处理后的音频帧。如果处理失败，可能返回 `null`。
+
+```java
+public AgoraAudioFrame process(AgoraAudioFrame nearIn, AgoraAudioFrame farIn)
+```
+
+- **描述**：对输入的近端和远端音频帧进行 3A 处理（如 AEC、ANS、AGC）。当需要进行回声消除 (AEC) 等同时处理近端和远端音频的场景时使用此方法。
+- **参数**：
+  - `nearIn`：`io.agora.rtc.audio3a.AgoraAudioFrame` 类型，包含待处理的近端 PCM 音频数据的帧对象。
+  - `farIn`：`io.agora.rtc.audio3a.AgoraAudioFrame` 类型，包含参考的远端 PCM 音频数据的帧对象，主要用于声学回声消除 (AEC)。
+- **返回**：`io.agora.rtc.audio3a.AgoraAudioFrame` 类型，处理后的近端音频帧。如果处理失败，可能返回 `null`。
+
+```java
+public int release()
+```
+
+- **描述**：释放 `AgoraAudioProcessor` 实例所占用的所有资源。处理完成后应调用此方法。
+- **返回**：`int` 类型，0 表示成功，其他值表示失败。
+
+##### AgoraAudioProcessorConfig 类
+
+此类用于配置 `AgoraAudioProcessor`。
+
+###### 方法
+
+```java
+public void setModelPath(String modelPath)
+```
+
+- **描述**: 设置 3A 处理所需的模型文件路径。模型文件通常随 SDK 包提供，位于 `resources/model/` 目录下。
+- **参数**:
+  - `modelPath`: `String` 类型，模型文件所在的目录路径。例如 `./resources/model/`。
+
+```java
+public void setAecConfig(AecConfig aecConfig)
+public AecConfig getAecConfig()
+```
+
+- **描述**: 设置和获取声学回声消除（AEC）配置。
+- **参数**:
+  - `aecConfig`: `AecConfig` 类型，AEC 配置对象。
+
+```java
+public void setAnsConfig(AnsConfig ansConfig)
+public AnsConfig getAnsConfig()
+```
+
+- **描述**: 设置和获取自动噪声抑制（ANS）配置。
+- **参数**:
+  - `ansConfig`: `AnsConfig` 类型，ANS 配置对象。
+
+```java
+public void setAgcConfig(AgcConfig agcConfig)
+public AgcConfig getAgcConfig()
+```
+
+- **描述**: 设置和获取自动增益控制（AGC）配置。
+- **参数**:
+  - `agcConfig`: `AgcConfig` 类型，AGC 配置对象。
+
+```java
+public void setBghvsConfig(BghvsConfig bghvsConfig)
+public BghvsConfig getBghvsConfig()
+```
+
+- **描述**: 设置和获取背景人声抑制（BGHVS）配置。
+- **参数**:
+  - `bghvsConfig`: `BghvsConfig` 类型，BGHVS 配置对象。
+
+###### 示例
+
+```java
+AgoraAudioProcessorConfig config = new AgoraAudioProcessorConfig();
+config.setModelPath("./resources/model/"); // 根据实际模型文件位置进行设置
+
+// 配置 AEC
+AecConfig aecConfig = new AecConfig();
+aecConfig.setEnabled(true);
+config.setAecConfig(aecConfig);
+
+// 配置 ANS
+AnsConfig ansConfig = new AnsConfig();
+ansConfig.setEnabled(true);
+config.setAnsConfig(ansConfig);
+
+// 配置 AGC
+AgcConfig agcConfig = new AgcConfig();
+agcConfig.setEnabled(true);
+config.setAgcConfig(agcConfig);
+
+// 配置 BGHVS
+BghvsConfig bghvsConfig = new BghvsConfig();
+bghvsConfig.setEnabled(true);
+config.setBghvsConfig(bghvsConfig);
+```
+
+##### IAgoraAudioProcessorEventHandler 接口
+
+此接口用于接收来自 `AgoraAudioProcessor` 的事件和错误通知。
+
+###### 方法
+
+```java
+public void onEvent(Constants.AgoraAudioProcessorEventType eventType)
+```
+
+- **描述**：报告处理器在运行过程中发生的事件。
+- **参数**：
+  - `eventType`：`io.agora.rtc.Constants.AgoraAudioProcessorEventType` 类型，具体的事件类型。
+
+```java
+public void onError(int errorCode)
+```
+
+- **描述**：报告处理器在运行过程中发生的错误。
+- **参数**：
+  - `errorCode`：`int` 类型，错误码，指示发生的具体错误。
+
+##### io.agora.rtc.audio3a.AgoraAudioFrame 类
+
+此类用于封装音频数据以供 `AgoraAudioProcessor` 处理。 (注意：这与 `io.agora.rtc.AudioFrame` 可能不同，请使用 `audio3a` 包下的版本)
+
+###### 关键属性
+
+| 属性名            | 类型       | 描述                                                                                                        |
+| ----------------- | ---------- | ----------------------------------------------------------------------------------------------------------- |
+| type              | int        | 音频帧类型，通常为 `Constants.AudioFrameType.PCM16.getValue()`。                                            |
+| sampleRate        | int        | 音频采样率 (Hz)，例如 16000, 32000, 48000。                                                                 |
+| channels          | int        | 音频通道数，例如 1 (单声道) 或 2 (立体声)。                                                                 |
+| samplesPerChannel | int        | 每个通道的采样点数量。对于 10ms 的帧，通常是 `sampleRate / 100`。                                           |
+| bytesPerSample    | int        | 每个采样点的字节数。例如 PCM16 格式为 2 字节 (`Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue()`)。 |
+| buffer            | ByteBuffer | 包含原始 PCM 音频数据的 `java.nio.ByteBuffer`。                                                             |
+
+###### 主要方法 (Setters/Getters)
+
+```java
+public void setType(int type);
+public int getType();
+
+public void setSampleRate(int sampleRate);
+public int getSampleRate();
+
+public void setChannels(int channels);
+public int getChannels();
+
+public void setSamplesPerChannel(int samplesPerChannel);
+public int getSamplesPerChannel();
+
+public void setBytesPerSample(int bytesPerSample);
+public int getBytesPerSample();
+
+public void setBuffer(java.nio.ByteBuffer buffer);
+public java.nio.ByteBuffer getBuffer();
+```
+
+#### 使用示例
+
+以下是一个简单的示例代码，展示如何使用 `AgoraAudioProcessor` 进行音频帧处理：
+
+```java
+import io.agora.rtc.audio3a.AgoraAudioProcessor;
+import io.agora.rtc.audio3a.AgoraAudioProcessorConfig;
+import io.agora.rtc.audio3a.IAgoraAudioProcessorEventHandler;
+import io.agora.rtc.audio3a.AgoraAudioFrame; // 使用 audio3a 包下的 AgoraAudioFrame
+import io.agora.rtc.audio3a.AecConfig;
+import io.agora.rtc.audio3a.AnsConfig;
+import io.agora.rtc.audio3a.AgcConfig;
+import io.agora.rtc.audio3a.BghvsConfig;
+import io.agora.rtc.Constants; // SDK 的常量类
+import java.nio.ByteBuffer;
+import java.util.Arrays; // 用于打印数据示例
+
+public class Audio3AProcessingExample {
+    public static void main(String[] args) {
+        // 替换为您的 App ID 和 License
+        String appId = "YOUR_APP_ID";
+        String license = "YOUR_LICENSE_KEY";
+
+        // 1. 创建 AgoraAudioProcessor 实例
+        AgoraAudioProcessor audioProcessor = new AgoraAudioProcessor();
+
+        // 2. 配置 AgoraAudioProcessorConfig
+        AgoraAudioProcessorConfig config = new AgoraAudioProcessorConfig();
+        // 设置模型文件路径，通常在 SDK 包的 resources/model/ 目录下
+        // 请确保路径正确，否则初始化可能失败
+        config.setModelPath("./resources/model/"); // 根据您的实际路径修改
+
+        // 配置 AEC（声学回声消除）
+        AecConfig aecConfig = config.getAecConfig();
+        aecConfig.setEnabled(true); // 启用 AEC
+        
+        // 配置 ANS（自动噪声抑制）
+        AnsConfig ansConfig = config.getAnsConfig();
+        ansConfig.setEnabled(true); // 启用 ANS
+        
+        // 配置 AGC（自动增益控制）
+        AgcConfig agcConfig = config.getAgcConfig();
+        agcConfig.setEnabled(true); // 启用 AGC
+        
+        // 配置 BGHVS（背景人声抑制）
+        BghvsConfig bghvsConfig = config.getBghvsConfig();
+        bghvsConfig.setEnabled(true); // 启用 BGHVS
+
+
+        // 3. 初始化 AgoraAudioProcessor
+        int initRet = audioProcessor.init(appId, license,
+                new IAgoraAudioProcessorEventHandler() {
+                    @Override
+                    public void onEvent(Constants.AgoraAudioProcessorEventType eventType) {
+                        System.out.println("AgoraAudioProcessor Event: " + eventType);
+                    }
+
+                    @Override
+                    public void onError(int errorCode) {
+                        System.err.println("AgoraAudioProcessor Error: " + errorCode);
+                    }
+                }, config);
+
+        if (initRet != 0) {
+            System.err.println("Failed to initialize AgoraAudioProcessor. Error code: " + initRet);
+            // 根据错误码处理初始化失败的情况，例如检查 appId, license, modelPath 是否正确
+            return;
+        }
+        System.out.println("AgoraAudioProcessor initialized successfully.");
+
+        // 4. 准备音频帧 (AgoraAudioFrame)
+        // 示例参数：48kHz, 单声道, 10ms 音频帧
+        int sampleRate = 48000;
+        int channels = 1;
+        int samplesPerChannel = sampleRate / 100; // 10ms frame -> 480 samples
+        int bytesPerSample = Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue(); // PCM16
+        int bufferSize = samplesPerChannel * channels * bytesPerSample;
+
+        // 创建近端音频帧
+        AgoraAudioFrame nearInFrame = new AgoraAudioFrame();
+        nearInFrame.setType(Constants.AudioFrameType.PCM16.getValue());
+        nearInFrame.setSampleRate(sampleRate);
+        nearInFrame.setChannels(channels);
+        nearInFrame.setSamplesPerChannel(samplesPerChannel);
+        nearInFrame.setBytesPerSample(bytesPerSample);
+        // 实际应用中，这里的 pcmDataNear 来自近端音频源
+        byte[] pcmDataNear = new byte[bufferSize]; 
+        // ... 此处用虚拟数据填充 pcmDataNear ...
+        ByteBuffer nearAudioBuffer = ByteBuffer.allocateDirect(bufferSize);
+        nearAudioBuffer.put(pcmDataNear);
+        nearAudioBuffer.flip();
+        nearInFrame.setBuffer(nearAudioBuffer);
+
+        // 创建远端音频帧 (用于 AEC)
+        AgoraAudioFrame farInFrame = new AgoraAudioFrame();
+        farInFrame.setType(Constants.AudioFrameType.PCM16.getValue());
+        farInFrame.setSampleRate(sampleRate);
+        farInFrame.setChannels(channels);
+        farInFrame.setSamplesPerChannel(samplesPerChannel);
+        farInFrame.setBytesPerSample(bytesPerSample);
+        // 实际应用中，这里的 pcmDataFar 来自远端音频源
+        byte[] pcmDataFar = new byte[bufferSize]; 
+        // ... 此处用虚拟数据填充 pcmDataFar ...
+        ByteBuffer farAudioBuffer = ByteBuffer.allocateDirect(bufferSize);
+        farAudioBuffer.put(pcmDataFar);
+        farAudioBuffer.flip();
+        farInFrame.setBuffer(farAudioBuffer);
+
+        // 5. 处理音频帧
+        // 如果只需要处理近端音频（例如仅 ANS, AGC），可以调用单参数的 process 方法:
+        // AgoraAudioFrame outputFrame = audioProcessor.process(nearInFrame);
+ 
+        // 如果需要 AEC 处理，同时传入近端和远端音频帧
+        AgoraAudioFrame outputFrame = audioProcessor.process(nearInFrame, farInFrame);
+
+        if (outputFrame != null && outputFrame.getBuffer() != null) {
+            System.out.println("Audio frame processed successfully.");
+            ByteBuffer processedBuffer = outputFrame.getBuffer();
+            // processedBuffer 包含了经过 3A + BGHVS 处理的音频数据
+            // 处理后的音频将具有以下优化：
+            // - AEC: 消除声学回声
+            // - ANS: 抑制背景噪声
+            // - AGC: 自动调节音量增益
+            // - BGHVS: 抑制背景人声干扰
+            // 您可以将数据写入文件、发送到网络或进行其他操作
+            // 例如，获取处理后的字节数据：
+            // byte[] processedBytes = new byte[processedBuffer.remaining()];
+            // processedBuffer.get(processedBytes);
+            // System.out.println("Processed data sample (first 10 bytes): " +
+            // Arrays.toString(Arrays.copyOfRange(processedBytes, 0, Math.min(10, processedBytes.length))));
+        } else {
+            System.err.println("Failed to process audio frame or output frame is null.");
+            // 检查是否有错误回调，或 process 方法的返回值
+        }
+
+        // 6. 释放资源
+        int releaseRet = audioProcessor.release();
+        if (releaseRet == 0) {
+            System.out.println("AgoraAudioProcessor released successfully.");
+        } else {
+            System.err.println("Failed to release AgoraAudioProcessor. Error code: " + releaseRet);
+        }
     }
 }
 ```
@@ -691,7 +1409,7 @@ int numberOfChannels, int sampleRate) ` 方法标位不推荐，新增 `sendAudi
 - 详细更新日志请参考 [发版说明](https://doc.shengwang.cn/doc/rtc-server-sdk/java/overview/release-notes)
 
 ## 其他参考
-
 详细参考官网（<https://doc.shengwang.cn/doc/rtc-server-sdk/java/landing-page>）
 
 官网 API 文档 [Agora Server Java SDK API 参考](https://doc.shengwang.cn/api-ref/rtc-server-sdk/java/overview)
+
