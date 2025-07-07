@@ -19,9 +19,6 @@ import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.mediautils.H264Reader;
 import io.agora.rtc.example.utils.Utils;
 import java.io.FileInputStream;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -31,110 +28,70 @@ public class SendH264Test {
         System.loadLibrary("media_utils");
     }
 
-    private static String appId;
-    private static String token;
-    private final static String DEFAULT_LOG_PATH = "logs/agora_logs/agorasdk.log";
-    private final static int DEFAULT_LOG_SIZE = 5 * 1024; // default log size is 5 mb
+    private String appId;
+    private String token;
+    private final String DEFAULT_LOG_PATH = "logs/agora_logs/agorasdk.log";
+    private final int DEFAULT_LOG_SIZE = 5 * 1024; // default log size is 5 mb
 
     private static AgoraService service;
-    private static AgoraRtcConn conn;
     private static AgoraMediaNodeFactory mediaNodeFactory;
 
-    private static AgoraVideoEncodedImageSender customEncodedImageSender;
-    private static AgoraLocalVideoTrack customEncodedVideoTrack;
+    private AgoraRtcConn conn;
+    private AgoraVideoEncodedImageSender customEncodedImageSender;
+    private AgoraLocalVideoTrack customEncodedVideoTrack;
 
-    private static String channelId = "agaa";
-    private static String userId = "0";
-    private static int width = 360;
-    private static int height = 640;
-    private static int fps = 15;
-    private static String streamType = "high";
-    private static boolean enableSimulcastStream = false;
-    private static String videoFile = "test_data/send_video.h264";
-    private static long testTime = 60 * 1000;
+    private String channelId = "agaa";
+    private String userId = "0";
+    private int width = 360;
+    private int height = 640;
+    private int fps = 15;
+    private String streamType = "high";
+    private boolean enableSimulcastStream = false;
+    private String videoFile = "test_data/send_video.h264";
+    private long testTime = 60 * 1000;
 
-    private final static AtomicBoolean connConnected = new AtomicBoolean(false);
+    private final AtomicBoolean connConnected = new AtomicBoolean(false);
 
-    private static final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
-    private static final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
-
-    private static void parseArgs(String[] args) {
-        SampleLogger.log("parseArgs args:" + Arrays.toString(args));
-        if (args == null || args.length == 0) {
-            return;
-        }
-
-        Map<String, String> parsedArgs = new HashMap<>();
-        for (int i = 0; i < args.length; i += 2) {
-            if (i + 1 < args.length) {
-                parsedArgs.put(args[i], args[i + 1]);
-            } else {
-                SampleLogger.log("Missing value for argument: " + args[i]);
-            }
-        }
-
-        if (parsedArgs.containsKey("-channelId")) {
-            channelId = parsedArgs.get("-channelId");
-        }
-
-        if (parsedArgs.containsKey("-userId")) {
-            userId = parsedArgs.get("-userId");
-        }
-
-        if (parsedArgs.containsKey("-width")) {
-            width = Integer.parseInt(parsedArgs.get("-width"));
-        }
-
-        if (parsedArgs.containsKey("-height")) {
-            height = Integer.parseInt(parsedArgs.get("-height"));
-        }
-
-        if (parsedArgs.containsKey("-fps")) {
-            fps = Integer.parseInt(parsedArgs.get("-fps"));
-        }
-
-        if (parsedArgs.containsKey("-streamType")) {
-            streamType = parsedArgs.get("-streamType");
-        }
-
-        if (parsedArgs.containsKey("-enableSimulcastStream")) {
-            enableSimulcastStream = Boolean.parseBoolean(parsedArgs.get("-enableSimulcastStream"));
-        }
-
-        if (parsedArgs.containsKey("-videoFile")) {
-            videoFile = parsedArgs.get("-videoFile");
-        }
-
-        if (parsedArgs.containsKey("-testTime")) {
-            testTime = Long.parseLong(parsedArgs.get("-testTime"));
-        }
-    }
+    private final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
+    private final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
 
     public static void main(String[] args) {
-        parseArgs(args);
-        String[] keys = Utils.readAppIdAndToken(".keys");
-        appId = keys[0];
-        token = keys[1];
-        SampleLogger.log("read appId: " + appId + " token: " + token + " from .keys");
+        SendH264Test sendH264Test = new SendH264Test();
+        sendH264Test.start();
+    }
 
-        // Initialize Agora service globally once
-        service = new AgoraService();
-        AgoraServiceConfig config = new AgoraServiceConfig();
-        config.setAppId(appId);
-        config.setEnableAudioDevice(0);
-        config.setEnableAudioProcessor(1);
-        config.setEnableVideo(1);
-        config.setUseStringUid(0);
-        config.setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
-        config.setLogFilePath(DEFAULT_LOG_PATH);
-        config.setLogFileSize(DEFAULT_LOG_SIZE);
-        config.setLogFilters(Constants.LOG_FILTER_DEBUG);
+    public void start() {
+        if (appId == null || token == null) {
+            String[] keys = Utils.readAppIdAndToken(".keys");
+            appId = keys[0];
+            token = keys[1];
+            SampleLogger.log("read appId: " + appId + " token: " + token + " from .keys");
+        }
 
-        int ret = service.initialize(config);
-        if (ret != 0) {
-            SampleLogger.log("createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
-            releaseAgoraService();
-            return;
+        int ret = 0;
+        if (service == null) {
+            // Initialize Agora service globally once
+            service = new AgoraService();
+            AgoraServiceConfig config = new AgoraServiceConfig();
+            config.setAppId(appId);
+            config.setEnableAudioDevice(0);
+            config.setEnableAudioProcessor(1);
+            config.setEnableVideo(1);
+            config.setUseStringUid(0);
+            config.setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
+            config.setLogFilePath(DEFAULT_LOG_PATH);
+            config.setLogFileSize(DEFAULT_LOG_SIZE);
+            config.setLogFilters(Constants.LOG_FILTER_DEBUG);
+
+            ret = service.initialize(config);
+            if (ret != 0) {
+                SampleLogger.log(
+                    "createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
+                releaseAgoraService();
+                return;
+            }
+
+            mediaNodeFactory = service.createMediaNodeFactory();
         }
 
         // Create a connection for each channel
@@ -155,7 +112,8 @@ public class SendH264Test {
             @Override
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
                 super.onConnected(agoraRtcConn, connInfo, reason);
-                SampleLogger.log("onConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
+                SampleLogger.log(
+                    "onConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
                 connConnected.set(true);
                 userId = connInfo.getLocalUserId();
             }
@@ -164,20 +122,19 @@ public class SendH264Test {
             public void onUserJoined(AgoraRtcConn agoraRtcConn, String userId) {
                 super.onUserJoined(agoraRtcConn, userId);
                 SampleLogger.log("onUserJoined userId:" + userId);
-
             }
 
             @Override
             public void onUserLeft(AgoraRtcConn agoraRtcConn, String userId, int reason) {
                 super.onUserLeft(agoraRtcConn, userId, reason);
                 SampleLogger.log("onUserLeft userId:" + userId + " reason:" + reason);
-
             }
         });
         SampleLogger.log("registerObserver ret:" + ret);
 
         ret = conn.connect(token, channelId, userId);
-        SampleLogger.log("Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
+        SampleLogger.log(
+            "Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
         if (ret != 0) {
             SampleLogger.log("conn.connect fail ret=" + ret);
             releaseConn();
@@ -185,13 +142,12 @@ public class SendH264Test {
             return;
         }
 
-        mediaNodeFactory = service.createMediaNodeFactory();
-
         customEncodedImageSender = mediaNodeFactory.createVideoEncodedImageSender();
         // Create video track
         SenderOptions option = new SenderOptions();
         option.setCcMode(Constants.TCC_ENABLED);
-        customEncodedVideoTrack = service.createCustomVideoTrackEncoded(customEncodedImageSender, option);
+        customEncodedVideoTrack =
+            service.createCustomVideoTrackEncoded(customEncodedImageSender, option);
 
         if (enableSimulcastStream) {
             SimulcastStreamConfig lowStreamConfig = new SimulcastStreamConfig();
@@ -218,8 +174,8 @@ public class SendH264Test {
                 }
                 EncodedVideoFrameInfo info = new EncodedVideoFrameInfo();
                 info.setFrameType(lastFrameType);
-                info.setStreamType(
-                        streamType.equals("high") ? Constants.VIDEO_STREAM_HIGH : Constants.VIDEO_STREAM_LOW);
+                info.setStreamType(streamType.equals("high") ? Constants.VIDEO_STREAM_HIGH
+                                                             : Constants.VIDEO_STREAM_LOW);
                 info.setWidth(width);
                 info.setHeight(height);
                 info.setCodecType(Constants.VIDEO_CODEC_H264);
@@ -230,9 +186,9 @@ public class SendH264Test {
                 frameIndex++;
 
                 singleExecutorService.execute(() -> {
-                    SampleLogger.log("send h264 frame data size:" + data.length +
-                            " timestamp:" + timestamp + " frameIndex:" + frameIndex
-                            + " from channelId:" + channelId + " userId:" + userId);
+                    SampleLogger.log("send h264 frame data size:" + data.length
+                        + " timestamp:" + timestamp + " frameIndex:" + frameIndex
+                        + " from channelId:" + channelId + " userId:" + userId);
                 });
             }
 
@@ -282,17 +238,12 @@ public class SendH264Test {
         System.exit(0);
     }
 
-    private static void releaseConn() {
+    private void releaseConn() {
         SampleLogger.log("releaseConn for channelId:" + channelId + " userId:" + userId);
         if (conn == null) {
             return;
         }
         connConnected.set(false);
-
-        if (null != mediaNodeFactory) {
-            mediaNodeFactory.destroy();
-            mediaNodeFactory = null;
-        }
 
         if (null != customEncodedVideoTrack) {
             customEncodedVideoTrack.setEnabled(0);
@@ -324,7 +275,12 @@ public class SendH264Test {
         SampleLogger.log("Disconnected from Agora channel successfully");
     }
 
-    private static void releaseAgoraService() {
+    private void releaseAgoraService() {
+        if (null != mediaNodeFactory) {
+            mediaNodeFactory.destroy();
+            mediaNodeFactory = null;
+        }
+
         if (service != null) {
             service.destroy();
             service = null;

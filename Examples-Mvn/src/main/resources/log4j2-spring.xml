@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="DEBUG">
+    <Properties>
+        <!-- Set the base name for the log file -->
+        <Property name="logFileName">linux_server</Property>
+        <!-- Define the base log path -->
+        <Property name="logPath">logs</Property>
+        <!-- Define the pattern for log messages -->
+        <Property name="logPattern">%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Property>
+    </Properties>
+    <Appenders>
+        <!-- Console Appender -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${logPattern}" />
+        </Console>
+
+        <!-- Async Console Appender (improves performance) -->
+        <Async name="AsyncConsole" bufferSize="1024" includeLocation="false">
+            <AppenderRef ref="Console" />
+        </Async>
+
+        <!-- Rolling File Appender -->
+        <RollingFile name="RollingFile"
+            fileName="${logPath}/${logFileName}.log"
+            filePattern="${logPath}/${logFileName}-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${logPattern}" />
+            <Policies>
+                <!-- Rollover when file size reaches 10 MB -->
+                <SizeBasedTriggeringPolicy size="10 MB" />
+                <!-- Rollover daily (optional, remove if only size-based is needed) -->
+                <TimeBasedTriggeringPolicy interval="1" modulate="true" />
+            </Policies>
+            <!-- Keep up to 10 compressed archive files -->
+            <DefaultRolloverStrategy max="10">
+                <!-- Delete old log files -->
+                <Delete basePath="${logPath}" maxDepth="1">
+                    <IfFileName glob="${logFileName}-*.log.gz">
+                        <!-- Delete archive files older than 7 days -->
+                        <IfLastModified age="7d">
+                            <Delete />
+                        </IfLastModified>
+                    </IfFileName>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <!-- Async File Appender (improves performance) -->
+        <Async name="AsyncFile" bufferSize="1024" includeLocation="false">
+            <AppenderRef ref="RollingFile" />
+        </Async>
+    </Appenders>
+
+    <Loggers>
+        <!-- Root Logger: Default configuration for all loggers unless overridden -->
+        <Root level="info">
+            <!-- Send INFO level logs and above to both async console and async file -->
+            <AppenderRef ref="AsyncConsole" />
+            <AppenderRef ref="AsyncFile" />
+        </Root>
+    </Loggers>
+</Configuration> 

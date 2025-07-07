@@ -33,15 +33,28 @@
   - [Running Examples](#running-examples)
   - [Test Cases](#test-cases)
   - [Common Issues](#common-issues)
+- [Run Examples-Mvn Project](#run-examples-mvn-project)
+  - [Environment Preparation](#environment-preparation-1)
+  - [Project Configuration](#project-configuration-1)
+  - [Build Process](#build-process)
+  - [Running Examples](#running-examples-1)
+  - [Test Cases](#test-cases-1)
 
 6. [API Reference](#api-reference)
    - [API Documentation Reference](#api-documentation-reference)
    - [VAD Module](#vad-module)
-     - [Introduction](#introduction-1)
-     - [Classes and Methods](#classes-and-methods)
-     - [Usage Example](#usage-example)
+     - [VadV1 Module](#vadv1-module)
+       - [Introduction](#introduction-1)
+       - [Classes and Methods](#classes-and-methods)
+       - [Usage Example](#usage-example)
+     - [VadV2 Module](#vadv2-module)
+       - [Introduction](#introduction-2)
+       - [Classes and Methods](#classes-and-methods-1)
+       - [Usage Example](#usage-example-1)
+   - [Audio 3A Module](#audio-3a-module)
+     - [Introduction](#introduction-3)
+     - [Classes and Methods](#classes-and-methods-2)
 7. [Changelog](#changelog)
-   - [v4.4.32.1 (2025-06-12)](#v443212025-06-12)
    - [v4.4.32 (2025-05-27)](#v4432-2025-05-27)
    - [v4.4.31.4 (2025-03-21)](#v44314-2025-03-21)
    - [v4.4.31.3 (2025-02-26)](#v44313-2025-02-26)
@@ -56,6 +69,8 @@
 ## Introduction
 
 The Agora Linux Server Java SDK (v4.4.32.1) provides powerful real-time audio and video communication capabilities that can be seamlessly integrated into Linux server-side Java applications. With this SDK, your server can join Agora channels as a data source or processing node, accessing and processing audio and video streams in real-time to implement various business-related advanced features.
+
+The Agora Linux Gateway SDK has not been released yet, and related features are currently not supported.
 
 ## Development Environment Requirements
 
@@ -366,6 +381,13 @@ Refer to [Official Service Activation Guide](https://docs.agora.io/en/rtc-server
    TOKEN=
    ```
 
+   If Gateway SDK is supported, create a `.keys_gateway` file and add:
+
+   ```
+   APP_ID=your_app_id
+   LICENSE=your_license
+   ```
+
 3. Prepare the SDK file:
 
    - Rename the JAR to `agora-sdk.jar`
@@ -391,6 +413,38 @@ Refer to [Official Service Activation Guide](https://docs.agora.io/en/rtc-server
    ```
 
    Note: Ensure all .so files are correctly extracted as they are core components of the SDK.
+
+5. **Runtime Configuration (run_config)**
+
+   The `run_config` file is used to configure various runtime options, located at `Examples/run_config`. You can modify the following configurations as needed:
+
+   | Configuration    | Type    | Default | Description                                                                          |
+   | ---------------- | ------- | ------- | ------------------------------------------------------------------------------------ |
+   | enable_jni_check | boolean | false   | Whether to enable JNI checking for debugging JNI-related issues                      |
+   | enable_asan      | boolean | false   | Whether to enable AddressSanitizer for memory error detection                        |
+   | enable_aed_vad   | boolean | false   | Whether to enable AED VAD (Audio Event Detection Voice Activity Detection)           |
+   | enable_gateway   | boolean | false   | Whether to enable Gateway SDK mode, which allows access to VAD and Audio 3A features |
+
+   **Configuration Example:**
+
+   ```bash
+   # Enable Gateway SDK functionality
+   enable_gateway=true
+   
+   # Enable JNI checking (debug mode)
+   enable_jni_check=true
+   
+   # Enable memory checking (debug mode)
+   enable_asan=true
+   
+   # Enable AED VAD functionality
+   enable_aed_vad=true
+   ```
+
+   > **Note**:
+   > - Enabling `enable_gateway=true` allows access to VAD and Audio 3A advanced features
+   > - Enabling `enable_jni_check=true` or `enable_asan=true` will affect performance; recommended only for debugging
+   > - Project needs to be recompiled after modifying configuration
 
 #### Compilation Process
 
@@ -455,12 +509,181 @@ Execute the build script:
 
   Refer to `Examples/src/java/io/agora/rtc/example/scenario/SendReceiverStreamMessageTest.java` for sending and receiving stream messages.
 
+- VadV1 Module (Only supported by Gateway SDK)
+
+  Refer to `Examples/src/java/io/agora/rtc/example/scenario/VadV1Test.java` for VadV1 module.
+
+- Audio 3A Processing (Only supported by Gateway SDK)
+
+  Refer to `Examples/src/java/io/agora/rtc/example/scenario/Audio3aTest.java` for audio 3A processing.
+
 #### Common Issues
 
 - Ensure the Java environment is correctly installed and configured.
 - Verify `agora-sdk.jar` version compatibility.
 - Check `APP_ID` and `TOKEN` configuration before running.
 - Follow the steps sequentially to avoid dependency issues.
+
+### Run Examples-Mvn Project
+
+**Examples-Mvn** is a Maven example project built on the Spring Boot framework, providing a complete RESTful API service to demonstrate various features of the Agora Linux Server Java SDK.
+
+#### Environment Preparation
+
+Install Maven build tool, refer to [Maven Installation Guide](https://maven.apache.org/install.html)
+
+#### Project Configuration
+
+1. Enter the `Examples-Mvn` directory:
+
+   ```bash
+   cd Examples-Mvn
+   ```
+
+2. Create a `.keys` file and add:
+
+   ```
+   APP_ID=your_app_id
+   TOKEN=your_token
+   ```
+
+   _If certificates are not enabled, the TOKEN value can be empty, e.g.:_
+
+   ```
+   APP_ID=abcd1234
+   TOKEN=
+   ```
+
+   If Gateway SDK is supported, create a `.keys_gateway` file and add:
+
+   ```
+   APP_ID=your_app_id
+   LICENSE=your_license
+   ```
+
+3. **Runtime Configuration (run_config)**
+
+   The `run_config` file is used to configure various runtime options, located at `Examples-Mvn/run_config`. You can modify the following configurations as needed:
+
+   | Configuration    | Type    | Default | Description                                                                          |
+   | ---------------- | ------- | ------- | ------------------------------------------------------------------------------------ |
+   | enable_jni_check | boolean | false   | Whether to enable JNI checking for debugging JNI-related issues                      |
+   | enable_asan      | boolean | false   | Whether to enable AddressSanitizer for memory error detection                        |
+   | enable_aed_vad   | boolean | false   | Whether to enable AED VAD (Audio Event Detection Voice Activity Detection)           |
+   | enable_gateway   | boolean | false   | Whether to enable Gateway SDK mode, which allows access to VAD and Audio 3A features |
+
+   **Configuration Example:**
+
+   ```bash
+   # Enable Gateway SDK functionality
+   enable_gateway=true
+   
+   # Enable JNI checking (debug mode)
+   enable_jni_check=true
+   
+   # Enable memory checking (debug mode)
+   enable_asan=true
+   
+   # Enable AED VAD functionality
+   enable_aed_vad=true
+   ```
+
+   > **Note**:
+   > - Enabling `enable_gateway=true` allows access to VAD and Audio 3A advanced features
+   > - Enabling `enable_jni_check=true` or `enable_asan=true` will affect performance; recommended only for debugging
+   > - Project needs to be recompiled after modifying configuration
+
+#### Build Process
+
+Execute the build script:
+
+```bash
+./build_mvn.sh [-start]
+```
+
+By default, it only compiles the project. Use the `-start` option to compile and start the example service.
+
+#### Running Examples
+
+After starting the service, use a browser or Postman to access the following interface addresses to test various features:
+
+**Basic Configuration Interface:**
+```
+http://localhost:18080/api/server/start?configFileName=mixed_audio_multiple_conn_recv.json
+```
+
+**Feature Test Interface:**
+```
+http://localhost:18080/api/server/basic?taskName=ReceiverPcmDirectSendTest
+http://localhost:18080/api/server/basic?taskName=ReceiverPcmH264Test
+http://localhost:18080/api/server/basic?taskName=ReceiverPcmVadTest
+http://localhost:18080/api/server/basic?taskName=ReceiverPcmYuvTest
+http://localhost:18080/api/server/basic?taskName=SendH264Test
+http://localhost:18080/api/server/basic?taskName=SendMp4Test
+http://localhost:18080/api/server/basic?taskName=SendOpusTest
+http://localhost:18080/api/server/basic?taskName=SendPcmFileTest
+http://localhost:18080/api/server/basic?taskName=SendPcmRealTimeTest
+http://localhost:18080/api/server/basic?taskName=SendReceiverStreamMessageTest
+http://localhost:18080/api/server/basic?taskName=SendYuvTest
+```
+
+**Gateway SDK Exclusive Features:**
+```
+http://localhost:18080/api/server/basic?taskName=VadV1Test
+http://localhost:18080/api/server/basic?taskName=Audio3aTest
+```
+
+> **Note**: Replace `localhost:18080` with your actual server address and port.
+
+#### Test Cases
+
+- Send PCM Audio
+
+  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendPcmFileTest.java`, implement looping PCM file sending
+
+  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendPcmRealTimeTest.java`, implement streaming PCM data sending
+
+- Send YUV Video
+
+  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendYuvTest.java`, implement streaming YUV data sending
+
+- Send H264 Video
+
+  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendH264Test.java`, implement streaming H264 data sending
+
+- Send Opus Audio
+
+  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendOpusTest.java`, implement streaming Opus data sending
+
+- Send MP4 Audio/Video
+
+  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendMp4Test.java`, implement MP4 file sending
+
+- Receive PCM Audio
+
+  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmVadTest.java`, implement receiving PCM data with VAD data
+
+  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmDirectSendTest.java`, implement receiving PCM data and directly sending back
+
+- Receive PCM&H264 Audio/Video
+
+  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmH264Test.java`, implement receiving PCM & H264 data
+
+- Receive PCM&YUV Audio/Video
+
+  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmYuvTest.java`, implement receiving PCM & YUV data
+
+- Send/Receive Stream Messages
+
+  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendReceiverStreamMessageTest.java`, implement sending and receiving stream messages
+
+- VadV1 Module (Only supported by Gateway SDK)
+
+  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/VadV1Test.java`, implement VadV1 module functionality
+
+- Audio 3A Processing (Only supported by Gateway SDK)
+
+  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/Audio3aTest.java`, implement audio 3A processing functionality
 
 ## API Reference
 
@@ -473,15 +696,128 @@ For complete API documentation, refer to the following resources:
 
 ### VAD Module
 
-#### Introduction
+#### VadV1 Module (Only supported by Gateway SDK)
 
-`AgoraAudioVadV2` is a Voice Activity Detection (VAD) module for processing audio frames. It detects speech activity in an audio stream and processes it based on configuration parameters.
+##### Introduction
 
-#### Classes and Methods
+`AgoraAudioVad` is a Voice Activity Detection (VAD) module for processing audio frames. It detects speech activity in an audio stream and processes it based on configuration parameters. This module is the first version of VAD, providing basic voice activity detection functionality.
 
-##### AgoraAudioVadV2 Class
+##### Classes and Methods
 
-###### Constructor
+###### AgoraAudioVad Class
+
+**Constructor**
+
+```java
+public AgoraAudioVad()
+```
+
+- **Description**: Constructs an `AgoraAudioVad` instance.
+
+**Methods**
+
+```java
+public int initialize(AgoraAudioVadConfig config)
+```
+
+- **Description**: Initializes the VAD module. This must be called before using other methods.
+- **Parameters**:
+  - `config`: `AgoraAudioVadConfig` type, VAD configuration.
+- **Returns**: `int`, 0 for success, -1 for failure.
+
+```java
+public VadProcessResult processPcmFrame(byte[] frame)
+```
+
+- **Description**: Processes PCM audio frames.
+- **Parameters**:
+  - `frame`: `byte[]` type, PCM audio data.
+- **Returns**: `VadProcessResult` type, VAD processing result.
+
+```java
+public synchronized void destroy()
+```
+
+- **Description**: Destroys the VAD module and releases resources.
+
+###### AgoraAudioVadConfig Class
+
+**Main Properties**
+
+| Property Name          | Type  | Description                                           | Default | Range                  |
+| ---------------------- | ----- | ----------------------------------------------------- | ------- | ---------------------- |
+| fftSz                  | int   | FFT size, supports only 128, 256, 512, 1024           | 1024    | [128, 256, 512, 1024]  |
+| hopSz                  | int   | FFT hop size, used for checking                       | 160     | [1, Integer.MAX_VALUE] |
+| anaWindowSz            | int   | FFT window size, used for calculating RMS             | 768     | [1, Integer.MAX_VALUE] |
+| voiceProbThr           | float | Voice probability threshold                           | 0.8     | [0.0, 1.0]             |
+| rmsThr                 | float | RMS threshold (dB)                                    | -40.0   | [-100.0, 0.0]          |
+| jointThr               | float | Joint threshold (dB)                                  | 0.0     | [-100.0, 100.0]        |
+| aggressive             | float | Aggressive factor, higher value means more aggressive | 5.0     | [0.0, 10.0]            |
+| startRecognizeCount    | int   | Start recognition count                               | 10      | [1, Integer.MAX_VALUE] |
+| stopRecognizeCount     | int   | Stop recognition count                                | 6       | [1, Integer.MAX_VALUE] |
+| preStartRecognizeCount | int   | Pre-start recognition count                           | 10      | [0, Integer.MAX_VALUE] |
+| activePercent          | float | Active percentage                                     | 0.6     | [0.0, 1.0]             |
+| inactivePercent        | float | Inactive percentage                                   | 0.2     | [0.0, 1.0]             |
+
+##### Usage Example
+
+Here is a simple example showing how to use `AgoraAudioVad` for audio frame processing:
+
+```java
+import io.agora.rtc.AgoraAudioVad;
+import io.agora.rtc.AgoraAudioVadConfig;
+import io.agora.rtc.VadProcessResult;
+import java.io.FileInputStream;
+
+public class VadV1Example {
+    public static void main(String[] args) {
+        // Create VAD instance
+        AgoraAudioVad audioVad = new AgoraAudioVad();
+        
+        // Create configuration
+        AgoraAudioVadConfig config = new AgoraAudioVadConfig();
+        // Configure parameters as needed, recommend using default values
+        
+        // Initialize VAD
+        int ret = audioVad.initialize(config);
+        if (ret != 0) {
+            System.err.println("Failed to initialize VAD: " + ret);
+            return;
+        }
+        
+        // Process audio frames
+        try {
+            // Assume we have PCM audio data
+            byte[] pcmData = new byte[320]; // 10ms 16kHz mono PCM16 data
+            
+            VadProcessResult result = audioVad.processPcmFrame(pcmData);
+            if (result != null) {
+                System.out.println("VAD State: " + result.getState());
+                if (result.getOutFrame() != null) {
+                    System.out.println("Output Frame Length: " + result.getOutFrame().length);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        // Destroy VAD instance
+        audioVad.destroy();
+    }
+}
+```
+
+#### VadV2 Module
+
+##### Introduction
+
+`AgoraAudioVadV2` is the second version of the Voice Activity Detection (VAD) module for processing audio frames. It detects speech activity in an audio stream and processes it based on configuration parameters.
+
+##### Classes and Methods
+
+###### AgoraAudioVadV2 Class
+
+**Constructor**
 
 ```java
 public AgoraAudioVadV2(AgoraAudioVadConfigV2 config)
@@ -545,7 +881,7 @@ public VadProcessResult(byte[] result, Constants.VadState state)
   - `result`: `byte[]` type, the processed audio data.
   - `state`: `Constants.VadState` type, the current VAD state.
 
-#### Usage Example
+##### Usage Example
 
 Here is a simple example showing how to use `AgoraAudioVadV2` for audio frame processing:
 
@@ -556,7 +892,7 @@ import io.agora.rtc.Constants;
 import io.agora.rtc.AudioFrame;
 import io.agora.rtc.VadProcessResult;
 
-public class Main {
+public class VadV2Example {
     public static void main(String[] args) {
         // Create VAD configuration
         AgoraAudioVadConfigV2 config = new AgoraAudioVadConfigV2();
@@ -587,6 +923,347 @@ public class Main {
 
         // Destroy VAD instance
         vad.destroy();
+    }
+}
+```
+
+### Audio 3A Module (Only supported by Gateway SDK)
+
+#### Introduction
+
+The `AgoraAudioProcessor` is a module designed for Audio 3A processing and Background Human Voice Suppression (BGHVS), which includes Acoustic Echo Cancellation (AEC), Automatic Noise Suppression (ANS), Automatic Gain Control (AGC), and Background Human Voice Suppression (BGHVS). It processes audio frames to enhance audio quality by mitigating echo, reducing noise, normalizing volume levels, and suppressing background human voices. This module requires corresponding model files to perform its processing tasks.
+
+#### Classes and Methods
+
+##### AgoraAudioProcessor Class
+
+###### Constructor
+
+```java
+public AgoraAudioProcessor()
+```
+
+- **Description**: Constructs an `AgoraAudioProcessor` instance.
+
+###### Methods
+
+```java
+public int init(String appId, String license, IAgoraAudioProcessorEventHandler eventHandler, AgoraAudioProcessorConfig config)
+```
+
+- **Description**: Initializes the audio processor. This must be called before any other methods.
+- **Parameters**:
+  - `appId`: `String`, your App ID obtained from Agora Console.
+  - `license`: `String`, your License key obtained from Agora Console.
+  - `eventHandler`: `IAgoraAudioProcessorEventHandler`, a callback handler to receive processor events and errors.
+  - `config`: `AgoraAudioProcessorConfig`, the 3A processor configuration object, used for setting the model path, etc.
+- **Returns**: `int`, 0 for success, other values indicate failure.
+
+```java
+public AgoraAudioFrame process(AgoraAudioFrame nearIn)
+```
+
+- **Description**: Performs 3A processing (e.g., ANS, AGC) on the input near-end audio frame. Use this method when processing only near-end audio or when AEC is not required.
+- **Parameters**:
+  - `nearIn`: `io.agora.rtc.audio3a.AgoraAudioFrame`, the frame object containing near-end PCM audio data to be processed.
+- **Returns**: `io.agora.rtc.audio3a.AgoraAudioFrame`, the processed audio frame. May return `null` if processing fails.
+
+```java
+public AgoraAudioFrame process(AgoraAudioFrame nearIn, AgoraAudioFrame farIn)
+```
+
+- **Description**: Performs 3A processing (e.g., AEC, ANS, AGC) on the input near-end and far-end audio frames. Use this method when Acoustic Echo Cancellation (AEC) or other processing that requires both near-end and far-end audio is needed.
+- **Parameters**:
+  - `nearIn`: `io.agora.rtc.audio3a.AgoraAudioFrame`, the frame object containing near-end PCM audio data to be processed.
+  - `farIn`: `io.agora.rtc.audio3a.AgoraAudioFrame`, the frame object containing far-end PCM audio data for reference, primarily used for Acoustic Echo Cancellation (AEC).
+- **Returns**: `io.agora.rtc.audio3a.AgoraAudioFrame`, the processed near-end audio frame. May return `null` if processing fails.
+
+```java
+public int release()
+```
+
+- **Description**: Releases all resources occupied by the `AgoraAudioProcessor` instance. This should be called when processing is complete.
+- **Returns**: `int`, 0 for success, other values indicate failure.
+
+##### AgoraAudioProcessorConfig Class
+
+This class is used to configure the `AgoraAudioProcessor`.
+
+###### Methods
+
+```java
+public void setModelPath(String modelPath)
+```
+
+- **Description**: Sets the path to the model files required for 3A processing. Model files are typically provided with the SDK package, often in a `resources/model/` directory.
+- **Parameters**:
+  - `modelPath`: `String`, the directory path where model files are located. For example, `./resources/model/`.
+
+```java
+public void setAecConfig(AecConfig aecConfig)
+public AecConfig getAecConfig()
+```
+
+- **Description**: Sets and gets the Acoustic Echo Cancellation (AEC) configuration.
+- **Parameters**:
+  - `aecConfig`: `AecConfig` type, the AEC configuration object.
+
+```java
+public void setAnsConfig(AnsConfig ansConfig)
+public AnsConfig getAnsConfig()
+```
+
+- **Description**: Sets and gets the Automatic Noise Suppression (ANS) configuration.
+- **Parameters**:
+  - `ansConfig`: `AnsConfig` type, the ANS configuration object.
+
+```java
+public void setAgcConfig(AgcConfig agcConfig)
+public AgcConfig getAgcConfig()
+```
+
+- **Description**: Sets and gets the Automatic Gain Control (AGC) configuration.
+- **Parameters**:
+  - `agcConfig`: `AgcConfig` type, the AGC configuration object.
+
+```java
+public void setBghvsConfig(BghvsConfig bghvsConfig)
+public BghvsConfig getBghvsConfig()
+```
+
+- **Description**: Sets and gets the Background Human Voice Suppression (BGHVS) configuration.
+- **Parameters**:
+  - `bghvsConfig`: `BghvsConfig` type, the BGHVS configuration object.
+
+###### Example
+
+```java
+AgoraAudioProcessorConfig config = new AgoraAudioProcessorConfig();
+config.setModelPath("./resources/model/"); // Set according to the actual model file location
+
+// Configure AEC
+AecConfig aecConfig = new AecConfig();
+aecConfig.setEnabled(true);
+config.setAecConfig(aecConfig);
+
+// Configure ANS
+AnsConfig ansConfig = new AnsConfig();
+ansConfig.setEnabled(true);
+config.setAnsConfig(ansConfig);
+
+// Configure AGC
+AgcConfig agcConfig = new AgcConfig();
+agcConfig.setEnabled(true);
+config.setAgcConfig(agcConfig);
+
+// Configure BGHVS
+BghvsConfig bghvsConfig = new BghvsConfig();
+bghvsConfig.setEnabled(true);
+config.setBghvsConfig(bghvsConfig);
+```
+
+##### IAgoraAudioProcessorEventHandler Interface
+
+This interface is used to receive event and error notifications from the `AgoraAudioProcessor`.
+
+###### Methods
+
+```java
+public void onEvent(Constants.AgoraAudioProcessorEventType eventType)
+```
+
+- **Description**: Reports events that occur during processor operation.
+- **Parameters**:
+  - `eventType`: `io.agora.rtc.Constants.AgoraAudioProcessorEventType`, the specific event type.
+
+```java
+public void onError(int errorCode)
+```
+
+- **Description**: Reports errors that occur during processor operation.
+- **Parameters**:
+  - `errorCode`: `int`, the error code indicating the specific error that occurred.
+
+
+##### io.agora.rtc.audio3a.AgoraAudioFrame Class
+
+This class is used to encapsulate audio data for processing by `AgoraAudioProcessor`. (Note: This might be different from `io.agora.rtc.AudioFrame`; use the version from the `audio3a` package).
+
+###### Key Properties
+
+| Property Name     | Type       | Description                                                                                                             |
+| ----------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------- |
+| type              | int        | Audio frame type, typically `Constants.AudioFrameType.PCM16.getValue()`.                                                |
+| sampleRate        | int        | Audio sample rate (Hz), e.g., 16000, 32000, 48000.                                                                      |
+| channels          | int        | Number of audio channels, e.g., 1 (mono) or 2 (stereo).                                                                 |
+| samplesPerChannel | int        | Number of samples per channel. For a 10ms frame, this is usually `sampleRate / 100`.                                    |
+| bytesPerSample    | int        | Number of bytes per sample. E.g., for PCM16, it's 2 bytes (`Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue()`). |
+| buffer            | ByteBuffer | `java.nio.ByteBuffer` containing the raw PCM audio data.                                                                |
+
+###### Main Methods (Setters/Getters)
+
+```java
+public void setType(int type);
+public int getType();
+
+public void setSampleRate(int sampleRate);
+public int getSampleRate();
+
+public void setChannels(int channels);
+public int getChannels();
+
+public void setSamplesPerChannel(int samplesPerChannel);
+public int getSamplesPerChannel();
+
+public void setBytesPerSample(int bytesPerSample);
+public int getBytesPerSample();
+
+public void setBuffer(java.nio.ByteBuffer buffer);
+public java.nio.ByteBuffer getBuffer();
+```
+
+#### Usage Example
+
+Below is a simple example demonstrating how to use `AgoraAudioProcessor` for audio frame processing:
+
+```java
+import io.agora.rtc.audio3a.AgoraAudioProcessor;
+import io.agora.rtc.audio3a.AgoraAudioProcessorConfig;
+import io.agora.rtc.audio3a.IAgoraAudioProcessorEventHandler;
+import io.agora.rtc.audio3a.AgoraAudioFrame; // Use AgoraAudioFrame from the audio3a package
+import io.agora.rtc.audio3a.AecConfig;
+import io.agora.rtc.audio3a.AnsConfig;
+import io.agora.rtc.audio3a.AgcConfig;
+import io.agora.rtc.audio3a.BghvsConfig;
+import io.agora.rtc.Constants; // SDK's constants class
+import java.nio.ByteBuffer;
+import java.util.Arrays; // For printing data in example
+
+public class Audio3AProcessingExample {
+    public static void main(String[] args) {
+        // Replace with your App ID and License
+        String appId = "YOUR_APP_ID";
+        String license = "YOUR_LICENSE_KEY";
+
+        // 1. Create AgoraAudioProcessor instance
+        AgoraAudioProcessor audioProcessor = new AgoraAudioProcessor();
+
+        // 2. Configure AgoraAudioProcessorConfig
+        AgoraAudioProcessorConfig config = new AgoraAudioProcessorConfig();
+        // Set the model file path, usually in resources/model/ of the SDK package
+        // Ensure the path is correct, otherwise initialization might fail
+        config.setModelPath("./resources/model/"); // Modify according to your actual path
+
+        // Configure AEC (Acoustic Echo Cancellation)
+        AecConfig aecConfig = config.getAecConfig();
+        aecConfig.setEnabled(true); // Enable AEC
+        
+        // Configure ANS (Automatic Noise Suppression)
+        AnsConfig ansConfig = config.getAnsConfig();
+        ansConfig.setEnabled(true); // Enable ANS
+        
+        // Configure AGC (Automatic Gain Control)
+        AgcConfig agcConfig = config.getAgcConfig();
+        agcConfig.setEnabled(true); // Enable AGC
+        
+        // Configure BGHVS (Background Human Voice Suppression)
+        BghvsConfig bghvsConfig = config.getBghvsConfig();
+        bghvsConfig.setEnabled(true); // Enable BGHVS
+
+        // 3. Initialize AgoraAudioProcessor
+        int initRet = audioProcessor.init(appId, license,
+                new IAgoraAudioProcessorEventHandler() {
+                    @Override
+                    public void onEvent(Constants.AgoraAudioProcessorEventType eventType) {
+                        System.out.println("AgoraAudioProcessor Event: " + eventType);
+                    }
+
+                    @Override
+                    public void onError(int errorCode) {
+                        System.err.println("AgoraAudioProcessor Error: " + errorCode);
+                    }
+                }, config);
+
+        if (initRet != 0) {
+            System.err.println("Failed to initialize AgoraAudioProcessor. Error code: " + initRet);
+            // Handle initialization failure based on the error code, e.g., check appId, license, modelPath
+            return;
+        }
+        System.out.println("AgoraAudioProcessor initialized successfully.");
+
+        // 4. Prepare audio frame (AgoraAudioFrame)
+        // Example parameters: 48kHz, mono, 10ms audio frame
+        int sampleRate = 48000;
+        int channels = 1;
+        int samplesPerChannel = sampleRate / 100; // 10ms frame -> 480 samples
+        int bytesPerSample = Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue(); // PCM16
+        int bufferSize = samplesPerChannel * channels * bytesPerSample;
+
+        // Create near-end audio frame
+        AgoraAudioFrame nearInFrame = new AgoraAudioFrame();
+        nearInFrame.setType(Constants.AudioFrameType.PCM16.getValue());
+        nearInFrame.setSampleRate(sampleRate);
+        nearInFrame.setChannels(channels);
+        nearInFrame.setSamplesPerChannel(samplesPerChannel);
+        nearInFrame.setBytesPerSample(bytesPerSample);
+        // In a real application, pcmDataNear would come from a near-end audio source
+        byte[] pcmDataNear = new byte[bufferSize]; 
+        // ... Fill pcmDataNear with dummy data here ...
+        ByteBuffer nearAudioBuffer = ByteBuffer.allocateDirect(bufferSize);
+        nearAudioBuffer.put(pcmDataNear);
+        nearAudioBuffer.flip();
+        nearInFrame.setBuffer(nearAudioBuffer);
+
+        // Create far-end audio frame (for AEC)
+        AgoraAudioFrame farInFrame = new AgoraAudioFrame();
+        farInFrame.setType(Constants.AudioFrameType.PCM16.getValue());
+        farInFrame.setSampleRate(sampleRate);
+        farInFrame.setChannels(channels);
+        farInFrame.setSamplesPerChannel(samplesPerChannel);
+        farInFrame.setBytesPerSample(bytesPerSample);
+        // In a real application, pcmDataFar would come from a far-end audio source
+        byte[] pcmDataFar = new byte[bufferSize]; 
+        // ... Fill pcmDataFar with dummy data here ...
+        ByteBuffer farAudioBuffer = ByteBuffer.allocateDirect(bufferSize);
+        farAudioBuffer.put(pcmDataFar);
+        farAudioBuffer.flip();
+        farInFrame.setBuffer(farAudioBuffer);
+
+        // 5. Process the audio frame
+        // If you only need to process the near-end audio (e.g., only ANS, AGC), 
+        // you can call the single-parameter process method:
+        // AgoraAudioFrame outputFrame = audioProcessor.process(nearInFrame);
+
+        // If AEC processing is required, pass both near-end and far-end audio frames
+        AgoraAudioFrame outputFrame = audioProcessor.process(nearInFrame, farInFrame);
+
+        if (outputFrame != null && outputFrame.getBuffer() != null) {
+            System.out.println("Audio frame processed successfully.");
+            ByteBuffer processedBuffer = outputFrame.getBuffer();
+            // processedBuffer contains the 3A + BGHVS-processed audio data
+            // The processed audio will have the following optimizations:
+            // - AEC: Acoustic echo cancellation
+            // - ANS: Background noise suppression
+            // - AGC: Automatic gain control
+            // - BGHVS: Background human voice suppression
+            // You can write this data to a file, send it over the network, or perform other operations
+            // Example: Get processed byte data:
+            // byte[] processedBytes = new byte[processedBuffer.remaining()];
+            // processedBuffer.get(processedBytes);
+            // System.out.println("Processed data sample (first 10 bytes): " +
+            // Arrays.toString(Arrays.copyOfRange(processedBytes, 0, Math.min(10, processedBytes.length))));
+        } else {
+            System.err.println("Failed to process audio frame or output frame is null.");
+            // Check for error callbacks or the return value of the process method
+        }
+
+        // 6. Release resources
+        int releaseRet = audioProcessor.release();
+        if (releaseRet == 0) {
+            System.out.println("AgoraAudioProcessor released successfully.");
+        } else {
+            System.err.println("Failed to release AgoraAudioProcessor. Error code: " + releaseRet);
+        }
     }
 }
 ```

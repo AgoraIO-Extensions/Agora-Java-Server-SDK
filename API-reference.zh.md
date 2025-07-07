@@ -18,6 +18,9 @@
   - [AgoraVideoEncodedImageSender](#agoravideoencodedimagesender)
   - [AgoraAudioEncodedFrameSender](#agoraaudioencodedframesender)
   - [AgoraParameter](#agoraparameter)
+  - [AgoraAudioProcessor](#agoraprocessor)
+  - [AgoraAudioVad](#agoraaudiovad)
+  - [AgoraAudioVadV2](#agoraaudiovadev2)
 - [观察者接口](#观察者接口)
   - [IRtcConnObserver](#irtcconnobserver)
   - [ILocalUserObserver](#ilocaluserobserver)
@@ -26,6 +29,7 @@
   - [IAudioFrameObserver](#iaudioframeobserver)
   - [IAudioEncodedFrameObserver](#iaudioencodedframeobserver)
   - [IVideoEncodedFrameObserver](#ivideoencodedframeobserver)
+  - [IAgoraAudioProcessorEventHandler](#iagoraaudioprocessoreventhandler)
 - [数据结构](#数据结构)
   - [AgoraServiceConfig](#agoraserviceconfig)
   - [RtcConnConfig](#rtcconnconfig)
@@ -45,6 +49,7 @@
   - [UserInfo](#userinfo)
   - [VadProcessResult](#vadprocessresult)
   - [AgoraAudioVadConfigV2](#agoraaudiovadconfigv2)
+  - [AgoraAudioVadConfig](#agoraaudiovadconfig)
   - [LocalAudioTrackStats](#localaudiotrackstats)
   - [LocalVideoTrackStats](#localvideotrackstats)
   - [RemoteAudioTrackStats](#remoteaudiotrackstats)
@@ -53,6 +58,12 @@
   - [UplinkNetworkInfo](#uplinknetworkinfo)
   - [DownlinkNetworkInfo](#downlinknetworkinfo)
   - [PeerDownlinkInfo](#peerdownlinkinfo)
+  - [AecConfig](#aecconfig)
+  - [AnsConfig](#ansconfig)
+  - [AgcConfig](#agcconfig)
+  - [BghvsConfig](#bghvsconfig)
+  - [AgoraAudioProcessorConfig](#agoraaudioprocessorconfig)
+  - [AgoraAudioFrame](#agoraaudioframe)
 - [工具类](#工具类)
   - [AudioConsumerUtils](#audioconsumerutils)
   - [VadDumpUtils](#vaddumputils)
@@ -2775,6 +2786,21 @@ public int getString(String key, Out value)
 - 0：成功
 - < 0：失败
 
+### AgoraAudioProcessor
+
+`AgoraAudioProcessor` 类提供了上行音频处理的接口，包括 AEC、ANS、AGC 和 BGHVS 功能。
+
+**主要方法:**
+
+- `AgoraAudioProcessor()`: 构造函数。
+- `static String getSdkVersion()`: 获取 SDK 版本号。
+- `int init(String appId, String license, IAgoraAudioProcessorEventHandler eventHandler, AgoraAudioProcessorConfig config)`: 使用给定的配置初始化处理器。
+- `AgoraAudioFrame process(AgoraAudioFrame nearIn)`: 处理近端音频帧（例如用于 ANS、AGC），并返回处理后的帧。当仅需要处理近端音频或不需要 AEC 时使用此方法。
+- `AgoraAudioFrame process(AgoraAudioFrame nearIn, AgoraAudioFrame farIn)`: 处理近端和远端音频帧（例如用于 AEC、ANS、AGC），并返回处理后的近端音频帧。当需要 AEC 处理时使用此方法。
+- `int release()`: 释放处理器及相关资源。
+
+**注意:** 此类使用原生方法进行实际处理。
+
 ## 观察者接口
 
 ### IRtcConnObserver
@@ -4190,6 +4216,17 @@ public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int user
 
 - SDK 预留参数，返回 0 即可。
 
+### IAgoraAudioProcessorEventHandler
+
+`IAgoraAudioProcessorEventHandler` 接口提供来自 Agora 上行音频处理库的事件和错误回调。
+
+**方法:**
+
+- `void onEvent(Constants.AgoraAudioProcessorEventType eventType)`: 音频处理器的事件回调。
+- `void onError(int errorCode)`: 音频处理器的错误回调。
+
+**注意:** 这两个方法都有默认的空实现。
+
 ## 数据结构
 
 ### AgoraServiceConfig
@@ -4484,7 +4521,7 @@ public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int user
 
 ### AgoraAudioVadConfigV2
 
-`AgoraAudioVadConfigV2` 类配置音频 VAD 参数。
+`AgoraAudioVadConfigV2` 类配置音频 VAD 参数的 V2 版本。
 
 #### 主要属性
 
@@ -4497,6 +4534,67 @@ public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int user
 - **stopVoiceProb**：停止语音概率 (int)。
 - **startRmsThreshold**：开始 RMS 阈值 (int)。
 - **stopRmsThreshold**：停止 RMS 阈值 (int)。
+
+### AgoraAudioVadConfig
+
+`AgoraAudioVadConfig` 类配置音频 VAD 参数。
+
+#### 主要属性
+
+- **fftSz**：FFT 大小 (int)。仅支持 128、256、512、1024，默认值为 1024。
+- **hopSz**：FFT 跳跃大小 (int)。用于检查，默认值为 160。
+- **anaWindowSz**：FFT 窗口大小 (int)。用于计算 RMS，默认值为 768。
+- **frqInputAvailableFlag**：是否包含外部频率功率谱 (int)。默认值为 0。
+- **useCVersionAIModule**：是否使用 C 版本的 AI 子模块 (int)。默认值为 0。
+- **voiceProbThr**：语音概率阈值 (float)。范围 0.0f ~ 1.0f，默认值为 0.8。
+- **rmsThr**：RMS 阈值 (float)。单位为 dB，默认值为 -40.0。
+- **jointThr**：联合阈值 (float)。单位为 dB，默认值为 0.0。
+- **aggressive**：激进因子 (float)。值越大越激进，默认值为 5.0。
+- **startRecognizeCount**：开始识别计数 (int)。10ms 16KHz 16bit 单通道 PCM 的缓冲区大小，默认值为 10。
+- **stopRecognizeCount**：停止识别计数 (int)。10ms 16KHz 16bit 单通道 PCM 的缓冲区大小，默认值为 6。
+- **preStartRecognizeCount**：预开始识别计数 (int)。10ms 16KHz 16bit 单通道 PCM 的缓冲区大小，默认值为 10。
+- **activePercent**：活跃百分比 (float)。超过此百分比将被识别为说话，默认值为 0.6。
+- **inactivePercent**：非活跃百分比 (float)。低于此百分比将被识别为非说话，默认值为 0.2。
+
+#### 构造方法
+
+##### AgoraAudioVadConfig
+
+```java
+public AgoraAudioVadConfig()
+```
+
+使用默认值创建 `AgoraAudioVadConfig` 实例。
+
+```java
+public AgoraAudioVadConfig(int fftSz, int hopSz, int anaWindowSz, int frqInputAvailableFlag,
+                          int useCVersionAIModule, float voiceProbThr, float rmsThr, float jointThr, 
+                          float aggressive, int startRecognizeCount, int stopRecognizeCount, 
+                          int preStartRecognizeCount, float activePercent, float inactivePercent)
+```
+
+使用指定参数创建 `AgoraAudioVadConfig` 实例。
+
+**参数**：
+
+- `fftSz`：FFT 大小。
+- `hopSz`：跳跃大小。
+- `anaWindowSz`：分析窗口大小。
+- `frqInputAvailableFlag`：频率输入可用标志。
+- `useCVersionAIModule`：是否使用 C 版本 AI 模块。
+- `voiceProbThr`：语音概率阈值。
+- `rmsThr`：RMS 阈值。
+- `jointThr`：联合阈值。
+- `aggressive`：激进因子。
+- `startRecognizeCount`：开始识别计数。
+- `stopRecognizeCount`：停止识别计数。
+- `preStartRecognizeCount`：预开始识别计数。
+- `activePercent`：活跃百分比。
+- `inactivePercent`：非活跃百分比。
+
+#### 方法
+
+该类提供所有属性的 Getter 和 Setter 方法，以及 `toString()` 方法用于调试。
 
 ### LocalAudioTrackStats
 
@@ -4626,9 +4724,229 @@ public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int user
 - **currentDownscaleLevel**：当前下采样级别 (int)。
 - **expectedBitrateBps**：预期比特率（bps）(int)。
 
-### 工具类
+### AecConfig
 
-#### AudioConsumerUtils
+`AecConfig` 类配置声学回声消除 (AEC) 设置。
+
+**主要属性:**
+
+- **enabled**: 是否启用 AEC (`boolean`)。
+- **stereoAecEnabled**: 是否启用立体声 AEC (`boolean`)。
+- **enableAecAutoReset**: 是否启用 AEC 自动重置 (`boolean`)。
+- **aecStartupMaxSuppressTimeInMs**: AEC 启动期间的最大抑制时间 (毫秒) (`int`)。
+- **filterLength**: AEC 的滤波器长度 (`Constants.AecFilterLength`)。
+- **aecModelType**: AEC 模型类型 (`Constants.AecModelType`)。
+- **aecSuppressionMode**: AEC 抑制模式 (`Constants.AecSuppressionMode`)。
+- **aiAecSuppressionMode**: AI AEC 抑制模式 (`Constants.AIAecSuppressionMode`)。
+
+**构造函数:**
+
+- `AecConfig()`
+- `AecConfig(boolean enabled, boolean stereoAecEnabled, boolean enableAecAutoReset, int aecStartupMaxSuppressTimeInMs, Constants.AecFilterLength filterLength, Constants.AecModelType aecModelType, Constants.AecSuppressionMode aecSuppressionMode, Constants.AIAecSuppressionMode aiAecSuppressionMode)`
+
+**方法:**
+
+- 所有属性的 Getters 和 Setters。
+
+### AnsConfig
+
+`AnsConfig` 类配置自动噪声抑制 (ANS) 设置。
+
+**主要属性:**
+
+- **enabled**: 是否启用 ANS (`boolean`)。
+- **suppressionMode**: ANS 抑制模式 (`Constants.AnsSuppressionMode`)。
+- **ansModelType**: ANS 模型类型 (`Constants.AnsModelType`)。
+- **speechProtectThreshold**: 语音保护阈值 (`int`)。
+
+**构造函数:**
+
+- `AnsConfig()`
+- `AnsConfig(boolean enabled, Constants.AnsSuppressionMode suppressionMode, Constants.AnsModelType ansModelType, int speechProtectThreshold)`
+
+**方法:**
+
+- 所有属性的 Getters 和 Setters。
+
+### AgcConfig
+
+`AgcConfig` 类配置自动增益控制 (AGC) 设置。
+
+**主要属性:**
+
+- **enabled**: 是否启用 AGC (`boolean`)。
+- **useAnalogMode**: 是否使用模拟模式 (`boolean`)。
+- **maxDigitalGaindB**: 最大数字增益 (dB) (`int`)。
+- **targetleveldB**: 目标电平 (dB) (`int`)。
+- **curveSlope**: 曲线斜率 (`int`)。
+
+**构造函数:**
+
+- `AgcConfig()`
+- `AgcConfig(boolean enabled, boolean useAnalogMode, int maxDigitalGaindB, int targetleveldB, int curveSlope)`
+
+**方法:**
+
+- 所有属性的 Getters 和 Setters。
+
+### BghvsConfig
+
+`BghvsConfig` 类配置背景谐波人声抑制 (BGHVS) 设置。
+
+**主要属性:**
+
+- **enabled**: 是否启用 BGHVS (`boolean`)。
+- **bghvsSosLenInMs**: 语音起始段长度 (毫秒) (`int`)。
+- **bghvsEosLenInMs**: 语音结束段长度 (毫秒) (`int`)。
+- **bghvsSppMode**: BGHVS 抑制模式 (`Constants.BghvsSuppressionMode`)。
+- **bghvsDelayInFrmNums**: 延迟帧数 (`int`)。
+
+**构造函数:**
+
+- `BghvsConfig()`
+- `BghvsConfig(boolean enabled, int bghvsSosLenInMs, int bghvsEosLenInMs, Constants.BghvsSuppressionMode bghvsSppMode, int bghvsDelayInFrmNums)`
+
+**方法:**
+
+- 所有属性的 Getters 和 Setters。
+
+### AgoraAudioProcessorConfig
+
+`AgoraAudioProcessorConfig` 类用于配置 `AgoraAudioProcessor`。
+
+**主要属性:**
+
+- **modelPath**: 模型文件路径 (`String`)。
+- **aecConfig**: AEC 配置 (`AecConfig`)。
+- **ansConfig**: ANS 配置 (`AnsConfig`)。
+- **agcConfig**: AGC 配置 (`AgcConfig`)。
+- **bghvsConfig**: BGHVS 配置 (`BghvsConfig`)。
+
+**构造函数:**
+
+- `AgoraAudioProcessorConfig()`
+- `AgoraAudioProcessorConfig(String modelPath, AecConfig aecConfig, AnsConfig ansConfig, AgcConfig agcConfig, BghvsConfig bghvsConfig)`
+
+**方法:**
+
+- 所有属性的 Getters 和 Setters。
+
+### AgoraAudioFrame
+
+`AgoraAudioFrame` 类表示用于处理的音频帧。
+
+**主要属性:**
+
+- **type**: 音频帧类型 (`int`)。
+- **sampleRate**: 采样率 (Hz) (`int`)。
+- **channels**: 通道数 (`int`)。
+- **samplesPerChannel**: 每通道采样数 (`int`)。
+- **bytesPerSample**: 每采样字节数 (`int`)。
+- **buffer**: 音频数据缓冲区 (`ByteBuffer`)。
+
+**构造函数:**
+
+- `AgoraAudioFrame()`
+- `AgoraAudioFrame(int type, int sampleRate, int channels, int samplesPerChannel, int bytesPerSample, ByteBuffer buffer)`
+
+**方法:**
+
+- 所有属性的 Getters 和 Setters。
+
+### AgoraAudioVad
+
+`AgoraAudioVad` 类提供基于原生实现的语音活动检测（VAD）功能。
+
+```java
+public class AgoraAudioVad {
+    // 构造方法
+    public AgoraAudioVad()
+}
+```
+
+#### 方法
+
+##### initialize
+
+```java
+public int initialize(AgoraAudioVadConfig config)
+```
+
+使用指定的配置初始化 VAD 模块。
+
+**参数**：
+
+- `config`：VAD 模块的配置 (`AgoraAudioVadConfig`)。
+
+**返回值**：
+
+- 0：成功
+- -1：失败
+
+##### processPcmFrame
+
+```java
+public VadProcessResult processPcmFrame(byte[] frame)
+```
+
+处理 PCM 音频帧并返回 VAD 处理结果。
+
+**参数**：
+
+- `frame`：PCM 音频帧数据 (`byte[]`)。
+
+**返回值**：
+
+- `VadProcessResult`：VAD 处理结果，包含处理后的音频数据和状态。如果输入无效则返回 null。
+
+##### destroy
+
+```java
+public synchronized void destroy()
+```
+
+销毁 VAD 模块并释放资源。
+
+### AgoraAudioVadV2
+
+`AgoraAudioVadV2` 类提供基于 Java 实现的语音活动检测（VAD）功能的 V2 版本。
+
+```java
+public class AgoraAudioVadV2 {
+    // 构造方法
+    public AgoraAudioVadV2(AgoraAudioVadConfigV2 config)
+}
+```
+
+#### 方法
+
+##### processFrame
+
+```java
+public VadProcessResult processFrame(AudioFrame frame)
+```
+
+处理音频帧并返回 VAD 处理结果。
+
+**参数**：
+
+- `frame`：音频帧 (`AudioFrame`)。
+
+**返回值**：
+
+- `VadProcessResult`：VAD 处理结果，包含处理后的音频数据和当前状态。如果输入无效则返回 null。
+
+##### destroy
+
+```java
+public void destroy()
+```
+
+销毁 VAD 模块并释放资源。
+
+## 工具类
+
+### AudioConsumerUtils
 
 `AudioConsumerUtils` 类用于消费 PCM 音频数据并将其推送到 RTC 频道。主要用于 AI 场景，如处理 TTS 返回的数据。
 
