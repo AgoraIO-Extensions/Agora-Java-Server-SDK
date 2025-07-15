@@ -63,7 +63,7 @@ public class AgoraServiceInitializer {
     }
 
     private static void initData(ArgsConfig argsConfig) {
-        SampleLogger.enableLog(argsConfig.isEnableLog());
+        //SampleLogger.enableLog(argsConfig.isEnableLog());
 
         if (argsConfig.getConnectionCount() <= 0) {
             argsConfig.setConnectionCount(1);

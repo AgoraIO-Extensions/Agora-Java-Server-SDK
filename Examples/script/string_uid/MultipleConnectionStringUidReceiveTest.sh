@@ -1,1 +1,0 @@
-sh run.zsh io.agora.rtc.example.test.pcm.MultipleConnectionPcmReceiveTest -stringUid -channelId pcmChannel -userId 11120qq -connectionCount 1 -sampleRate 16000 -numOfChannels 1 -audioOutFile test_data_out/received_pcm -enableAudioLabel 1

@@ -42,6 +42,7 @@ public class ServerController implements DisposableBean, ApplicationContextAware
     // AgoraTaskManager is used to manage the Agora tasks
     private AgoraTaskManager agoraTaskManager;
 
+    // SseEmitter for current request - will be recreated for each request
     private SseEmitter sseEmitter;
 
     private CountDownLatch taskFinishLatch;
@@ -86,7 +87,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
         this.agoraTaskManager = new AgoraTaskManager(agoraTaskListener);
-        this.sseEmitter = new SseEmitter(Long.MAX_VALUE);
+        // Initialize the ThreadLocal SseEmitter
+        // currentSseEmitter.set(new SseEmitter(Long.MAX_VALUE)); // Removed as per edit hint
     }
 
     public ServerController() {
@@ -98,6 +100,9 @@ public class ServerController implements DisposableBean, ApplicationContextAware
         log.info("=== START SSE SERVER REQUEST ===");
         log.info("Received configFileName parameter: {}", configFileName);
 
+        // Create a new SseEmitter for each request
+        sseEmitter = new SseEmitter(Long.MAX_VALUE);
+
         sendSseEvent("SSE connection established, starting tasks...");
 
         // return sseEmitter immediately to client to avoid timeout
@@ -106,11 +111,11 @@ public class ServerController implements DisposableBean, ApplicationContextAware
                 if (configFileName == null || configFileName.trim().isEmpty()) {
                     log.info("ConfigFileName is empty, will start recording for all config files "
                         + "via SSE");
-                    startAllServersTasks();
+                    startAllServersTasks(sseEmitter);
                 } else {
                     log.info("ConfigFileName provided: {}, starting single recording via SSE",
                         configFileName);
-                    startSingleServerSse(configFileName.trim());
+                    startSingleServerSse(configFileName.trim(), sseEmitter);
                 }
                 sseEmitter.complete();
             } catch (Exception e) {
@@ -132,6 +137,9 @@ public class ServerController implements DisposableBean, ApplicationContextAware
     public SseEmitter startBasicServer(String taskName) {
         log.info("=== START SSE SERVER REQUEST ===");
         log.info("Received taskName parameter: {}", taskName);
+
+        // Create a new SseEmitter for each request
+        sseEmitter = new SseEmitter(Long.MAX_VALUE);
 
         sendSseEvent("SSE connection established, starting tasks...");
 
@@ -220,69 +228,69 @@ public class ServerController implements DisposableBean, ApplicationContextAware
         return sseEmitter;
     }
 
-    private void startAllServersTasks() {
-        sendSseEvent("--- Starting all servers via SSE ---");
+    private void startAllServersTasks(SseEmitter sseEmitter) {
+        sendSseEvent("--- Starting all servers via SSE ---", sseEmitter);
 
         long startTime = System.currentTimeMillis();
         try {
-            if (!testPcmTask()) {
-                sendSseEvent("Error: test pcm task failed");
+            if (!testPcmTask(sseEmitter)) {
+                sendSseEvent("Error: test pcm task failed", sseEmitter);
                 return;
             }
 
             Thread.sleep(5 * 1000);
 
-            if (!testEncodedAudioTask()) {
-                sendSseEvent("Error: test encoded audio task failed");
+            if (!testEncodedAudioTask(sseEmitter)) {
+                sendSseEvent("Error: test encoded audio task failed", sseEmitter);
                 return;
             }
 
             Thread.sleep(5 * 1000);
 
-            if (!testMixedAudioTask()) {
-                sendSseEvent("Error: test mixed audio task failed");
+            if (!testMixedAudioTask(sseEmitter)) {
+                sendSseEvent("Error: test mixed audio task failed", sseEmitter);
                 return;
             }
 
             Thread.sleep(5 * 1000);
 
-            if (!testYuvTask()) {
-                sendSseEvent("Error: test yuv task failed");
+            if (!testYuvTask(sseEmitter)) {
+                sendSseEvent("Error: test yuv task failed", sseEmitter);
                 return;
             }
 
             Thread.sleep(5 * 1000);
 
-            if (!testH264Task()) {
-                sendSseEvent("Error: test h264 task failed");
+            if (!testH264Task(sseEmitter)) {
+                sendSseEvent("Error: test h264 task failed", sseEmitter);
                 return;
             }
 
             Thread.sleep(5 * 1000);
 
-            if (!testAgoraParameterTask()) {
-                sendSseEvent("Error: test agora parameter task failed");
+            if (!testAgoraParameterTask(sseEmitter)) {
+                sendSseEvent("Error: test agora parameter task failed", sseEmitter);
                 return;
             }
 
             Thread.sleep(5 * 1000);
 
-            if (!testDataStreamTask()) {
-                sendSseEvent("Error: test data stream task failed");
+            if (!testDataStreamTask(sseEmitter)) {
+                sendSseEvent("Error: test data stream task failed", sseEmitter);
                 return;
             }
 
             Thread.sleep(5 * 1000);
 
-            if (!testRgbaTask()) {
-                sendSseEvent("Error: test rgba task failed");
+            if (!testRgbaTask(sseEmitter)) {
+                sendSseEvent("Error: test rgba task failed", sseEmitter);
                 return;
             }
 
             Thread.sleep(5 * 1000);
 
-            if (!testVp8Task()) {
-                sendSseEvent("Error: test vp8 task failed");
+            if (!testVp8Task(sseEmitter)) {
+                sendSseEvent("Error: test vp8 task failed", sseEmitter);
                 return;
             }
 
@@ -292,18 +300,20 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             long timeCostMs = endTime - startTime;
             double timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent("All tasks finished, time cost: " + String.format("%.2f", timeCostMinutes)
-                + " minutes (" + timeCostMs + "ms) and releasing AgoraService resources...");
+                    + " minutes (" + timeCostMs + "ms) and releasing AgoraService resources...",
+                sseEmitter);
 
             agoraTaskManager.cleanup();
-            sendSseEvent("AgoraService resources released successfully.");
+            sendSseEvent("AgoraService resources released successfully.", sseEmitter);
             destroyApplication();
         } catch (Exception e) {
             log.error("Error in SSE task for startAllServersTasks", e);
-            sendSseEvent("Error in SSE task for startAllServersTasks: " + e.getMessage());
+            sendSseEvent(
+                "Error in SSE task for startAllServersTasks: " + e.getMessage(), sseEmitter);
         }
     }
 
-    private boolean testPcmTask() {
+    private boolean testPcmTask(SseEmitter sseEmitter) {
         try {
             long startTime = System.currentTimeMillis();
             taskFinishLatch = new CountDownLatch(1);
@@ -321,7 +331,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             taskFinishLatch.await();
             if (!Utils.checkFileExists(recvArgsConfig.getAudioOutFile())) {
                 sendSseEvent("Error: recv pcm audioOutFile does not exist: "
-                    + recvArgsConfig.getAudioOutFile());
+                        + recvArgsConfig.getAudioOutFile(),
+                    sseEmitter);
                 return false;
             }
 
@@ -329,7 +340,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             long timeCostMs = endTime - startTime;
             double timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent("recv and send pcm task finished, time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
 
             Thread.sleep(5 * 1000);
 
@@ -351,14 +363,16 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             taskFinishLatch.await();
             if (!Utils.checkFileExists(recvArgsConfig.getAudioOutFile())) {
                 sendSseEvent("Error: recv pcm with encrypted audioOutFile does not exist: "
-                    + recvArgsConfig.getAudioOutFile());
+                        + recvArgsConfig.getAudioOutFile(),
+                    sseEmitter);
                 return false;
             }
             endTime = System.currentTimeMillis();
             timeCostMs = endTime - startTime;
             timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent("recv and send encrypted pcm task finished, time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
 
             Thread.sleep(5 * 1000);
 
@@ -378,14 +392,16 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             taskFinishLatch.await();
             if (!Utils.checkFileExists(recvArgsConfig.getAudioOutFile())) {
                 sendSseEvent("Error: recv pcm with remote user id audioOutFile does not exist: "
-                    + recvArgsConfig.getAudioOutFile());
+                        + recvArgsConfig.getAudioOutFile(),
+                    sseEmitter);
                 return false;
             }
 
             if (recvArgsConfig.isEnableVad()) {
                 if (!Utils.checkFileExists(recvArgsConfig.getAudioOutFile(), "_vad.pcm")) {
                     sendSseEvent("Error: recv pcm with remote user id audioOutFile does not exist: "
-                        + recvArgsConfig.getAudioOutFile());
+                            + recvArgsConfig.getAudioOutFile(),
+                        sseEmitter);
                     return false;
                 }
             }
@@ -395,7 +411,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
                         recvArgsConfig.getAudioOutFile(), "_audio_meta_data.txt")) {
                     sendSseEvent(
                         "Error: recv pcm with remote user id audio meta data file does not exist: "
-                        + recvArgsConfig.getAudioOutFile());
+                            + recvArgsConfig.getAudioOutFile(),
+                        sseEmitter);
                     return false;
                 }
             }
@@ -404,7 +421,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             timeCostMs = endTime - startTime;
             timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent("recv and send pcm with remote user id task finished, time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
 
             Thread.sleep(5 * 1000);
 
@@ -422,7 +440,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             taskFinishLatch.await();
             if (Utils.checkFileExists(recvArgsConfig.getAudioOutFile())) {
                 sendSseEvent("Error: recv pcm with not exist remote user id audioOutFile exists: "
-                    + recvArgsConfig.getAudioOutFile());
+                        + recvArgsConfig.getAudioOutFile(),
+                    sseEmitter);
                 return false;
             }
 
@@ -431,7 +450,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent(
                 "recv and send pcm with not exist remote user id  task finished, time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
 
             Thread.sleep(5 * 1000);
 
@@ -451,7 +471,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             taskFinishLatch.await();
             if (!Utils.checkFileExists(recvArgsConfig.getAudioOutFile())) {
                 sendSseEvent("Error: recv pcm with cloud proxy audioOutFile does not exist: "
-                    + recvArgsConfig.getAudioOutFile());
+                        + recvArgsConfig.getAudioOutFile(),
+                    sseEmitter);
                 return false;
             }
 
@@ -459,7 +480,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             timeCostMs = endTime - startTime;
             timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent("recv and send pcm with cloud proxy task finished, time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
         } catch (Exception e) {
             log.error("Error in SSE task for testPcmTask", e);
             return false;
@@ -467,7 +489,7 @@ public class ServerController implements DisposableBean, ApplicationContextAware
         return true;
     }
 
-    private boolean testEncodedAudioTask() {
+    private boolean testEncodedAudioTask(SseEmitter sseEmitter) {
         try {
             long startTime = System.currentTimeMillis();
             taskFinishLatch = new CountDownLatch(1);
@@ -487,8 +509,9 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             if (!Utils.checkFileExists(recvArgsConfig.getAudioOutFile(),
                     recvArgsConfig.getFileType(), recvArgsConfig.getExpectedFile())) {
                 sendSseEvent("Error: recv encoded audio audioOutFile does not exist: "
-                    + recvArgsConfig.getAudioOutFile()
-                    + " or not match expectedFile: " + recvArgsConfig.getExpectedFile());
+                        + recvArgsConfig.getAudioOutFile()
+                        + " or not match expectedFile: " + recvArgsConfig.getExpectedFile(),
+                    sseEmitter);
                 return false;
             }
 
@@ -496,7 +519,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             long timeCostMs = endTime - startTime;
             double timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent("recv and send encoded audio task finished, time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
         } catch (Exception e) {
             log.error("Error in SSE task for testEncodedAudioTask", e);
             return false;
@@ -504,7 +528,7 @@ public class ServerController implements DisposableBean, ApplicationContextAware
         return true;
     }
 
-    private boolean testMixedAudioTask() {
+    private boolean testMixedAudioTask(SseEmitter sseEmitter) {
         try {
             long startTime = System.currentTimeMillis();
             taskFinishLatch = new CountDownLatch(1);
@@ -523,7 +547,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             if (!Utils.checkFileExists(recvArgsConfig.getAudioOutFile())) {
                 sendSseEvent("Error: recv mixed audio audioOutFile does not exist: "
-                    + recvArgsConfig.getAudioOutFile());
+                        + recvArgsConfig.getAudioOutFile(),
+                    sseEmitter);
                 return false;
             }
 
@@ -531,7 +556,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             long timeCostMs = endTime - startTime;
             double timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent("recv and send mixed audio task finished, time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
         } catch (Exception e) {
             log.error("Error in SSE task for testMixedAudioTask", e);
             return false;
@@ -539,7 +565,7 @@ public class ServerController implements DisposableBean, ApplicationContextAware
         return true;
     }
 
-    private boolean testYuvTask() {
+    private boolean testYuvTask(SseEmitter sseEmitter) {
         try {
             long startTime = System.currentTimeMillis();
             taskFinishLatch = new CountDownLatch(1);
@@ -558,7 +584,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             if (!Utils.checkFileExists(recvArgsConfig.getVideoOutFile())) {
                 sendSseEvent("Error: recv yuv videoOutFile does not exist: "
-                    + recvArgsConfig.getVideoOutFile());
+                        + recvArgsConfig.getVideoOutFile(),
+                    sseEmitter);
                 return false;
             }
 
@@ -566,7 +593,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             long timeCostMs = endTime - startTime;
             double timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent("recv and send yuv task finished, time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
 
             Thread.sleep(5 * 1000);
 
@@ -587,7 +615,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             if (!Utils.checkFileExists(recvArgsConfig.getVideoOutFile())) {
                 sendSseEvent("Error: recv yuv with remote user id videoOutFile does not exist: "
-                    + recvArgsConfig.getVideoOutFile());
+                        + recvArgsConfig.getVideoOutFile(),
+                    sseEmitter);
                 return false;
             }
 
@@ -595,7 +624,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
                 if (!Utils.checkFileExists(recvArgsConfig.getVideoOutFile(), "_metaData.txt")) {
                     sendSseEvent(
                         "Error: recv yuv with remote user id video meta data file does not exist: "
-                        + recvArgsConfig.getVideoOutFile());
+                            + recvArgsConfig.getVideoOutFile(),
+                        sseEmitter);
                     return false;
                 }
             }
@@ -603,7 +633,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             timeCostMs = endTime - startTime;
             timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent("recv and send yuv with remote user id task finished, time cost:"
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
 
             Thread.sleep(5 * 1000);
 
@@ -622,7 +653,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             if (Utils.checkFileExists(recvArgsConfig.getVideoOutFile())) {
                 sendSseEvent("Error: recv yuv with not exist remote user id videoOutFile exists: "
-                    + recvArgsConfig.getVideoOutFile());
+                        + recvArgsConfig.getVideoOutFile(),
+                    sseEmitter);
                 return false;
             }
 
@@ -630,7 +662,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             timeCostMs = endTime - startTime;
             timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent("recv and send yuv with not exist remote user id task finished,time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
 
             Thread.sleep(5 * 1000);
 
@@ -651,14 +684,16 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             if (!Utils.checkFileExists(recvArgsConfig.getVideoOutFile())) {
                 sendSseEvent("Error: recv yuv with alpha videoOutFile does not exist: "
-                    + recvArgsConfig.getVideoOutFile());
+                        + recvArgsConfig.getVideoOutFile(),
+                    sseEmitter);
                 return false;
             }
 
             if (sendArgsConfig.isEnableSendVideoMetaData()) {
                 if (!Utils.checkFileExists(recvArgsConfig.getVideoOutFile(), "_alpha.raw")) {
                     sendSseEvent("Error: recv yuv with alpha video meta data file does not exist:"
-                        + recvArgsConfig.getVideoOutFile());
+                            + recvArgsConfig.getVideoOutFile(),
+                        sseEmitter);
                     return false;
                 }
             }
@@ -667,7 +702,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             timeCostMs = endTime - startTime;
             timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent("recv and send yuv with alpha task finished, time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
 
             Thread.sleep(5 * 1000);
 
@@ -693,13 +729,15 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             if (!Utils.checkFileExists(recvArgsConfig.getVideoOutFile())) {
                 sendSseEvent("Error: recv yuv dual stream high videoOutFile does not exist: "
-                    + recvArgsConfig.getVideoOutFile());
+                        + recvArgsConfig.getVideoOutFile(),
+                    sseEmitter);
                 return false;
             }
 
             if (!Utils.checkFileExists(recvArgsConfigLow.getVideoOutFile())) {
                 sendSseEvent("Error: recv yuv dual stream low videoOutFile does not exist: "
-                    + recvArgsConfigLow.getVideoOutFile());
+                        + recvArgsConfigLow.getVideoOutFile(),
+                    sseEmitter);
                 return false;
             }
 
@@ -707,15 +745,16 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             timeCostMs = endTime - startTime;
             timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent("recv and send yuv dual stream task finished, time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
         } catch (Exception e) {
-            sendSseEvent("Error: test yuv task failed: " + e.getMessage());
+            sendSseEvent("Error: test yuv task failed: " + e.getMessage(), sseEmitter);
             return false;
         }
         return true;
     }
 
-    private boolean testH264Task() {
+    private boolean testH264Task(SseEmitter sseEmitter) {
         try {
             long startTime = System.currentTimeMillis();
             taskFinishLatch = new CountDownLatch(1);
@@ -734,7 +773,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             if (!Utils.checkFileExists(recvArgsConfig.getVideoOutFile())) {
                 sendSseEvent("Error: recv h264 videoOutFile does not exist: "
-                    + recvArgsConfig.getVideoOutFile());
+                        + recvArgsConfig.getVideoOutFile(),
+                    sseEmitter);
                 return false;
             }
 
@@ -742,7 +782,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             long timeCostMs = endTime - startTime;
             double timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent("recv and send h264 task finished, time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
 
             Thread.sleep(5 * 1000);
 
@@ -763,7 +804,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             if (!Utils.checkFileExists(recvArgsConfig.getVideoOutFile())) {
                 sendSseEvent("Error: recv h264 with remote user id videoOutFile does not exist: "
-                    + recvArgsConfig.getVideoOutFile());
+                        + recvArgsConfig.getVideoOutFile(),
+                    sseEmitter);
                 return false;
             }
 
@@ -771,7 +813,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             timeCostMs = endTime - startTime;
             timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent("recv and send h264 with remote user id task finished, time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
 
             Thread.sleep(5 * 1000);
 
@@ -790,7 +833,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             if (Utils.checkFileExists(recvArgsConfig.getVideoOutFile())) {
                 sendSseEvent("Error: recv h264 with not exist remote user id videoOutFile exists: "
-                    + recvArgsConfig.getVideoOutFile());
+                        + recvArgsConfig.getVideoOutFile(),
+                    sseEmitter);
                 return false;
             }
 
@@ -799,7 +843,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent(
                 "recv and send h264 with not exist remote user id task finished, time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
 
             Thread.sleep(5 * 1000);
 
@@ -820,7 +865,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             if (!Utils.checkFileExists(recvArgsConfig.getVideoOutFile())) {
                 sendSseEvent("Error: recv h264 encrypted videoOutFile does not exist: "
-                    + recvArgsConfig.getVideoOutFile());
+                        + recvArgsConfig.getVideoOutFile(),
+                    sseEmitter);
                 return false;
             }
 
@@ -828,7 +874,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             timeCostMs = endTime - startTime;
             timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent("recv and send h264 encrypted task finished, time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
 
             Thread.sleep(5 * 1000);
 
@@ -854,13 +901,15 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             if (!Utils.checkFileExists(recvArgsConfig.getVideoOutFile())) {
                 sendSseEvent("Error: recv h264 dual stream high videoOutFile does not exist: "
-                    + recvArgsConfig.getVideoOutFile());
+                        + recvArgsConfig.getVideoOutFile(),
+                    sseEmitter);
                 return false;
             }
 
             if (!Utils.checkFileExists(recvArgsConfigLow.getVideoOutFile())) {
                 sendSseEvent("Error: recv h264 dual stream low videoOutFile does not exist: "
-                    + recvArgsConfigLow.getVideoOutFile());
+                        + recvArgsConfigLow.getVideoOutFile(),
+                    sseEmitter);
                 return false;
             }
 
@@ -868,7 +917,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             timeCostMs = endTime - startTime;
             timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent("recv and send h264 dual stream task finished, time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
         } catch (Exception e) {
             log.error("Error in SSE task for testH264Task", e);
             return false;
@@ -876,7 +926,7 @@ public class ServerController implements DisposableBean, ApplicationContextAware
         return true;
     }
 
-    private boolean testAgoraParameterTask() {
+    private boolean testAgoraParameterTask(SseEmitter sseEmitter) {
         try {
             long startTime = System.currentTimeMillis();
             taskFinishLatch = new CountDownLatch(1);
@@ -891,15 +941,16 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             long timeCostMs = endTime - startTime;
             double timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent("test agora parameter task finished, time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
         } catch (Exception e) {
-            sendSseEvent("Error: test agora parameter task failed: " + e.getMessage());
+            sendSseEvent("Error: test agora parameter task failed: " + e.getMessage(), sseEmitter);
             return false;
         }
         return true;
     }
 
-    private boolean testDataStreamTask() {
+    private boolean testDataStreamTask(SseEmitter sseEmitter) {
         try {
             long startTime = System.currentTimeMillis();
             taskFinishLatch = new CountDownLatch(1);
@@ -918,7 +969,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             if (!Utils.checkFileExists(recvArgsConfig.getAudioOutFile())) {
                 sendSseEvent("Error: recv data stream audioOutFile does not exist: "
-                    + recvArgsConfig.getAudioOutFile());
+                        + recvArgsConfig.getAudioOutFile(),
+                    sseEmitter);
                 return false;
             }
 
@@ -926,15 +978,16 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             long timeCostMs = endTime - startTime;
             double timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent("test data stream recv task finished, time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
         } catch (Exception e) {
-            sendSseEvent("Error: test data stream task failed: " + e.getMessage());
+            sendSseEvent("Error: test data stream task failed: " + e.getMessage(), sseEmitter);
             return false;
         }
         return true;
     }
 
-    private boolean testRgbaTask() {
+    private boolean testRgbaTask(SseEmitter sseEmitter) {
         try {
             long startTime = System.currentTimeMillis();
             taskFinishLatch = new CountDownLatch(1);
@@ -953,7 +1006,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             if (!Utils.checkFileExists(recvArgsConfig.getVideoOutFile())) {
                 sendSseEvent("Error: recv rgba videoOutFile does not exist: "
-                    + recvArgsConfig.getVideoOutFile());
+                        + recvArgsConfig.getVideoOutFile(),
+                    sseEmitter);
                 return false;
             }
 
@@ -961,15 +1015,16 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             long timeCostMs = endTime - startTime;
             double timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent("test rgba task finished, time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
         } catch (Exception e) {
-            sendSseEvent("Error: test rgba task failed: " + e.getMessage());
+            sendSseEvent("Error: test rgba task failed: " + e.getMessage(), sseEmitter);
             return false;
         }
         return true;
     }
 
-    private boolean testVp8Task() {
+    private boolean testVp8Task(SseEmitter sseEmitter) {
         try {
             long startTime = System.currentTimeMillis();
             taskFinishLatch = new CountDownLatch(1);
@@ -988,7 +1043,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             if (!Utils.checkFileExists(recvArgsConfig.getVideoOutFile())) {
                 sendSseEvent("Error: recv vp8 videoOutFile does not exist: "
-                    + recvArgsConfig.getVideoOutFile());
+                        + recvArgsConfig.getVideoOutFile(),
+                    sseEmitter);
                 return false;
             }
 
@@ -996,22 +1052,26 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             long timeCostMs = endTime - startTime;
             double timeCostMinutes = timeCostMs / 1000.0 / 60.0;
             sendSseEvent("Test vp8 task finished, time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
         } catch (Exception e) {
-            sendSseEvent("Error: test vp8 task failed: " + e.getMessage());
+            sendSseEvent("Error: test vp8 task failed: " + e.getMessage(), sseEmitter);
             return false;
         }
         return true;
     }
 
-    private boolean startSingleServerSse(String configFileName) {
+    private boolean startSingleServerSse(String configFileName, SseEmitter sseEmitter) {
         sendSseEvent(String.format(
-            "--- Starting single server (SSE) --- ConfigFileName: %s", configFileName));
+                         "--- Starting single server (SSE) --- ConfigFileName: %s", configFileName),
+            sseEmitter);
         try {
             long startTime = System.currentTimeMillis();
             taskFinishLatch = new CountDownLatch(1);
 
             ArgsConfig argsConfig = agoraTaskManager.parseArgsConfig(configFileName);
+
+            // Stress related config files
             if ("stress_recv_pcm_h264.json".equalsIgnoreCase(configFileName)) {
                 agoraTaskManager.startStressTask(
                     false, configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM_H264);
@@ -1026,22 +1086,205 @@ public class ServerController implements DisposableBean, ApplicationContextAware
                     true, configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_YUV);
             }
 
+            // PCM related config files
+            else if ("pcm_recv.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM);
+            } else if ("pcm_send.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_PCM);
+            } else if ("pcm_yuv_send.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_PCM_YUV);
+            } else if ("pcm_h264_send.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_PCM_H264);
+            } else if ("pcm_recv_encrypted.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM);
+            } else if ("pcm_send_encrypted.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_PCM);
+            } else if ("pcm_recv_with_remote_user_id.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM);
+            } else if ("pcm_send_with_remote_user_id.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_PCM);
+            } else if ("pcm_recv_by_cloud_proxy.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM);
+            } else if ("pcm_send_by_cloud_proxy.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_PCM);
+            } else if ("pcm_h264_recv.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM_H264);
+            }
+
+            // Encoded Audio related config files
+            else if ("encoded_audio_recv.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_ENCODED_AUDIO);
+            } else if ("opus_send.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_OPUS);
+            }
+
+            // Mixed Audio related config files
+            else if ("mixed_audio_recv.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_MIXED_AUDIO);
+            } else if ("aac_send.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_AAC);
+            }
+
+            // YUV related config files
+            else if ("yuv_recv.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_YUV);
+            } else if ("yuv_send.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_YUV);
+            } else if ("yuv_recv_with_remote_user_id.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_YUV);
+            } else if ("yuv_send_with_remote_user_id.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_YUV);
+            } else if ("yuv_recv_with_alpha.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_YUV);
+            } else if ("yuv_send_with_alpha.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_YUV);
+            } else if ("yuv_recv_dual_stream_high.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_YUV);
+            } else if ("yuv_recv_dual_stream_low.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_YUV);
+            } else if ("yuv_send_dual_stream.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_YUV_DUAL_STREAM);
+            }
+
+            // H264 related config files
+            else if ("h264_recv.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_H264);
+            } else if ("h264_send.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_H264);
+            } else if ("h264_recv_with_remote_user_id.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_H264);
+            } else if ("h264_send_with_remote_user_id.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_H264);
+            } else if ("h264_recv_encrypted.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_H264);
+            } else if ("h264_send_encrypted.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_H264);
+            } else if ("h264_recv_dual_stream_high.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_H264);
+            } else if ("h264_recv_dual_stream_low.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_H264);
+            } else if ("h264_send_dual_stream.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_H264_DUAL_STREAM);
+            }
+
+            // Agora Parameter related config files
+            else if ("agora_parameter_test.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.testAgoraParameterTask(configFileName, argsConfig);
+            }
+
+            // Data Stream related config files
+            else if ("data_stream_send.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_DATA_STREAM);
+            } else if ("data_stream_recv.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_DATA_STREAM);
+            }
+
+            // RGBA related config files
+            else if ("rgba_send.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_RGBA);
+            } else if ("rgba_pcm_send.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_RGBA_PCM);
+            } else if ("rgba_recv.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_H264);
+            }
+
+            // VP8 related config files
+            else if ("vp8_send.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_VP8);
+            } else if ("vp8_pcm_send.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_VP8_PCM);
+            } else if ("vp8_recv.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_YUV);
+            }
+
+            // MP4 related config files
+            else if ("mp4_send.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_MP4);
+            }
+
+            // Default case for unknown config files
+            else {
+                sendSseEvent("Error: Unknown config file: " + configFileName, sseEmitter);
+                return false;
+            }
+
             taskFinishLatch.await();
 
             long endTime = System.currentTimeMillis();
             long timeCostMs = endTime - startTime;
             double timeCostMinutes = timeCostMs / 1000.0 / 60.0;
-            sendSseEvent("stress pcm h264 recv task finished, time cost: "
-                + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)");
+            sendSseEvent("Single server task finished, time cost: "
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
         } catch (Exception e) {
-            sendSseEvent("Error: test stress pcm h264 recv task failed: " + e.getMessage());
+            sendSseEvent("Error: Single server task failed: " + e.getMessage(), sseEmitter);
             return false;
         }
         return true;
     }
 
-    // Helper method to send SSE events
+    // Helper method to send SSE events - original method
     private void sendSseEvent(String data) {
+        SampleLogger.log(data);
+
+        String timestamp = LocalDateTime.now().format(timeFormatter);
+        String timestampedData = String.format("[%s] %s", timestamp, data);
+        String eventName = "log";
+        try {
+            sseEmitter.send(SseEmitter.event().name(eventName).data(timestampedData));
+        } catch (IOException e) {
+            // Log error or handle client disconnects
+            log.warn("Failed to send SSE event: {} - {}, error: {}", eventName, timestampedData,
+                e.getMessage());
+            // Consider if we should throw a runtime exception to stop the SSE stream
+            // For now, just log and continue if possible.
+        }
+    }
+
+    // Helper method to send SSE events - overloaded method with specific SseEmitter
+    private void sendSseEvent(String data, SseEmitter sseEmitter) {
         SampleLogger.log(data);
 
         String timestamp = LocalDateTime.now().format(timeFormatter);
@@ -1061,6 +1304,10 @@ public class ServerController implements DisposableBean, ApplicationContextAware
     @GetMapping(value = "/destroy")
     public SseEmitter destroyApplication() {
         log.info("=== SSE DESTROY APPLICATION REQUEST RECEIVED ===");
+
+        // Create a new SseEmitter for this request
+        sseEmitter = new SseEmitter(Long.MAX_VALUE);
+
         taskExecutorService.shutdown();
         try {
             try {

@@ -29,20 +29,12 @@
   - [快速开始](#快速开始)
     - [官方示例文档](#官方示例文档)
     - [开通服务](#开通服务)
-    - [运行 Examples 示例工程](#运行-examples-示例工程)
+    - [运行 Examples-Mvn 示例工程](#运行-examples-mvn-示例工程)
       - [环境准备](#环境准备)
-        - [安装 FFmpeg（可选，用于 MP4 相关测试）](#安装-ffmpeg可选用于-mp4-相关测试)
       - [项目配置](#项目配置)
-      - [编译过程](#编译过程)
+      - [编译构建](#编译构建)
       - [运行示例](#运行示例)
       - [测试 case](#测试-case)
-      - [常见问题](#常见问题)
-    - [运行 Examples-Mvn 示例工程](#运行-examples-mvn-示例工程)
-      - [环境准备](#环境准备-1)
-      - [项目配置](#项目配置-1)
-      - [编译构建](#编译构建)
-      - [运行示例](#运行示例-1)
-      - [测试 case](#测试-case-1)
   - [API 参考](#api-参考)
     - [API 文档参考](#api-文档参考)
     - [VAD 模块](#vad-模块)
@@ -104,6 +96,7 @@
       - [改进与优化](#改进与优化-8)
     - [v4.4.30（2024-10-24）](#v44302024-10-24)
   - [其他参考](#其他参考)
+  - [其他参考](#其他参考-1)
 
 ## 简介
 
@@ -366,210 +359,38 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
 
 参考 [官网开通服务](https://doc.shengwang.cn/doc/rtc-server-sdk/java/get-started/enable-service)
 
-### 运行 Examples 示例工程
-
-#### 环境准备
-
-##### 安装 FFmpeg（可选，用于 MP4 相关测试）
-
-1. 更新系统包：
-
-   ```bash
-   sudo apt update
-   ```
-
-2. 安装 FFmpeg（需要 7.0+）：
-
-   ```bash
-   sudo apt install ffmpeg
-   ```
-
-3. 安装 FFmpeg 开发库：
-
-   ```bash
-   sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
-   ```
-
-4. 获取库依赖路径：
-
-   ```bash
-   pkg-config --cflags --libs libavformat libavcodec libavutil libswresample libswscale
-   ```
-
-5. 更新 `build.sh` 中的 `FFMPEG_INCLUDE_DIR` 和 `FFMPEG_LIB_DIR`。
-
-#### 项目配置
-
-1. 进入 `Examples` 目录：
-
-   ```bash
-   cd Examples
-   ```
-
-2. 创建 `.keys` 文件，添加：
-
-   ```
-   APP_ID=your_app_id
-   TOKEN=your_token
-   ```
-
-   _如果未开启证书，TOKEN 值可为空，例如：_
-
-   ```
-   APP_ID=abcd1234
-   TOKEN=
-   ```
-
-   如果支持Gateway SDK，则需要创建 `.keys_gateway` 文件，添加：
-
-   ```
-   APP_ID=your_app_id
-   LICENSE=your_license
-   ```
-
-3. 准备 SDK 文件：
-
-   - 重命名 JAR 为 `agora-sdk.jar`
-   - 放入 `libs/` 目录
-
-4. 提取 SO 文件：
-
-   进入 `Examples/libs` 目录，执行：
-
-   ```bash
-   jar xvf agora-sdk.jar
-   ```
-
-   提取完成后，确保目录结构如下：
-
-   ```
-   libs/
-   ├── agora-sdk.jar
-   └── native/
-       └── linux/
-           └── x86_64/
-               └── lib*.so (各种动态库文件)
-   ```
-
-   注意：确保所有 .so 文件都被正确提取，这些文件是 SDK 的核心组件。
-
-5. **运行时配置 (run_config)**
-
-   `run_config` 文件用于配置运行时的各种选项，位于 `Examples/run_config`。您可以根据需要修改以下配置：
-
-   | 配置项           | 类型    | 默认值 | 描述                                                              |
-   | ---------------- | ------- | ------ | ----------------------------------------------------------------- |
-   | enable_jni_check | boolean | false  | 是否启用 JNI 检查，用于调试 JNI 相关问题                          |
-   | enable_asan      | boolean | false  | 是否启用 AddressSanitizer，用于内存错误检测                       |
-   | enable_aed_vad   | boolean | false  | 是否启用 AED VAD (Audio Event Detection Voice Activity Detection) |
-   | enable_gateway   | boolean | false  | 是否启用 Gateway SDK 模式，启用后可使用 VAD 和 Audio 3A 等功能    |
-
-   **配置示例：**
-
-   ```bash
-   # 启用 Gateway SDK 功能
-   enable_gateway=true
-   
-   # 启用 JNI 检查（调试模式）
-   enable_jni_check=true
-   
-   # 启用内存检查（调试模式）
-   enable_asan=true
-   
-   # 启用 AED VAD 功能
-   enable_aed_vad=true
-   ```
-
-   > **注意**：
-   > - 启用 `enable_gateway=true` 后，可以使用 VAD 和 Audio 3A 等高级功能
-   > - 启用 `enable_jni_check=true` 或 `enable_asan=true` 会影响性能，仅建议在调试时使用
-   > - 修改配置后需要重新编译项目
-
-#### 编译过程
-
-执行编译脚本：
-
-```bash
-./build.sh [-ffmpegUtils] [-mediaUtils]
-```
-
-- 使用 `-ffmpegUtils` 选项编译 FFmpeg 相关库（MP4 测试必需）
-- 使用 `-mediaUtils` 选项编译解码音视频相关库（发送编码音视频测试必须）
-
-#### 运行示例
-
-1. 运行测试脚本：
-
-   ```bash
-   ./script/TestCaseName.sh
-   ```
-
-2. 修改测试参数：直接编辑对应的 `.sh` 文件
-
-#### 测试 case
-
-- 发送 PCM 音频
-
-  参考 `Examples/src/java/io/agora/rtc/example/scenario/SendPcmFileTest.java`,实现循环发送 pcm 文件
-
-  参考 `Examples/src/java/io/agora/rtc/example/scenario/SendPcmRealTimeTest.java`,实现发送流式 pcm 数据
-
-- 发送 YUV 视频
-
-  参考 `Examples/src/java/io/agora/rtc/example/scenario/SendYuvTest.java`,实现流式发送 yuv 数据
-
-- 发送 H264 视频
-
-  参考 `Examples/src/java/io/agora/rtc/example/scenario/SendH264Test.java`,实现流式发送 h264 数据
-
-- 发送 Opus 音频
-
-  参考 `Examples/src/java/io/agora/rtc/example/scenario/SendOpusTest.java`,实现流式发送 opus 数据
-
-- 发送 MP4 音视频
-
-  参考 `Examples/src/java/io/agora/rtc/example/scenario/SendMp4Test.java`,实现发送 MP4 文件
-
-- 接收 PCM 音频
-
-  参考 `Examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmVadTest.java`,实现接收 pcm 数据并携带 VAD 数据
-
-  参考 `Examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmDirectSendTest.java`,实现接收 pcm 数据并直接返回发送
-
-- 接收 PCM&H264 音视频
-
-  参考 `Examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmH264Test.java`,实现接收 pcm&h264 数据
-
-- 接收 PCM&YUV 音视频
-
-  参考 `Examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmYuvTest.java`,实现接收 pcm&yuv 数据
-
-- 发送接收流消息
-
-  参考 `Examples/src/java/io/agora/rtc/example/scenario/SendReceiverStreamMessageTest.java`,实现发送接收流消息
-
-- VadV1 模块（仅支持Gateway SDK）
-
-  参考 `Examples/src/java/io/agora/rtc/example/scenario/VadV1Test.java`,实现 VadV1 模块
-
-- 音频 3A 处理（仅支持Gateway SDK）
-
-  参考 `Examples/src/java/io/agora/rtc/example/scenario/Audio3aTest.java`,实现音频 3A 处理
-
-#### 常见问题
-
-- 确保 Java 环境正确安装和配置
-- 验证 `agora-sdk.jar` 版本兼容性
-- 运行前检查 `APP_ID` 和 `TOKEN` 配置
-- 按顺序执行步骤，避免依赖问题
 
 ### 运行 Examples-Mvn 示例工程
 
 **Examples-Mvn** 是基于 Spring Boot 框架构建的 Maven 示例工程，提供了完整的 RESTful API 服务来演示 Agora Linux Server Java SDK 的各种功能特性。
 
+该工程已集成了C++代码编译功能，可以在Maven构建过程中自动编译生成所需的.so库文件。
+
 #### 环境准备
 
-安装 Maven 构建工具，参考 [Maven 安装指南](https://maven.apache.org/install.html)
+1. **安装 Maven 构建工具**
+
+   参考 [Maven 安装指南](https://maven.apache.org/install.html)
+
+2. **C++ 编译环境 (如果需要编译native库)**
+
+   安装基本编译工具：
+   ```bash
+   sudo apt-get update
+   sudo apt-get install build-essential pkg-config
+   ```
+
+3. **FFmpeg 依赖 (如果需要编译FFmpeg相关功能)**
+
+   ```bash
+   sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libswresample-dev
+   ```
+
+4. **确保 JAVA_HOME 环境变量设置正确**
+
+   ```bash
+   export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+   ```
 
 #### 项目配置
 
@@ -632,26 +453,71 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
    > - 启用 `enable_jni_check=true` 或 `enable_asan=true` 会影响性能，仅建议在调试时使用
    > - 修改配置后需要重新编译项目
 
+4. **更新Linux Java SDK版本号**
+
+   确保 `pom.xml` 文件中的Linux Java SDK版本号与实际使用的版本一致：
+
+   ```xml
+   <dependency>
+       <groupId>io.agora.rtc</groupId>
+       <artifactId>linux-java-sdk</artifactId>
+       <version>4.4.32.1</version>  <!-- 确保版本号正确 -->
+   </dependency>
+   ```
+
+   > **注意**：版本号不匹配可能导致编译错误或运行时问题，请确保使用与您下载的SDK包对应的正确版本号。
+
 #### 编译构建
 
 执行编译脚本：
 
 ```bash
-./build_mvn.sh [-start]
+# 标准Maven构建 (不编译native代码)
+./build.sh
+
+# 编译并启动服务
+./build.sh start
+
+# 编译所有native库
+./build.sh -native
+
+# 编译所有native库并启动服务
+./build.sh -native start
+
+# 只编译FFmpeg相关库
+./build.sh -ffmpegUtils
+
+# 只编译Media相关库  
+./build.sh -mediaUtils
 ```
 
-默认情况下仅编译项目，使用 `-start` 选项可编译并启动示例服务。
+**编译选项说明：**
+- 默认情况下仅编译Java项目，不编译C++代码
+- 使用 `-native` 选项编译所有native库（FFmpeg + Media）
+- 使用 `-ffmpegUtils` 选项只编译FFmpeg相关库（用于MP4处理）
+- 使用 `-mediaUtils` 选项只编译Media相关库（用于编码音视频处理）
+- 使用 `start` 选项可在编译完成后自动启动服务
+
+**使用Maven命令：**
+
+你也可以直接使用Maven命令：
+
+```bash
+# 编译所有native库
+mvn clean package -Dbuild.native=true
+
+# 只编译FFmpeg库
+mvn clean package -Dbuild.ffmpeg=true
+
+# 只编译Media库
+mvn clean package -Dbuild.media=true
+```
 
 #### 运行示例
 
 启动服务后，使用浏览器或 Postman 访问以下接口地址，测试各种功能：
 
-**基础配置接口：**
-```
-http://localhost:18080/api/server/start?configFileName=mixed_audio_multiple_conn_recv.json
-```
-
-**功能测试接口：**
+**基础功能测试接口：**
 ```
 http://localhost:18080/api/server/basic?taskName=ReceiverPcmDirectSendTest
 http://localhost:18080/api/server/basic?taskName=ReceiverPcmH264Test
@@ -672,6 +538,11 @@ http://localhost:18080/api/server/basic?taskName=VadV1Test
 http://localhost:18080/api/server/basic?taskName=Audio3aTest
 ```
 
+**配置文件接口：**
+```
+http://localhost:18080/api/server/start?configFileName=pcm_send.json
+```
+
 > **注意**：请将 `localhost:18080` 替换为您的实际服务器地址和端口。
 
 
@@ -679,51 +550,51 @@ http://localhost:18080/api/server/basic?taskName=Audio3aTest
 
 - 发送 PCM 音频
 
-  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendPcmFileTest.java`,实现循环发送 pcm 文件
+  参考 [SendPcmFileTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendPcmFileTest.java),实现循环发送 pcm 文件
 
-  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendPcmRealTimeTest.java`,实现发送流式 pcm 数据
+  参考 [SendPcmRealTimeTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendPcmRealTimeTest.java),实现发送流式 pcm 数据
 
 - 发送 YUV 视频
 
-  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendYuvTest.java`,实现流式发送 yuv 数据
+  参考 [SendYuvTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendYuvTest.java),实现流式发送 yuv 数据
 
 - 发送 H264 视频
 
-  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendH264Test.java`,实现流式发送 h264 数据
+  参考 [SendH264Test.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendH264Test.java),实现流式发送 h264 数据
 
 - 发送 Opus 音频
 
-  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendOpusTest.java`,实现流式发送 opus 数据
+  参考 [SendOpusTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendOpusTest.java),实现流式发送 opus 数据
 
 - 发送 MP4 音视频
 
-  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendMp4Test.java`,实现发送 MP4 文件
+  参考 [SendMp4Test.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendMp4Test.java),实现发送 MP4 文件
 
 - 接收 PCM 音频
 
-  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmVadTest.java`,实现接收 pcm 数据并携带 VAD 数据
+  参考 [ReceiverPcmVadTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmVadTest.java),实现接收 pcm 数据并携带 VAD 数据
 
-  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmDirectSendTest.java`,实现接收 pcm 数据并直接返回发送
+  参考 [ReceiverPcmDirectSendTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmDirectSendTest.java),实现接收 pcm 数据并直接返回发送
 
 - 接收 PCM&H264 音视频
 
-  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmH264Test.java`,实现接收 pcm&h264 数据
+  参考 [ReceiverPcmH264Test.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmH264Test.java),实现接收 pcm&h264 数据
 
 - 接收 PCM&YUV 音视频
 
-  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmYuvTest.java`,实现接收 pcm&yuv 数据
+  参考 [ReceiverPcmYuvTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmYuvTest.java),实现接收 pcm&yuv 数据
 
 - 发送接收流消息
 
-  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendReceiverStreamMessageTest.java`,实现发送接收流消息
+  参考 [SendReceiverStreamMessageTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendReceiverStreamMessageTest.java),实现发送接收流消息
 
 - VadV1 模块（仅支持Gateway SDK）
 
-  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/VadV1Test.java`,实现 VadV1 模块
+  参考 [VadV1Test.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/VadV1Test.java.disabled),实现 VadV1 模块
 
 - 音频 3A 处理（仅支持Gateway SDK）
 
-  参考 `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/Audio3aTest.java`,实现音频 3A 处理
+  参考 [Audio3aTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/Audio3aTest.java.disabled),实现音频 3A 处理
 
 ## API 参考
 
@@ -1405,6 +1276,14 @@ int numberOfChannels, int sampleRate) ` 方法标位不推荐，新增 `sendAudi
 - 修改 `onAudioVolumeIndication` 回调参数类型
 
 ### v4.4.30（2024-10-24）
+
+- 详细更新日志请参考 [发版说明](https://doc.shengwang.cn/doc/rtc-server-sdk/java/overview/release-notes)
+
+## 其他参考
+详细参考官网（<https://doc.shengwang.cn/doc/rtc-server-sdk/java/landing-page>）
+
+官网 API 文档 [Agora Server Java SDK API 参考](https://doc.shengwang.cn/api-ref/rtc-server-sdk/java/overview)
+
 
 - 详细更新日志请参考 [发版说明](https://doc.shengwang.cn/doc/rtc-server-sdk/java/overview/release-notes)
 

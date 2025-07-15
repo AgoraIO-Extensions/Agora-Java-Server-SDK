@@ -1,1 +1,0 @@
-sh run.zsh io.agora.rtc.example.test.rgba.MultipleConnectionRgbaPcmSendTest -channelId rgbaChannel -userId 0 -connectionCount 1 -sampleRate 16000 -numOfChannels 1 -audioFile test_data/send_audio_16k_1ch.pcm -videoFile test_data/raw_data.rgba -height 720 -width 360 -fps 30 -testTime 86400
