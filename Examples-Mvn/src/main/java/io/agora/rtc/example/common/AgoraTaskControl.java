@@ -218,7 +218,7 @@ public class AgoraTaskControl {
                         Constants.VIDEO_STREAM_HIGH, true);
                     break;
                 case SEND_MP4:
-                    connTask.sendAvMediaTask(argsConfig.getAudioFile(), 50);
+                    connTask.sendAvMediaTask(argsConfig.getVideoFile(), 50);
                     break;
                 case SEND_DATA_STREAM:
                     connTask.sendDataStreamTask(1, 50, true);

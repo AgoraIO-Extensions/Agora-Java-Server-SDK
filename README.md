@@ -4,67 +4,98 @@
 
 ## Table of Contents
 
-1. [Introduction](#introduction)
-2. [Development Environment Requirements](#development-environment-requirements)
-   - [Hardware Environment](#hardware-environment)
-   - [Software Environment](#software-environment)
-3. [SDK Download](#sdk-download)
-   - [Maven Download](#maven-download)
-   - [CDN Download](#cdn-download)
-4. [Integrate the SDK](#integrate-the-sdk)
-   - [1. Maven Integration](#1-maven-integration)
-     - [1.1 Add Maven Dependency](#11-add-maven-dependency)
-     - [1.2 Integrate .so Library Files](#12-integrate-so-library-files)
-   - [2. Local SDK Integration](#2-local-sdk-integration)
-     - [2.1 SDK Package Structure](#21-sdk-package-structure)
-     - [2.2 Integrate JAR Files](#22-integrate-jar-files)
-     - [2.3 Integrate .so Library Files](#23-integrate-so-library-files)
-   - [3. Loading Native Libraries (.so Files)](#3-loading-native-libraries-so-files)
-     - [3.1 Extract .so Library Files](#31-extract-so-library-files)
-     - [3.2 Configure Loading Path](#32-configure-loading-path)
-5. [Quick Start](#quick-start)
-
-- [Official Example Documentation](#official-example-documentation)
-- [Enable Service](#enable-service)
-- [Run Examples](#run-examples)
-  - [Environment Preparation](#environment-preparation)
-  - [Project Configuration](#project-configuration)
-  - [Compilation Process](#compilation-process)
-  - [Running Examples](#running-examples)
-  - [Test Cases](#test-cases)
-  - [Common Issues](#common-issues)
-- [Run Examples-Mvn Project](#run-examples-mvn-project)
-  - [Environment Preparation](#environment-preparation-1)
-  - [Project Configuration](#project-configuration-1)
-  - [Build Process](#build-process)
-  - [Running Examples](#running-examples-1)
-  - [Test Cases](#test-cases-1)
-
-6. [API Reference](#api-reference)
-   - [API Documentation Reference](#api-documentation-reference)
-   - [VAD Module](#vad-module)
-     - [VadV1 Module](#vadv1-module)
-       - [Introduction](#introduction-1)
-       - [Classes and Methods](#classes-and-methods)
-       - [Usage Example](#usage-example)
-     - [VadV2 Module](#vadv2-module)
-       - [Introduction](#introduction-2)
-       - [Classes and Methods](#classes-and-methods-1)
-       - [Usage Example](#usage-example-1)
-   - [Audio 3A Module](#audio-3a-module)
-     - [Introduction](#introduction-3)
-     - [Classes and Methods](#classes-and-methods-2)
-7. [Changelog](#changelog)
-   - [v4.4.32 (2025-05-27)](#v4432-2025-05-27)
-   - [v4.4.31.4 (2025-03-21)](#v44314-2025-03-21)
-   - [v4.4.31.3 (2025-02-26)](#v44313-2025-02-26)
-   - [v4.4.31.2 (2025-02-19)](#v44312-2025-02-19)
-   - [v4.4.31.1 (2025-01-06)](#v44311-2025-01-06)
-   - [v4.4.31 (2024-12-23)](#v4431-2024-12-23)
-   - [v4.4.30.2 (2024-11-20)](#v44302-2024-11-20)
-   - [v4.4.30.1 (2024-11-12)](#v44301-2024-11-12)
-   - [v4.4.30 (2024-10-24)](#v4430-2024-10-24)
-8. [Other References](#other-references)
+- [Agora Linux Server Java SDK](#agora-linux-server-java-sdk)
+  - [Table of Contents](#table-of-contents)
+  - [Introduction](#introduction)
+  - [Development Environment Requirements](#development-environment-requirements)
+    - [Hardware Environment](#hardware-environment)
+    - [Software Environment](#software-environment)
+  - [SDK Download](#sdk-download)
+    - [Maven Download](#maven-download)
+    - [CDN Download](#cdn-download)
+  - [Integrate the SDK](#integrate-the-sdk)
+    - [1. Maven Integration](#1-maven-integration)
+      - [1.1 Add Maven Dependency](#11-add-maven-dependency)
+      - [1.2 Integrate .so Library Files](#12-integrate-so-library-files)
+    - [2. Local SDK Integration](#2-local-sdk-integration)
+      - [2.1 SDK Package Structure](#21-sdk-package-structure)
+      - [2.2 Integrate JAR Files](#22-integrate-jar-files)
+          - [Local Maven Repository Method](#local-maven-repository-method)
+          - [Direct Reference Method](#direct-reference-method)
+      - [2.3 Integrate .so Library Files](#23-integrate-so-library-files)
+    - [3. Loading Native Libraries (.so Files)](#3-loading-native-libraries-so-files)
+      - [3.1 Extract .so Library Files](#31-extract-so-library-files)
+      - [3.2 Configure Loading Path](#32-configure-loading-path)
+  - [Quick Start](#quick-start)
+    - [Official Example Documentation](#official-example-documentation)
+    - [Enable Service](#enable-service)
+    - [Run Examples-Mvn Project](#run-examples-mvn-project)
+      - [Environment Preparation](#environment-preparation)
+      - [Project Configuration](#project-configuration)
+      - [Build Process](#build-process)
+      - [Running Examples](#running-examples)
+      - [Test Cases](#test-cases)
+  - [API Reference](#api-reference)
+    - [API Documentation Reference](#api-documentation-reference)
+    - [VAD Module](#vad-module)
+      - [VadV1 Module (Only supported by Gateway SDK)](#vadv1-module-only-supported-by-gateway-sdk)
+        - [Introduction](#introduction-1)
+        - [Classes and Methods](#classes-and-methods)
+          - [AgoraAudioVad Class](#agoraaudiovad-class)
+          - [AgoraAudioVadConfig Class](#agoraaudiovadconfig-class)
+        - [Usage Example](#usage-example)
+      - [VadV2 Module](#vadv2-module)
+        - [Introduction](#introduction-2)
+        - [Classes and Methods](#classes-and-methods-1)
+          - [AgoraAudioVadV2 Class](#agoraaudiovadv2-class)
+          - [AgoraAudioVadConfigV2 Properties](#agoraaudiovadconfigv2-properties)
+          - [Notes](#notes)
+          - [Methods](#methods)
+        - [VadProcessResult](#vadprocessresult)
+          - [Constructor](#constructor)
+        - [Usage Example](#usage-example-1)
+    - [Audio 3A Module (Only supported by Gateway SDK)](#audio-3a-module-only-supported-by-gateway-sdk)
+      - [Introduction](#introduction-3)
+      - [Classes and Methods](#classes-and-methods-2)
+        - [AgoraAudioProcessor Class](#agoraaudioprocessor-class)
+          - [Constructor](#constructor-1)
+          - [Methods](#methods-1)
+        - [AgoraAudioProcessorConfig Class](#agoraaudioprocessorconfig-class)
+          - [Methods](#methods-2)
+          - [Example](#example)
+        - [IAgoraAudioProcessorEventHandler Interface](#iagoraaudioprocessoreventhandler-interface)
+          - [Methods](#methods-3)
+        - [io.agora.rtc.audio3a.AgoraAudioFrame Class](#ioagorartcaudio3aagoraaudioframe-class)
+          - [Key Properties](#key-properties)
+          - [Main Methods (Setters/Getters)](#main-methods-settersgetters)
+      - [Usage Example](#usage-example-2)
+  - [Changelog](#changelog)
+    - [v4.4.32.1 (2025-06-12)](#v44321-2025-06-12)
+      - [API Changes](#api-changes)
+      - [Improvements \& Optimizations](#improvements--optimizations)
+    - [v4.4.32 (2025-05-27)](#v4432-2025-05-27)
+      - [API Changes](#api-changes-1)
+      - [Improvements \& Optimizations](#improvements--optimizations-1)
+    - [v4.4.31.4 (2025-03-21)](#v44314-2025-03-21)
+      - [Improvements \& Optimizations](#improvements--optimizations-2)
+    - [v4.4.31.3 (2025-02-26)](#v44313-2025-02-26)
+      - [Improvements \& Optimizations](#improvements--optimizations-3)
+    - [v4.4.31.2 (2025-02-19)](#v44312-2025-02-19)
+      - [API Changes](#api-changes-2)
+      - [Improvements \& Optimizations](#improvements--optimizations-4)
+    - [v4.4.31.1 (2025-01-06)](#v44311-2025-01-06)
+      - [Improvements \& Optimizations](#improvements--optimizations-5)
+    - [v4.4.31 (2024-12-23)](#v4431-2024-12-23)
+      - [API Changes](#api-changes-3)
+      - [Improvements \& Optimizations](#improvements--optimizations-6)
+    - [v4.4.30.2 (2024-11-20)](#v44302-2024-11-20)
+      - [API Changes](#api-changes-4)
+      - [Improvements \& Optimizations](#improvements--optimizations-7)
+    - [v4.4.30.1 (2024-11-12)](#v44301-2024-11-12)
+      - [API Changes](#api-changes-5)
+      - [Improvements \& Optimizations](#improvements--optimizations-8)
+    - [v4.4.30 (2024-10-24)](#v4430-2024-10-24)
+  - [Other References](#other-references)
 
 ## Introduction
 
@@ -327,210 +358,37 @@ Refer to the [Official Example Documentation](https://docs.agora.io/en/rtc-serve
 
 Refer to [Official Service Activation Guide](https://docs.agora.io/en/rtc-server-sdk/java/get-started/enable-service/)
 
-### Run Examples
-
-#### Environment Preparation
-
-##### Install FFmpeg (Optional, for MP4 related tests)
-
-1. Update system packages:
-
-   ```bash
-   sudo apt update
-   ```
-
-2. Install FFmpeg (version 7.0+ required):
-
-   ```bash
-   sudo apt install ffmpeg
-   ```
-
-3. Install FFmpeg development libraries:
-
-   ```bash
-   sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
-   ```
-
-4. Get library dependency paths:
-
-   ```bash
-   pkg-config --cflags --libs libavformat libavcodec libavutil libswresample libswscale
-   ```
-
-5. Update `FFMPEG_INCLUDE_DIR` and `FFMPEG_LIB_DIR` in `build.sh`.
-
-#### Project Configuration
-
-1. Go to the `Examples` directory:
-
-   ```bash
-   cd Examples
-   ```
-
-2. Create a `.keys` file and add:
-
-   ```
-   APP_ID=your_app_id
-   TOKEN=your_token
-   ```
-
-   _If certificates are not enabled, the TOKEN value can be empty, e.g.:_
-
-   ```
-   APP_ID=abcd1234
-   TOKEN=
-   ```
-
-   If Gateway SDK is supported, create a `.keys_gateway` file and add:
-
-   ```
-   APP_ID=your_app_id
-   LICENSE=your_license
-   ```
-
-3. Prepare the SDK file:
-
-   - Rename the JAR to `agora-sdk.jar`
-   - Place it in the `libs/` directory
-
-4. Extract SO files:
-
-   Go to the `Examples/libs` directory and execute:
-
-   ```bash
-   jar xvf agora-sdk.jar
-   ```
-
-   After extraction, ensure the directory structure is as follows:
-
-   ```
-   libs/
-   ├── agora-sdk.jar
-   └── native/
-       └── linux/
-           └── x86_64/
-               └── lib*.so (various dynamic library files)
-   ```
-
-   Note: Ensure all .so files are correctly extracted as they are core components of the SDK.
-
-5. **Runtime Configuration (run_config)**
-
-   The `run_config` file is used to configure various runtime options, located at `Examples/run_config`. You can modify the following configurations as needed:
-
-   | Configuration    | Type    | Default | Description                                                                          |
-   | ---------------- | ------- | ------- | ------------------------------------------------------------------------------------ |
-   | enable_jni_check | boolean | false   | Whether to enable JNI checking for debugging JNI-related issues                      |
-   | enable_asan      | boolean | false   | Whether to enable AddressSanitizer for memory error detection                        |
-   | enable_aed_vad   | boolean | false   | Whether to enable AED VAD (Audio Event Detection Voice Activity Detection)           |
-   | enable_gateway   | boolean | false   | Whether to enable Gateway SDK mode, which allows access to VAD and Audio 3A features |
-
-   **Configuration Example:**
-
-   ```bash
-   # Enable Gateway SDK functionality
-   enable_gateway=true
-   
-   # Enable JNI checking (debug mode)
-   enable_jni_check=true
-   
-   # Enable memory checking (debug mode)
-   enable_asan=true
-   
-   # Enable AED VAD functionality
-   enable_aed_vad=true
-   ```
-
-   > **Note**:
-   > - Enabling `enable_gateway=true` allows access to VAD and Audio 3A advanced features
-   > - Enabling `enable_jni_check=true` or `enable_asan=true` will affect performance; recommended only for debugging
-   > - Project needs to be recompiled after modifying configuration
-
-#### Compilation Process
-
-Execute the build script:
-
-```bash
-./build.sh [-ffmpegUtils] [-mediaUtils]
-```
-
-- Use the `-ffmpegUtils` option to compile FFmpeg related libraries (required for MP4 tests).
-- Use the `-mediaUtils` option to compile audio/video decoding related libraries (required for sending encoded audio/video tests).
-
-#### Running Examples
-
-1. Run the test script:
-
-   ```bash
-   ./script/TestCaseName.sh
-   ```
-
-2. Modify test parameters: Directly edit the corresponding `.sh` file.
-
-#### Test Cases
-
-- Send PCM Audio
-
-  Refer to `Examples/src/java/io/agora/rtc/example/scenario/SendPcmFileTest.java` for sending PCM files in a loop.
-
-  Refer to `Examples/src/java/io/agora/rtc/example/scenario/SendPcmRealTimeTest.java` for sending streaming PCM data.
-
-- Send YUV Video
-
-  Refer to `Examples/src/java/io/agora/rtc/example/scenario/SendYuvTest.java` for sending streaming YUV data.
-
-- Send H264 Video
-
-  Refer to `Examples/src/java/io/agora/rtc/example/scenario/SendH264Test.java` for sending streaming H264 data.
-
-- Send Opus Audio
-
-  Refer to `Examples/src/java/io/agora/rtc/example/scenario/SendOpusTest.java` for sending streaming Opus data.
-
-- Send MP4 Audio/Video
-
-  Refer to `Examples/src/java/io/agora/rtc/example/scenario/SendMp4Test.java` for sending MP4 files.
-
-- Receive PCM Audio
-
-  Refer to `Examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmVadTest.java` for receiving PCM data with VAD information.
-
-  Refer to `Examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmDirectSendTest.java` for receiving PCM data and sending it back directly.
-
-- Receive PCM & H264 Audio/Video
-
-  Refer to `Examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmH264Test.java` for receiving PCM & H264 data.
-
-- Receive PCM & YUV Audio/Video
-
-  Refer to `Examples/src/java/io/agora/rtc/example/scenario/ReceiverPcmYuvTest.java` for receiving PCM & YUV data.
-
-- Send/Receive Stream Messages
-
-  Refer to `Examples/src/java/io/agora/rtc/example/scenario/SendReceiverStreamMessageTest.java` for sending and receiving stream messages.
-
-- VadV1 Module (Only supported by Gateway SDK)
-
-  Refer to `Examples/src/java/io/agora/rtc/example/scenario/VadV1Test.java` for VadV1 module.
-
-- Audio 3A Processing (Only supported by Gateway SDK)
-
-  Refer to `Examples/src/java/io/agora/rtc/example/scenario/Audio3aTest.java` for audio 3A processing.
-
-#### Common Issues
-
-- Ensure the Java environment is correctly installed and configured.
-- Verify `agora-sdk.jar` version compatibility.
-- Check `APP_ID` and `TOKEN` configuration before running.
-- Follow the steps sequentially to avoid dependency issues.
-
 ### Run Examples-Mvn Project
 
 **Examples-Mvn** is a Maven example project built on the Spring Boot framework, providing a complete RESTful API service to demonstrate various features of the Agora Linux Server Java SDK.
 
+This project has integrated C++ code compilation functionality, which can automatically compile and generate required .so library files during the Maven build process.
+
 #### Environment Preparation
 
-Install Maven build tool, refer to [Maven Installation Guide](https://maven.apache.org/install.html)
+1. **Install Maven Build Tool**
+
+   Refer to [Maven Installation Guide](https://maven.apache.org/install.html)
+
+2. **C++ Compilation Environment (if you need to compile native libraries)**
+
+   Install basic compilation tools:
+   ```bash
+   sudo apt-get update
+   sudo apt-get install build-essential pkg-config
+   ```
+
+3. **FFmpeg Dependencies (if you need to compile FFmpeg-related features)**
+
+   ```bash
+   sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libswresample-dev
+   ```
+
+4. **Ensure JAVA_HOME Environment Variable is Set Correctly**
+
+   ```bash
+   export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+   ```
 
 #### Project Configuration
 
@@ -593,26 +451,71 @@ Install Maven build tool, refer to [Maven Installation Guide](https://maven.apac
    > - Enabling `enable_jni_check=true` or `enable_asan=true` will affect performance; recommended only for debugging
    > - Project needs to be recompiled after modifying configuration
 
+4. **Update Linux Java SDK Version**
+
+   Ensure the Linux Java SDK version in the `pom.xml` file matches the actual version being used:
+
+   ```xml
+   <dependency>
+       <groupId>io.agora.rtc</groupId>
+       <artifactId>linux-java-sdk</artifactId>
+       <version>4.4.32.1</version>  <!-- Ensure correct version number -->
+   </dependency>
+   ```
+
+   > **Note**: Version mismatch may cause compilation errors or runtime issues. Please ensure you use the correct version number corresponding to your downloaded SDK package.
+
 #### Build Process
 
 Execute the build script:
 
 ```bash
-./build_mvn.sh [-start]
+# Standard Maven build (without compiling native code)
+./build.sh
+
+# Compile and start service
+./build.sh start
+
+# Compile all native libraries
+./build.sh -native
+
+# Compile all native libraries and start service
+./build.sh -native start
+
+# Compile only FFmpeg-related libraries
+./build.sh -ffmpegUtils
+
+# Compile only Media-related libraries
+./build.sh -mediaUtils
 ```
 
-By default, it only compiles the project. Use the `-start` option to compile and start the example service.
+**Build Options:**
+- By default, only compiles the Java project without compiling C++ code
+- Use `-native` option to compile all native libraries (FFmpeg + Media)
+- Use `-ffmpegUtils` option to compile only FFmpeg-related libraries (for MP4 processing)
+- Use `-mediaUtils` option to compile only Media-related libraries (for encoded audio/video processing)
+- Use `start` option to automatically start the service after compilation
+
+**Using Maven Commands:**
+
+You can also use Maven commands directly:
+
+```bash
+# Compile all native libraries
+mvn clean package -Dbuild.native=true
+
+# Compile only FFmpeg libraries
+mvn clean package -Dbuild.ffmpeg=true
+
+# Compile only Media libraries
+mvn clean package -Dbuild.media=true
+```
 
 #### Running Examples
 
 After starting the service, use a browser or Postman to access the following interface addresses to test various features:
 
-**Basic Configuration Interface:**
-```
-http://localhost:18080/api/server/start?configFileName=mixed_audio_multiple_conn_recv.json
-```
-
-**Feature Test Interface:**
+**Basic Feature Test Interface:**
 ```
 http://localhost:18080/api/server/basic?taskName=ReceiverPcmDirectSendTest
 http://localhost:18080/api/server/basic?taskName=ReceiverPcmH264Test
@@ -633,57 +536,62 @@ http://localhost:18080/api/server/basic?taskName=VadV1Test
 http://localhost:18080/api/server/basic?taskName=Audio3aTest
 ```
 
+**Configuration File Interface:**
+```
+http://localhost:18080/api/server/start?configFileName=pcm_send.json
+```
+
 > **Note**: Replace `localhost:18080` with your actual server address and port.
 
 #### Test Cases
 
 - Send PCM Audio
 
-  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendPcmFileTest.java`, implement looping PCM file sending
+  Refer to [SendPcmFileTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendPcmFileTest.java), implement looping PCM file sending
 
-  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendPcmRealTimeTest.java`, implement streaming PCM data sending
+  Refer to [SendPcmRealTimeTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendPcmRealTimeTest.java), implement streaming PCM data sending
 
 - Send YUV Video
 
-  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendYuvTest.java`, implement streaming YUV data sending
+  Refer to [SendYuvTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendYuvTest.java), implement streaming YUV data sending
 
 - Send H264 Video
 
-  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendH264Test.java`, implement streaming H264 data sending
+  Refer to [SendH264Test.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendH264Test.java), implement streaming H264 data sending
 
 - Send Opus Audio
 
-  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendOpusTest.java`, implement streaming Opus data sending
+  Refer to [SendOpusTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendOpusTest.java), implement streaming Opus data sending
 
 - Send MP4 Audio/Video
 
-  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendMp4Test.java`, implement MP4 file sending
+  Refer to [SendMp4Test.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendMp4Test.java), implement MP4 file sending
 
 - Receive PCM Audio
 
-  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmVadTest.java`, implement receiving PCM data with VAD data
+  Refer to [ReceiverPcmVadTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmVadTest.java), implement receiving PCM data with VAD data
 
-  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmDirectSendTest.java`, implement receiving PCM data and directly sending back
+  Refer to [ReceiverPcmDirectSendTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmDirectSendTest.java), implement receiving PCM data and directly sending back
 
 - Receive PCM&H264 Audio/Video
 
-  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmH264Test.java`, implement receiving PCM & H264 data
+  Refer to [ReceiverPcmH264Test.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmH264Test.java), implement receiving PCM & H264 data
 
 - Receive PCM&YUV Audio/Video
 
-  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmYuvTest.java`, implement receiving PCM & YUV data
+  Refer to [ReceiverPcmYuvTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmYuvTest.java), implement receiving PCM & YUV data
 
 - Send/Receive Stream Messages
 
-  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendReceiverStreamMessageTest.java`, implement sending and receiving stream messages
+  Refer to [SendReceiverStreamMessageTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendReceiverStreamMessageTest.java), implement sending and receiving stream messages
 
 - VadV1 Module (Only supported by Gateway SDK)
 
-  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/VadV1Test.java`, implement VadV1 module functionality
+  Refer to [VadV1Test.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/VadV1Test.java.disabled), implement VadV1 module functionality
 
 - Audio 3A Processing (Only supported by Gateway SDK)
 
-  Refer to `Examples-Mvn/src/main/java/io/agora/rtc/example/basic/Audio3aTest.java`, implement audio 3A processing functionality
+  Refer to [Audio3aTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/Audio3aTest.java.disabled), implement audio 3A processing functionality
 
 ## API Reference
 

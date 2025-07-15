@@ -1,1 +1,0 @@
-sh run.zsh io.agora.rtc.example.test.pcm.MultipleConnectionPcmSendTest -channelId pcmChannel -userId 0 -connectionCount 3 -sampleRate 16000 -numOfChannels 1 -audioFile test_data/send_audio_16k_1ch.pcm -enableCloudProxy 1

@@ -44,7 +44,7 @@ public class ArgsConfig {
     private float sleepTime = 0;
     private int timeForStressLeave = 0;
     private boolean isSender = false;
-    private boolean isEncodedFrame = false;
+    private boolean isRecvAudioEncodedFrame = false;
 
     // Getter and Setter methods
     public String getAppId() {
@@ -383,12 +383,12 @@ public class ArgsConfig {
         this.isSender = sender;
     }
 
-    public boolean isEncodedFrame() {
-        return isEncodedFrame;
+    public boolean isRecvAudioEncodedFrame() {
+        return isRecvAudioEncodedFrame;
     }
 
-    public void setEncodedFrame(boolean encodedFrame) {
-        this.isEncodedFrame = encodedFrame;
+    public void setRecvAudioEncodedFrame(boolean recvAudioEncodedFrame) {
+        this.isRecvAudioEncodedFrame = recvAudioEncodedFrame;
     }
 
     @Override
@@ -416,7 +416,7 @@ public class ArgsConfig {
             + enableStressTest + '\'' + ", enableRecvDataStream='" + enableRecvDataStream + '\''
             + ", logFilter='" + logFilter + '\'' + ", testTime='" + testTime + '\''
             + ", sleepTime='" + sleepTime + '\'' + ", timeForStressLeave='" + timeForStressLeave
-            + '\'' + ", isSender='" + isSender + '\'' + ", isEncodedFrame='" + isEncodedFrame + '\''
-            + '}';
+            + '\'' + ", isSender='" + isSender + '\'' + ", isRecvAudioEncodedFrame='"
+            + isRecvAudioEncodedFrame + '\'' + '}';
     }
 }

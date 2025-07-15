@@ -35,5 +35,5 @@
     "testTime": 5,
     "sleepTime": 1.0,
     "isSender": true,
-    "isEncodedFrame": false
+    "isRecvAudioEncodedFrame": false
 }

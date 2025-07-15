@@ -1,1 +1,0 @@
-sh run.zsh io.agora.rtc.example.scenario.ReceiverPcmH264Test -channelId agaa -userId 0 -sampleRate 16000 -numOfChannels 1 -audioOutFile test_data_out/receiver_audio_out -videoOutFile test_data_out/receiver_video_out

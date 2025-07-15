@@ -6,6 +6,7 @@ import io.agora.rtc.AgoraMediaNodeFactory;
 import io.agora.rtc.AgoraRtcConn;
 import io.agora.rtc.AgoraService;
 import io.agora.rtc.AgoraServiceConfig;
+import io.agora.rtc.AudioFrame;
 import io.agora.rtc.Constants;
 import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.RtcConnConfig;
@@ -13,6 +14,8 @@ import io.agora.rtc.RtcConnInfo;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.Utils;
 import io.agora.rtc.utils.AudioConsumerUtils;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -34,10 +37,9 @@ public class SendPcmFileTest {
 
     private AudioConsumerUtils audioConsumerUtils;
 
-    private String audioFilePath = "test_data/send_audio_16k_1ch.pcm";
+    private String audioFilePath = "test_data/tts_ai_16k_1ch.pcm";
     private int numOfChannels = 1;
     private int sampleRate = 16000;
-    private long testTime = 60 * 1000;
 
     private final AtomicBoolean connConnected = new AtomicBoolean(false);
 
@@ -138,47 +140,42 @@ public class SendPcmFileTest {
         audioFrameSender = mediaNodeFactory.createAudioPcmDataSender();
         // Create audio track
         customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
+        // up to 16min,100000 frames, 10000 frames is enough
+        customAudioTrack.setMaxBufferedAudioFrameNumber(100000);
         conn.getLocalUser().publishAudio(customAudioTrack);
 
-        if (audioConsumerUtils == null) {
-            audioConsumerUtils =
-                new AudioConsumerUtils(audioFrameSender, numOfChannels, sampleRate);
+        byte[] pcmData = Utils.readPcmFromFile(audioFilePath);
+        // The data length must be an integer multiple of the data length of 1ms.If not,
+        // then the remaining audio needs to be saved and sent together with the next audio.
+        // Assuming 16-bit samples (2 bytes per sample).
+        int bytesPerMs = numOfChannels * (sampleRate / 1000) * 2;
+        if (bytesPerMs > 0 && pcmData.length % bytesPerMs != 0) {
+            int newLength = (pcmData.length / bytesPerMs) * bytesPerMs;
+            SampleLogger.log(String.format("sendPcmTask: pcmData length is not a multiple of "
+                    + "1ms data bytes. Truncating from %d to %d bytes.",
+                pcmData.length, newLength));
+            pcmData = Arrays.copyOf(pcmData, newLength);
         }
 
-        final byte[] pcmData = Utils.readPcmFromFile(audioFilePath);
+        final byte[] finalPcmData = pcmData;
+        long pcmDataTimeMs = finalPcmData.length / bytesPerMs;
 
         testTaskExecutorService.execute(() -> {
-            audioConsumerUtils.pushPcmData(pcmData);
-            SampleLogger.log("pushData");
+            AudioFrame audioFrame = new AudioFrame();
+            audioFrame.setBuffer(ByteBuffer.wrap(finalPcmData));
+            audioFrame.setRenderTimeMs(0);
+            audioFrame.setSamplesPerChannel(finalPcmData.length / (2 * numOfChannels));
+            audioFrame.setBytesPerSample(2);
+            audioFrame.setChannels(numOfChannels);
+            audioFrame.setSamplesPerSec(sampleRate);
+            audioFrameSender.sendAudioPcmData(audioFrame);
+            SampleLogger.log("sendAudioPcmData " + finalPcmData.length);
         });
 
-        while (!connConnected.get()) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        long startTime = System.currentTimeMillis();
-        while (System.currentTimeMillis() - startTime < testTime) {
-            // If the remaining cache duration is less than 60 ms, push data into the cache
-            if (audioConsumerUtils.getRemainingCacheDurationInMs() < 60) {
-                testTaskExecutorService.execute(() -> {
-                    audioConsumerUtils.pushPcmData(pcmData);
-                    SampleLogger.log("pushData");
-                });
-            }
-            testTaskExecutorService.execute(() -> {
-                int consumeFrameCount = audioConsumerUtils.consume();
-                SampleLogger.log("send pcm " + consumeFrameCount
-                    + " frame data to channelId:" + channelId + " from userId:" + userId);
-            });
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        try {
+            Thread.sleep(pcmDataTimeMs + 1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
         releaseConn();

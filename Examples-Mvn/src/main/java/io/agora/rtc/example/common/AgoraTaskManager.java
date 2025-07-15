@@ -99,7 +99,7 @@ public class AgoraTaskManager {
         } else {
             ccfg.setClientRoleType(Constants.CLIENT_ROLE_AUDIENCE);
         }
-        if (argsConfig.isEncodedFrame()) {
+        if (argsConfig.isRecvAudioEncodedFrame()) {
             ccfg.setAudioRecvEncodedFrame(1);
         } else {
             ccfg.setAudioRecvEncodedFrame(0);

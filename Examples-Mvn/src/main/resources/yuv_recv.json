@@ -36,5 +36,5 @@
     "sleepTime": 1.0,
     "frameCount": 60,
     "isSender": false,
-    "isEncodedFrame": false
+    "isRecvAudioEncodedFrame": false
 }
