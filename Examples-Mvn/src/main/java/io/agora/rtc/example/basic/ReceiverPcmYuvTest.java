@@ -7,16 +7,16 @@ import io.agora.rtc.AgoraServiceConfig;
 import io.agora.rtc.AgoraVideoFrameObserver2;
 import io.agora.rtc.AudioFrame;
 import io.agora.rtc.Constants;
-import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.IAudioFrameObserver;
+import io.agora.rtc.IRtcConnObserver;
+import io.agora.rtc.IVideoFrameObserver2;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
+import io.agora.rtc.RtcConnPublishConfig;
 import io.agora.rtc.VadProcessResult;
 import io.agora.rtc.VideoFrame;
 import io.agora.rtc.VideoSubscriptionOptions;
-import io.agora.rtc.example.common.SampleAudioFrameObserver;
 import io.agora.rtc.example.common.SampleLogger;
-import io.agora.rtc.example.common.SampleVideFrameObserver;
 import io.agora.rtc.example.utils.Utils;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
@@ -64,7 +64,7 @@ public class ReceiverPcmYuvTest {
             config.setEnableAudioProcessor(1);
             config.setEnableVideo(1);
             config.setUseStringUid(0);
-            config.setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
+            config.setAudioScenario(Constants.AUDIO_SCENARIO_AI_SERVER);
             config.setLogFilePath(DEFAULT_LOG_PATH);
             config.setLogFileSize(DEFAULT_LOG_SIZE);
             config.setLogFilters(Constants.LOG_FILTER_DEBUG);
@@ -84,17 +84,23 @@ public class ReceiverPcmYuvTest {
         ccfg.setAutoSubscribeVideo(0);
         ccfg.setChannelProfile(Constants.CHANNEL_PROFILE_LIVE_BROADCASTING);
 
-        conn = service.agoraRtcConnCreate(ccfg);
+        RtcConnPublishConfig publishConfig = new RtcConnPublishConfig();
+        publishConfig.setAudioScenario(Constants.AUDIO_SCENARIO_AI_SERVER);
+        publishConfig.setAudioProfile(Constants.AUDIO_PROFILE_DEFAULT);
+        publishConfig.setIsPublishAudio(false);
+        publishConfig.setIsPublishVideo(false);
+        publishConfig.setAudioPublishType(Constants.AudioPublishType.NO_PUBLISH);
+        publishConfig.setVideoPublishType(Constants.VideoPublishType.NO_PUBLISH);
+        conn = service.agoraRtcConnCreate(ccfg, publishConfig);
         if (conn == null) {
             SampleLogger.log("AgoraService.agoraRtcConnCreate fail\n");
             releaseAgoraService();
             return;
         }
 
-        ret = conn.registerObserver(new DefaultRtcConnObserver() {
+        ret = conn.registerObserver(new IRtcConnObserver() {
             @Override
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
-                super.onConnected(agoraRtcConn, connInfo, reason);
                 SampleLogger.log(
                     "onConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
                 userId = connInfo.getLocalUserId();
@@ -102,13 +108,11 @@ public class ReceiverPcmYuvTest {
 
             @Override
             public void onUserJoined(AgoraRtcConn agoraRtcConn, String userId) {
-                super.onUserJoined(agoraRtcConn, userId);
                 SampleLogger.log("onUserJoined userId:" + userId);
             }
 
             @Override
             public void onUserLeft(AgoraRtcConn agoraRtcConn, String userId, int reason) {
-                super.onUserLeft(agoraRtcConn, userId, reason);
                 SampleLogger.log("onUserLeft userId:" + userId + " reason:" + reason);
             }
         });
@@ -132,36 +136,36 @@ public class ReceiverPcmYuvTest {
             return;
         }
 
-        audioFrameObserver =
-            new SampleAudioFrameObserver(audioOutFile + "_" + channelId + "_" + userId + ".pcm") {
-                @Override
-                public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser,
-                    String channelId, String userId, AudioFrame frame, VadProcessResult vadResult) {
-                    if (null == frame) {
-                        return 0;
-                    }
-                    // Note: To improve data transmission efficiency, the buffer of the frame
-                    // object is a DirectByteBuffer.
-                    // Be sure to extract the byte array value in the callback synchronously
-                    // and then transfer it to the asynchronous thread for processing.
-                    // You can refer to {@link io.agora.rtc.utils.Utils#getBytes(ByteBuffer)}.
-                    byte[] byteArray = io.agora.rtc.utils.Utils.getBytes(frame.getBuffer());
-                    if (byteArray == null) {
-                        return 0;
-                    }
-
-                    singleExecutorService.execute(() -> {
-                        SampleLogger.log("onPlaybackAudioFrameBeforeMixing frame:" + frame
-                            + " audioFrame size " + byteArray.length + " channelId:" + channelId
-                            + " userId:" + userId);
-                        writeAudioFrameToFile(byteArray);
-                    });
-
-                    return 1;
+        audioOutFile = audioOutFile + "_" + channelId + "_" + userId + ".pcm";
+        audioFrameObserver = new IAudioFrameObserver() {
+            @Override
+            public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser,
+                String channelId, String userId, AudioFrame frame, VadProcessResult vadResult) {
+                if (null == frame) {
+                    return 0;
                 }
-            };
+                // Note: To improve data transmission efficiency, the buffer of the frame
+                // object is a DirectByteBuffer.
+                // Be sure to extract the byte array value in the callback synchronously
+                // and then transfer it to the asynchronous thread for processing.
+                // You can refer to {@link io.agora.rtc.utils.Utils#getBytes(ByteBuffer)}.
+                byte[] byteArray = io.agora.rtc.utils.Utils.getBytes(frame.getBuffer());
+                if (byteArray == null) {
+                    return 0;
+                }
 
-        conn.getLocalUser().registerAudioFrameObserver(audioFrameObserver, false, null);
+                singleExecutorService.execute(() -> {
+                    SampleLogger.log("onPlaybackAudioFrameBeforeMixing frame:" + frame
+                        + " audioFrame size " + byteArray.length + " channelId:" + channelId
+                        + " userId:" + userId);
+                    Utils.writeBytesToFile(byteArray, audioOutFile);
+                });
+
+                return 1;
+            }
+        };
+
+        conn.registerAudioFrameObserver(audioFrameObserver, false, null);
 
         // receiver yuv
         VideoSubscriptionOptions subscriptionOptions = new VideoSubscriptionOptions();
@@ -181,50 +185,50 @@ public class ReceiverPcmYuvTest {
             conn.getLocalUser().subscribeAllVideo(subscriptionOptions);
         }
 
-        videoFrameObserver = new AgoraVideoFrameObserver2(
-            new SampleVideFrameObserver(videoOutFile + "_" + channelId + "_" + userId + ".yuv") {
-                @Override
-                public void onFrame(AgoraVideoFrameObserver2 agoraVideoFrameObserver2,
-                    String channelId, String remoteUserId, VideoFrame frame) {
-                    if (frame == null) {
-                        return;
+        videoOutFile = videoOutFile + "_" + channelId + "_" + userId + ".yuv";
+        videoFrameObserver = new AgoraVideoFrameObserver2(new IVideoFrameObserver2() {
+            @Override
+            public void onFrame(AgoraVideoFrameObserver2 agoraVideoFrameObserver2, String channelId,
+                String remoteUserId, VideoFrame frame) {
+                if (frame == null) {
+                    return;
+                }
+
+                int ylength = frame.getYBuffer().remaining();
+                int ulength = frame.getUBuffer().remaining();
+                int vlength = frame.getVBuffer().remaining();
+
+                byte[] data = new byte[ylength + ulength + vlength];
+                ByteBuffer buffer = ByteBuffer.wrap(data);
+                buffer.put(frame.getYBuffer()).put(frame.getUBuffer()).put(frame.getVBuffer());
+
+                final byte[] metaDataBufferData =
+                    io.agora.rtc.utils.Utils.getBytes(frame.getMetadataBuffer());
+                final byte[] alphaBufferData =
+                    io.agora.rtc.utils.Utils.getBytes(frame.getAlphaBuffer());
+
+                singleExecutorService.execute(() -> {
+                    SampleLogger.log(
+                        String.format("onFrame width:%d height:%d channelId:%s remoteUserId:%s "
+                                + "frame size:%d %d %d with  channelId:%s userId:%s",
+                            frame.getWidth(), frame.getHeight(), channelId, remoteUserId, ylength,
+                            ulength, vlength, channelId, userId));
+
+                    if (metaDataBufferData != null) {
+                        SampleLogger.log(
+                            "onFrame metaDataBuffer :" + new String(metaDataBufferData));
                     }
 
-                    int ylength = frame.getYBuffer().remaining();
-                    int ulength = frame.getUBuffer().remaining();
-                    int vlength = frame.getVBuffer().remaining();
+                    if (alphaBufferData != null) {
+                        SampleLogger.log("onFrame getAlphaBuffer size:" + alphaBufferData.length
+                            + " mode:" + frame.getAlphaMode());
+                    }
 
-                    byte[] data = new byte[ylength + ulength + vlength];
-                    ByteBuffer buffer = ByteBuffer.wrap(data);
-                    buffer.put(frame.getYBuffer()).put(frame.getUBuffer()).put(frame.getVBuffer());
-
-                    final byte[] metaDataBufferData =
-                        io.agora.rtc.utils.Utils.getBytes(frame.getMetadataBuffer());
-                    final byte[] alphaBufferData =
-                        io.agora.rtc.utils.Utils.getBytes(frame.getAlphaBuffer());
-
-                    singleExecutorService.execute(() -> {
-                        SampleLogger.log(
-                            String.format("onFrame width:%d height:%d channelId:%s remoteUserId:%s "
-                                          + "frame size:%d %d %d with  channelId:%s userId:%s",
-                                frame.getWidth(), frame.getHeight(), channelId, remoteUserId,
-                                ylength, ulength, vlength, channelId, userId));
-
-                        if (metaDataBufferData != null) {
-                            SampleLogger.log(
-                                "onFrame metaDataBuffer :" + new String(metaDataBufferData));
-                        }
-
-                        if (alphaBufferData != null) {
-                            SampleLogger.log("onFrame getAlphaBuffer size:" + alphaBufferData.length
-                                + " mode:" + frame.getAlphaMode());
-                        }
-
-                        writeVideoFrameToFile(data);
-                    });
-                }
-            });
-        conn.getLocalUser().registerVideoFrameObserver(videoFrameObserver);
+                    Utils.writeBytesToFile(data, videoOutFile);
+                });
+            }
+        });
+        conn.registerVideoFrameObserver(videoFrameObserver);
 
         ret = conn.connect(token, channelId, userId);
         SampleLogger.log(
@@ -256,31 +260,13 @@ public class ReceiverPcmYuvTest {
             return;
         }
 
-        if (null != audioFrameObserver) {
-            conn.getLocalUser().unregisterAudioFrameObserver();
-            audioFrameObserver = null;
-        }
-
-        if (null != videoFrameObserver) {
-            conn.getLocalUser().unregisterVideoFrameObserver(videoFrameObserver);
-            videoFrameObserver.destroy();
-            videoFrameObserver = null;
-        }
-
         int ret = conn.disconnect();
         if (ret != 0) {
             SampleLogger.log("conn.disconnect fail ret=" + ret);
         }
 
-        // Unregister connection observer
-        conn.unregisterObserver();
-        conn.getLocalUser().unregisterObserver();
-
         conn.destroy();
-
         conn = null;
-
-        singleExecutorService.shutdown();
 
         SampleLogger.log("Disconnected from Agora channel successfully");
     }
@@ -290,6 +276,8 @@ public class ReceiverPcmYuvTest {
             service.destroy();
             service = null;
         }
+        singleExecutorService.shutdown();
+
         SampleLogger.log("releaseAgoraService");
     }
 }

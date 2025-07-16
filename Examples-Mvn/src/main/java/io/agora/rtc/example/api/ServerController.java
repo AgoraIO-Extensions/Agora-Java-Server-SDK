@@ -1,5 +1,7 @@
 package io.agora.rtc.example.api;
 
+import io.agora.rtc.Constants;
+import io.agora.rtc.example.basic.AIReceiverSendPcmTest;
 import io.agora.rtc.example.basic.ReceiverPcmDirectSendTest;
 import io.agora.rtc.example.basic.ReceiverPcmH264Test;
 import io.agora.rtc.example.basic.ReceiverPcmVadTest;
@@ -16,9 +18,11 @@ import io.agora.rtc.example.common.AgoraTaskManager;
 import io.agora.rtc.example.common.ArgsConfig;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.Utils;
+import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -207,6 +211,9 @@ public class ServerController implements DisposableBean, ApplicationContextAware
                         log.error("Error executing Audio3aTest", e);
                         sendSseEvent("Error executing Audio3aTest: " + e.getMessage());
                     }
+                } else if (taskName.equals("AIReceiverSendPcmTest")) {
+                    AIReceiverSendPcmTest aiReceiverSendPcmTest = new AIReceiverSendPcmTest();
+                    aiReceiverSendPcmTest.start();
                 } else {
                     log.error("Invalid taskName: {}", taskName);
                     sendSseEvent("Invalid taskName: " + taskName);
@@ -291,6 +298,13 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             if (!testVp8Task(sseEmitter)) {
                 sendSseEvent("Error: test vp8 task failed", sseEmitter);
+                return;
+            }
+
+            Thread.sleep(5 * 1000);
+
+            if (!testAiPcmTask(sseEmitter)) {
+                sendSseEvent("Error: test ai pcm task failed", sseEmitter);
                 return;
             }
 
@@ -1061,6 +1075,159 @@ public class ServerController implements DisposableBean, ApplicationContextAware
         return true;
     }
 
+    private boolean testAiPcmTask(SseEmitter sseEmitter) {
+        try {
+            long startTime = System.currentTimeMillis();
+            taskFinishLatch = new CountDownLatch(1);
+
+            String configFileName = "ai_pcm_send.json";
+            ArgsConfig argsConfig = agoraTaskManager.parseArgsConfig(configFileName);
+            agoraTaskManager.startTask(
+                configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_PCM_AI);
+
+            String recvConfigFileName = "ai_pcm_recv.json";
+            ArgsConfig recvArgsConfig = agoraTaskManager.parseArgsConfig(recvConfigFileName);
+            agoraTaskManager.startTask(
+                recvConfigFileName, recvArgsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM_AI);
+
+            taskFinishLatch.await();
+
+            if (!Utils.checkFileExists(recvArgsConfig.getAudioOutFile())) {
+                sendSseEvent("Error: recv ai pcm audioOutFile does not exist: "
+                        + recvArgsConfig.getAudioOutFile(),
+                    sseEmitter);
+                return false;
+            }
+
+            List<File> files = Utils.getFilesInDirectory(recvArgsConfig.getAudioOutFile(), ".pcm");
+            if (files.size() != 1) {
+                sendSseEvent("Error: recv ai pcm audioOutFile does not exist: "
+                        + recvArgsConfig.getAudioOutFile(),
+                    sseEmitter);
+                return false;
+            }
+            File sendFile = new File(argsConfig.getAudioFile());
+            File recvFile = files.get(0);
+            int bytesPerMs =
+                argsConfig.getNumOfChannels() * (argsConfig.getSampleRate() / 1000) * 2;
+            if (sendFile.exists() && recvFile.exists()
+                && sendFile.length() - recvFile.length() > 10 * bytesPerMs) {
+                sendSseEvent(
+                    "Error: recv ai pcm audioOutFile length does not correct,send file length: "
+                        + sendFile.length() + " recv file length: " + recvFile.length()
+                        + " diff: " + (recvFile.length() - sendFile.length())
+                        + " bytes and more than 10ms(" + 10 * bytesPerMs + " bytes)",
+                    sseEmitter);
+                return false;
+            }
+
+            long endTime = System.currentTimeMillis();
+            long timeCostMs = endTime - startTime;
+            double timeCostMinutes = timeCostMs / 1000.0 / 60.0;
+            sendSseEvent("test ai pcm task send recv finished, time cost: "
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
+
+            Thread.sleep(5 * 1000);
+
+            taskFinishLatch = new CountDownLatch(1);
+            startTime = System.currentTimeMillis();
+
+            configFileName = "ai_pcm_send.json";
+            argsConfig = agoraTaskManager.parseArgsConfig(configFileName);
+            agoraTaskManager.startTask(
+                configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_PCM_AI);
+
+            recvConfigFileName = "ai_pcm_recv.json";
+            recvArgsConfig = agoraTaskManager.parseArgsConfig(recvConfigFileName);
+            recvArgsConfig.setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
+            recvArgsConfig.setAudioOutFile(recvArgsConfig.getAudioOutFile() + "_chorus");
+            agoraTaskManager.startTask(
+                recvConfigFileName, recvArgsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM_AI);
+
+            taskFinishLatch.await();
+
+            if (!Utils.checkFileExists(recvArgsConfig.getAudioOutFile())) {
+                sendSseEvent("Error: recv ai pcm with chorus audioOutFile does not exist: "
+                        + recvArgsConfig.getAudioOutFile(),
+                    sseEmitter);
+                return false;
+            }
+
+            files = Utils.getFilesInDirectory(recvArgsConfig.getAudioOutFile(), ".pcm");
+            if (files.size() != 1) {
+                sendSseEvent("Error: recv ai pcm audioOutFile does not exist: "
+                        + recvArgsConfig.getAudioOutFile(),
+                    sseEmitter);
+                return false;
+            }
+            recvFile = files.get(0);
+
+            if (recvFile.exists()
+                && recvFile.length() > (argsConfig.getTestTime() * 1000 + 20) * bytesPerMs) {
+                sendSseEvent(
+                    "Error: recv ai pcm with chorus audioOutFile length is more than test time: "
+                        + recvArgsConfig.getAudioOutFile()
+                        + " test time: " + (argsConfig.getTestTime() * 1000 + 20) + "ms"
+                        + " recv file length: " + recvFile.length()
+                        + " bytesPerMs: " + bytesPerMs,
+                    sseEmitter);
+                return false;
+            }
+
+            endTime = System.currentTimeMillis();
+            timeCostMs = endTime - startTime;
+            timeCostMinutes = timeCostMs / 1000.0 / 60.0;
+            sendSseEvent("test ai pcm task send recv chorus finished, time cost: "
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
+
+            Thread.sleep(5 * 1000);
+
+            taskFinishLatch = new CountDownLatch(1);
+            startTime = System.currentTimeMillis();
+
+            recvConfigFileName = "ai_pcm_recv.json";
+            recvArgsConfig = agoraTaskManager.parseArgsConfig(recvConfigFileName);
+            recvArgsConfig.setAudioOutFile(recvArgsConfig.getAudioOutFile() + "_fallback");
+            recvArgsConfig.setEnableLog(false);
+            agoraTaskManager.startTask(
+                recvConfigFileName, recvArgsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM_AI);
+
+            sendSseEvent("Please join channel:" + recvArgsConfig.getChannelId()
+                    + " with webrtc client and wait for a moment and leave the channel",
+                sseEmitter);
+
+            taskFinishLatch.await();
+
+            if (!Utils.checkFileExists(recvArgsConfig.getAudioOutFile())) {
+                sendSseEvent("Error: recv ai pcm with fallback audioOutFile does not exist: "
+                        + recvArgsConfig.getAudioOutFile(),
+                    sseEmitter);
+                return false;
+            }
+
+            if (!Utils.checkFileExists(
+                    recvArgsConfig.getAudioOutFile(), "_ai_qos_capability_missing.txt")) {
+                sendSseEvent("Error: recv ai pcm with fallback audioOutFile does not exist: "
+                        + recvArgsConfig.getAudioOutFile() + "_ai_qos_capability_missing.txt",
+                    sseEmitter);
+                return false;
+            }
+
+            endTime = System.currentTimeMillis();
+            timeCostMs = endTime - startTime;
+            timeCostMinutes = timeCostMs / 1000.0 / 60.0;
+            sendSseEvent("test ai pcm task send recv fallback finished, time cost: "
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                sseEmitter);
+        } catch (Exception e) {
+            sendSseEvent("Error: test ai pcm task failed: " + e.getMessage(), sseEmitter);
+            return false;
+        }
+        return true;
+    }
+
     private boolean startSingleServerSse(String configFileName, SseEmitter sseEmitter) {
         sendSseEvent(String.format(
                          "--- Starting single server (SSE) --- ConfigFileName: %s", configFileName),
@@ -1244,6 +1411,14 @@ public class ServerController implements DisposableBean, ApplicationContextAware
                     configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_MP4);
             }
 
+            // AI PCM related config files
+            else if ("ai_pcm_send.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_PCM_AI);
+            } else if ("ai_pcm_recv.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM_AI);
+            }
             // Default case for unknown config files
             else {
                 sendSseEvent("Error: Unknown config file: " + configFileName, sseEmitter);
@@ -1328,8 +1503,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
                 new Thread(() -> {
                     try {
                         Thread.sleep(500); // Short delay
-                        log.info(
-                            "Executing asynchronous application shutdown (from SSE /destroy)...");
+                        log.info("Executing asynchronous application shutdown (from SSE "
+                            + "/destroy)...");
                         int exitCode = SpringApplication.exit(applicationContext, () -> 0);
                         log.info("SpringApplication.exit() called via SSE /destroy. Exiting with "
                                 + "code: {}",
@@ -1348,8 +1523,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
                         System.exit(1);
                     }
                 }, "AppShutdownThread-SSE").start();
-                log.info(
-                    "Application shutdown thread started via SSE /destroy. SSE stream completed.");
+                log.info("Application shutdown thread started via SSE /destroy. SSE stream "
+                    + "completed.");
 
             } else {
                 log.error("ApplicationContext is not available. Cannot programmatically shut down "

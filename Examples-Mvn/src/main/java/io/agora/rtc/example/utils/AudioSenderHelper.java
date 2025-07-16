@@ -1,11 +1,9 @@
 package io.agora.rtc.example.utils;
 
-import io.agora.rtc.AgoraAudioEncodedFrameSender;
+import io.agora.rtc.AgoraRtcConn;
 import io.agora.rtc.EncodedAudioFrameInfo;
 import io.agora.rtc.example.common.SampleLogger;
-import io.agora.rtc.example.mediautils.AudioFrame;
 import io.agora.rtc.example.mediautils.OpusReader;
-
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
@@ -31,17 +29,14 @@ public class AudioSenderHelper {
 
     private AudioSenderCallback callback;
 
-    public enum FileType {
-        OPUS
-    }
+    public enum FileType { OPUS }
 
     public AudioSenderHelper() {
-        this.scheduler = Executors.newScheduledThreadPool(SCHEDULER_POOL_SIZE,
-                r -> {
-                    Thread thread = new Thread(r, "AudioSender-Worker");
-                    thread.setDaemon(true);
-                    return thread;
-                });
+        this.scheduler = Executors.newScheduledThreadPool(SCHEDULER_POOL_SIZE, r -> {
+            Thread thread = new Thread(r, "AudioSender-Worker");
+            thread.setDaemon(true);
+            return thread;
+        });
         this.taskList = new CopyOnWriteArrayList<>();
     }
 
@@ -60,14 +55,13 @@ public class AudioSenderHelper {
         taskList.add(taskInfo);
 
         if (null == readFileFuture) {
-            readFileFuture = scheduler.scheduleAtFixedRate(this::readFile, 0, INTERVAL_ONE_FRAME,
-                    TimeUnit.MILLISECONDS);
-
+            readFileFuture = scheduler.scheduleAtFixedRate(
+                this::readFile, 0, INTERVAL_ONE_FRAME, TimeUnit.MILLISECONDS);
         }
 
         if (sendDataFuture == null) {
-            sendDataFuture = scheduler.scheduleAtFixedRate(this::sendData, 0, INTERVAL_ONE_FRAME,
-                    TimeUnit.MILLISECONDS);
+            sendDataFuture = scheduler.scheduleAtFixedRate(
+                this::sendData, 0, INTERVAL_ONE_FRAME, TimeUnit.MILLISECONDS);
         }
 
         return 0;
@@ -90,11 +84,12 @@ public class AudioSenderHelper {
                     if (opusReader == null) {
                         opusReader = new OpusReader(currentTask.getFilePath());
                     }
-                    io.agora.rtc.example.mediautils.AudioFrame opusFrame = opusReader.getAudioFrame(INTERVAL_ONE_FRAME);
+                    io.agora.rtc.example.mediautils.AudioFrame opusFrame =
+                        opusReader.getAudioFrame(INTERVAL_ONE_FRAME);
                     if (opusFrame != null) {
                         if (audioFrameCache == null) {
-                            audioFrameCache = new AudioFrameCache(opusFrame.numberOfChannels, opusFrame.sampleRate,
-                                    opusFrame.samplesPerChannel, opusFrame.codec);
+                            audioFrameCache = new AudioFrameCache(opusFrame.numberOfChannels,
+                                opusFrame.sampleRate, opusFrame.samplesPerChannel, opusFrame.codec);
                         }
                         audioFrameCache.pushFrame(new AudioFrameCache.Frame(opusFrame.buffer));
                     } else {
@@ -113,7 +108,8 @@ public class AudioSenderHelper {
                                 currentTask = null;
                             }
                         } else if (currentTask.getRemainingLoops() > 0) {
-                            SampleLogger.log("readFile getRemainingLoops: " + currentTask.getRemainingLoops());
+                            SampleLogger.log(
+                                "readFile getRemainingLoops: " + currentTask.getRemainingLoops());
                             opusReader.reset();
                         }
                     }
@@ -155,10 +151,11 @@ public class AudioSenderHelper {
                             encodedInfo.setCodec(audioFrameCache.getCodec());
                             encodedInfo.setNumberOfChannels(audioFrameCache.getNumOfChannels());
                             encodedInfo.setSampleRateHz(audioFrameCache.getSampleRate());
-                            encodedInfo.setSamplesPerChannel(audioFrameCache.getSamplesPerChannel());
+                            encodedInfo.setSamplesPerChannel(
+                                audioFrameCache.getSamplesPerChannel());
                         }
-                        ((AgoraAudioEncodedFrameSender) currentTask.getSender()).sendEncodedAudioFrame(sendData,
-                                encodedInfo);
+                        ((AgoraRtcConn) currentTask.getSender())
+                            .pushAudioEncodedData(sendData, encodedInfo);
                     }
                     break;
                 default:
@@ -256,8 +253,8 @@ public class AudioSenderHelper {
         private final int loopCount;
         private volatile int remainingLoops;
 
-        public TaskInfo(String channelId, String userId, String filePath, FileType fileType, Object sender,
-                int loopCount) {
+        public TaskInfo(String channelId, String userId, String filePath, FileType fileType,
+            Object sender, int loopCount) {
             this.channelId = channelId;
             this.userId = userId;
             this.filePath = filePath;
@@ -301,9 +298,10 @@ public class AudioSenderHelper {
 
         @Override
         public String toString() {
-            return "TaskInfo{" + "channelId='" + channelId + '\'' + ", userId='" + userId + '\'' + ", filePath='"
-                    + filePath + '\'' + ", fileType=" + fileType + ", sender=" + sender + ", loopCount=" + loopCount
-                    + '}';
+            return "TaskInfo{"
+                + "channelId='" + channelId + '\'' + ", userId='" + userId + '\'' + ", filePath='"
+                + filePath + '\'' + ", fileType=" + fileType + ", sender=" + sender
+                + ", loopCount=" + loopCount + '}';
         }
     }
 

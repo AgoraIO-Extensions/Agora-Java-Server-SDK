@@ -96,6 +96,23 @@
       - [Improvements \& Optimizations](#improvements--optimizations-8)
     - [v4.4.30 (2024-10-24)](#v4430-2024-10-24)
   - [Other References](#other-references)
+      - [Improvements \& Optimizations](#improvements--optimizations-9)
+    - [v4.4.31.2 (2025-02-19)](#v44312-2025-02-19-1)
+      - [API Changes](#api-changes-6)
+      - [Improvements \& Optimizations](#improvements--optimizations-10)
+    - [v4.4.31.1 (2025-01-06)](#v44311-2025-01-06-1)
+      - [Improvements \& Optimizations](#improvements--optimizations-11)
+    - [v4.4.31 (2024-12-23)](#v4431-2024-12-23-1)
+      - [API Changes](#api-changes-7)
+      - [Improvements \& Optimizations](#improvements--optimizations-12)
+    - [v4.4.30.2 (2024-11-20)](#v44302-2024-11-20-1)
+      - [API Changes](#api-changes-8)
+      - [Improvements \& Optimizations](#improvements--optimizations-13)
+    - [v4.4.30.1 (2024-11-12)](#v44301-2024-11-12-1)
+      - [API Changes](#api-changes-9)
+      - [Improvements \& Optimizations](#improvements--optimizations-14)
+    - [v4.4.30 (2024-10-24)](#v4430-2024-10-24-1)
+  - [Other References](#other-references-1)
 
 ## Introduction
 
@@ -370,21 +387,33 @@ This project has integrated C++ code compilation functionality, which can automa
 
    Refer to [Maven Installation Guide](https://maven.apache.org/install.html)
 
-2. **C++ Compilation Environment (if you need to compile native libraries)**
+   ```bash
+   sudo apt-get install maven -y
+   sudo apt-get install lsof -y
+   ```
+
+2. **C++ Compilation Environment (if native library compilation is needed)**
 
    Install basic compilation tools:
    ```bash
    sudo apt-get update
-   sudo apt-get install build-essential pkg-config
+   sudo apt-get install build-essential pkg-config gcc g++
    ```
 
-3. **FFmpeg Dependencies (if you need to compile FFmpeg-related features)**
+3. **Install C++ Runtime Library**
+
+   The native libraries of the SDK depend on the `libc++` runtime. Please install it to avoid link errors:
+   ```bash
+   sudo apt-get install libc++1
+   ```
+
+4. **FFmpeg Dependencies (if FFmpeg features need to be compiled)**
 
    ```bash
    sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libswresample-dev
    ```
 
-4. **Ensure JAVA_HOME Environment Variable is Set Correctly**
+5. **Ensure JAVA_HOME is set correctly**
 
    ```bash
    export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
@@ -423,47 +452,89 @@ This project has integrated C++ code compilation functionality, which can automa
 
    The `run_config` file is used to configure various runtime options, located at `Examples-Mvn/run_config`. You can modify the following configurations as needed:
 
-   | Configuration    | Type    | Default | Description                                                                          |
-   | ---------------- | ------- | ------- | ------------------------------------------------------------------------------------ |
-   | enable_jni_check | boolean | false   | Whether to enable JNI checking for debugging JNI-related issues                      |
-   | enable_asan      | boolean | false   | Whether to enable AddressSanitizer for memory error detection                        |
-   | enable_aed_vad   | boolean | false   | Whether to enable AED VAD (Audio Event Detection Voice Activity Detection)           |
-   | enable_gateway   | boolean | false   | Whether to enable Gateway SDK mode, which allows access to VAD and Audio 3A features |
+   | Configuration  | Type    | Default | Description                                                                          |
+   | -------------- | ------- | ------- | ------------------------------------------------------------------------------------ |
+   | enable_asan    | boolean | false   | Whether to enable AddressSanitizer for memory error detection                        |
+   | enable_gateway | boolean | false   | Whether to enable Gateway SDK mode, which allows access to VAD and Audio 3A features |
 
    **Configuration Example:**
 
    ```bash
    # Enable Gateway SDK functionality
    enable_gateway=true
-   
-   # Enable JNI checking (debug mode)
-   enable_jni_check=true
-   
+  
    # Enable memory checking (debug mode)
    enable_asan=true
-   
-   # Enable AED VAD functionality
-   enable_aed_vad=true
    ```
 
    > **Note**:
-   > - Enabling `enable_gateway=true` allows access to VAD and Audio 3A advanced features
-   > - Enabling `enable_jni_check=true` or `enable_asan=true` will affect performance; recommended only for debugging
-   > - Project needs to be recompiled after modifying configuration
+   > - The project needs to be recompiled after modifying the configuration.
 
-4. **Update Linux Java SDK Version**
+4. **Configure Java SDK**
 
-   Ensure the Linux Java SDK version in the `pom.xml` file matches the actual version being used:
+    This section describes how to configure the Linux Java SDK dependency for your Maven project.
 
-   ```xml
-   <dependency>
-       <groupId>io.agora.rtc</groupId>
-       <artifactId>linux-java-sdk</artifactId>
-       <version>4.4.32.1</version>  <!-- Ensure correct version number -->
-   </dependency>
-   ```
+    **Step 1: Configure JAR Dependency**
 
-   > **Note**: Version mismatch may cause compilation errors or runtime issues. Please ensure you use the correct version number corresponding to your downloaded SDK package.
+    You have two ways to configure the project's JAR dependency:
+
+    **Method 1: Using Maven Central Repository (Recommended)**
+    
+    If your project can directly fetch dependencies from the Maven Central Repository, ensure that the correct version number is configured in `pom.xml`.
+    ```xml
+    <dependency>
+        <groupId>io.agora.rtc</groupId>
+        <artifactId>linux-java-sdk</artifactId>
+        <version>4.4.32.1</version>  <!-- Ensure the version number is consistent with the one you need to use -->
+    </dependency>
+    ```
+
+    **Method 2: Using a Local SDK Package**
+    
+    If you need to use a local SDK package (e.g., a customized or internal version), follow these steps:
+
+    1.  **Place SDK Artifacts**: Place the downloaded SDK JAR package (e.g., `agora-sdk.jar`) and the corresponding Javadoc package (`agora-sdk-javadoc.jar`) into the `Examples-Mvn/libs/` directory.
+
+    2.  **Install to Local Maven Repository**: In the `linux_server_java` directory, execute the following script. This script will install the JAR files from the `libs` directory as Maven artifacts into your local repository (usually located at `~/.m2/repository`).
+        ```bash
+        ./build_install_local_maven.sh
+        ```
+    3.  **Update Project Dependencies**: In your project's `pom.xml` (e.g., `Examples-Mvn`), update the version of the `linux-java-sdk` dependency to match the version you installed locally.
+
+
+    **Step 2: Configure Native Libraries (`.so`)**
+    
+    To ensure the Java program can successfully load the native libraries (`.so` files) at runtime, you need to place them in the specified path.
+
+    1.  **Enter the `libs` directory**:
+        ```bash
+        cd linux_server_java/Examples-Mvn/libs/
+        ```
+
+    2.  **Extract Native Libraries from JAR**:
+        ```bash
+        # -x: extract, -v: verbose, -f: file
+        jar -xvf agora-sdk.jar native/
+        ```
+        This command extracts the `native` directory from `agora-sdk.jar`, which contains the native libraries for all platforms.
+
+    3.  **Verify Directory Structure**:
+        After extraction, the `libs` directory structure should be as follows, ensuring the `.so` files are located under the `native/linux/x86_64/` path:
+        ```text
+        libs/
+        ├── agora-sdk.jar
+        ├── agora-sdk-javadoc.jar
+        └── native/
+            └── linux/
+                └── x86_64/
+                    ├── libagora_rtc_sdk.so
+                    ├── libagora-fdkaac.so
+                    └── ... (other .so files)
+        ```
+    4.  **Return to the project root directory**:
+        ```bash
+        cd ../../..
+        ```
 
 #### Build Process
 
@@ -1283,3 +1354,78 @@ public class Audio3AProcessingExample {
 Refer to the official website for details (<https://docs.agora.io/en/rtc-server-sdk/java/landing-page/>)
 
 Official API documentation [Agora Server Java SDK API Reference](https://docs.agora.io/en/rtc-server-sdk/java/reference/api-overview/)
+
+
+#### Improvements & Optimizations
+
+- Fixed exception handling issues potentially caused by memory reuse.
+
+### v4.4.31.2 (2025-02-19)
+
+#### API Changes
+
+- Added `sendStreamMessage(int streamId, byte[] messageData)` method, deprecated `sendStreamMessage(int streamId, String message, int length)` method.
+
+#### Improvements & Optimizations
+
+- Optimized code handling, improving system robustness.
+
+### v4.4.31.1 (2025-01-06)
+
+#### Improvements & Optimizations
+
+- Optimized VAD function configuration; VAD is now enabled by default, manual configuration is not required.
+
+### v4.4.31 (2024-12-23)
+
+#### API Changes
+
+- Added `DomainLimit` configuration option in `AgoraServiceConfig` for domain limit management.
+- Added `VadDumpUtils` utility class, supporting export of debug data from the VAD process.
+- Added `AudioConsumerUtils` class, providing an optimized PCM data transmission mechanism.
+- Modified `registerAudioFrameObserver` method in `AgoraLocalUser` to support configuration of `AgoraAudioVadConfigV2` parameters.
+- Added `vadResult` parameter to the `onPlaybackAudioFrameBeforeMixing` callback in `IAudioFrameObserver`.
+- Added `sendAudioMetaData` method in `AgoraLocalUser` class to support sending audio metadata.
+- Added `onAudioMetaDataReceived` callback in `ILocalUserObserver` class for receiving audio metadata.
+- Added `ColorSpace` property in `ExternalVideoFrame` class to support custom color space settings.
+
+#### Improvements & Optimizations
+
+- Optimized code logic architecture, significantly improving memory usage efficiency.
+- Fixed multiple memory leak issues, enhancing system stability.
+- Strengthened memory access security mechanisms, effectively preventing memory corruption issues.
+
+### v4.4.30.2 (2024-11-20)
+
+#### API Changes
+
+- Enhanced `processFrame` handling in AgoraAudioVadV2, adding `START_SPEAKING` and `STOP_SPEAKING` state callbacks.
+- Improved parameter types for encoded frame callbacks: `onEncodedAudioFrameReceived`, `onEncodedVideoImageReceived`, `onEncodedVideoFrame` now use `ByteBuffer` instead of `Byte` arrays.
+
+#### Improvements & Optimizations
+
+- VAD plugin startup optimization: `enableExtension` is now handled internally by the SDK; applications no longer need to call this method manually.
+- Fixed handling issues with `alphaBuffer` and `metadataBuffer` in `VideoFrame`.
+
+### v4.4.30.1 (2024-11-12)
+
+#### API Changes
+
+- Added AgoraAudioVad2 related `Vad2` interface, removed AgoraAudioVad related `Vad` interface.
+- Added callback interface `IAudioEncodedFrameObserver` for receiving encoded audio.
+
+#### Improvements & Optimizations
+
+- Fixed crash issues related to `LocalAudioDetailedStats` callbacks.
+- Modified parameter types for the `onAudioVolumeIndication` callback.
+
+### v4.4.30 (2024-10-24)
+
+- For detailed changelog, please refer to the [Release Notes](https://docs.agora.io/en/rtc-server-sdk/java/overview/release-notes/)
+
+## Other References
+
+Refer to the official website for details (<https://docs.agora.io/en/rtc-server-sdk/java/landing-page/>)
+
+Official API documentation [Agora Server Java SDK API Reference](https://docs.agora.io/en/rtc-server-sdk/java/reference/api-overview/)
+

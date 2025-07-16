@@ -49,7 +49,7 @@ fi
 # 如果有 -ffmpegUtils 参数，则编译 libffmpeg_utils.so
 if $build_ffmpegUtils; then
     echo "Building libffmpeg_utils.so..."
-    
+
     # 检查FFmpeg依赖
     if ! pkg-config --exists libavcodec libavformat libavutil libswresample libswscale; then
         echo "ERROR: FFmpeg development libraries not found. Please install them first."
@@ -75,11 +75,11 @@ fi
 # 如果有 -mediaUtils 参数，则编译 libmedia_utils.so
 if $build_mediaUtils; then
     echo "Building libmedia_utils.so..."
-    
+
     MEDIA_UTILS_DIR="$NATIVE_DIR/media_utils"
     OPUS_INCLUDE_DIR="$MEDIA_UTILS_DIR/third-party/opusfile_parser/include"
     OPUS_LIB_DIR="$MEDIA_UTILS_DIR/third-party/opusfile_parser/lib"
-    
+
     # 检查Opus依赖
     if [ ! -d "$OPUS_LIB_DIR" ]; then
         echo "ERROR: Opus library directory not found at $OPUS_LIB_DIR"
@@ -144,7 +144,6 @@ fi
 
 # 读取配置文件
 CONFIG_FILE="run_config"
-ENABLE_AED_VAD=false
 ENABLE_GATEWAY=false
 
 if [ -f "$CONFIG_FILE" ]; then
@@ -155,14 +154,10 @@ if [ -f "$CONFIG_FILE" ]; then
         if [[ "$key" =~ ^[[:space:]]*# ]] || [[ -z "$key" ]]; then
             continue
         fi
-        if [ "$key" = "enable_aed_vad" ]; then
-            ENABLE_AED_VAD=$value
-        fi
         if [ "$key" = "enable_gateway" ]; then
             ENABLE_GATEWAY=$value
         fi
-    done < "$CONFIG_FILE"
+    done <"$CONFIG_FILE"
 fi
 
 echo "Build completed successfully"
-echo "Configuration: enable_aed_vad=$ENABLE_AED_VAD, enable_gateway=$ENABLE_GATEWAY" 

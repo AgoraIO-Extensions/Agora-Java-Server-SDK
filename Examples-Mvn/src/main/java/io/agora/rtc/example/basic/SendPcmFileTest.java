@@ -1,20 +1,15 @@
 package io.agora.rtc.example.basic;
 
-import io.agora.rtc.AgoraAudioPcmDataSender;
-import io.agora.rtc.AgoraLocalAudioTrack;
-import io.agora.rtc.AgoraMediaNodeFactory;
 import io.agora.rtc.AgoraRtcConn;
 import io.agora.rtc.AgoraService;
 import io.agora.rtc.AgoraServiceConfig;
-import io.agora.rtc.AudioFrame;
 import io.agora.rtc.Constants;
-import io.agora.rtc.DefaultRtcConnObserver;
+import io.agora.rtc.IRtcConnObserver;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
+import io.agora.rtc.RtcConnPublishConfig;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.Utils;
-import io.agora.rtc.utils.AudioConsumerUtils;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -29,13 +24,8 @@ public class SendPcmFileTest {
     private String userId = "0";
 
     private static AgoraService service;
-    private static AgoraMediaNodeFactory mediaNodeFactory;
 
     private AgoraRtcConn conn;
-    private AgoraAudioPcmDataSender audioFrameSender;
-    private AgoraLocalAudioTrack customAudioTrack;
-
-    private AudioConsumerUtils audioConsumerUtils;
 
     private String audioFilePath = "test_data/tts_ai_16k_1ch.pcm";
     private int numOfChannels = 1;
@@ -63,7 +53,7 @@ public class SendPcmFileTest {
             config.setEnableAudioProcessor(1);
             config.setEnableVideo(1);
             config.setUseStringUid(0);
-            config.setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
+            config.setAudioScenario(Constants.AUDIO_SCENARIO_AI_SERVER);
             config.setLogFilePath(DEFAULT_LOG_PATH);
             config.setLogFileSize(DEFAULT_LOG_SIZE);
             config.setLogFilters(Constants.LOG_FILTER_DEBUG);
@@ -75,7 +65,6 @@ public class SendPcmFileTest {
                 releaseAgoraService();
                 return;
             }
-            mediaNodeFactory = service.createMediaNodeFactory();
         }
 
         // Create a connection for each channel
@@ -85,17 +74,23 @@ public class SendPcmFileTest {
         ccfg.setAutoSubscribeVideo(0);
         ccfg.setChannelProfile(Constants.CHANNEL_PROFILE_LIVE_BROADCASTING);
 
-        conn = service.agoraRtcConnCreate(ccfg);
+        RtcConnPublishConfig publishConfig = new RtcConnPublishConfig();
+        publishConfig.setAudioScenario(Constants.AUDIO_SCENARIO_AI_SERVER);
+        publishConfig.setAudioProfile(Constants.AUDIO_PROFILE_DEFAULT);
+        publishConfig.setIsPublishAudio(true);
+        publishConfig.setIsPublishVideo(false);
+        publishConfig.setAudioPublishType(Constants.AudioPublishType.PCM);
+        publishConfig.setVideoPublishType(Constants.VideoPublishType.NO_PUBLISH);
+        conn = service.agoraRtcConnCreate(ccfg, publishConfig);
         if (conn == null) {
             SampleLogger.log("AgoraService.agoraRtcConnCreate fail\n");
             releaseAgoraService();
             return;
         }
 
-        ret = conn.registerObserver(new DefaultRtcConnObserver() {
+        ret = conn.registerObserver(new IRtcConnObserver() {
             @Override
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
-                super.onConnected(agoraRtcConn, connInfo, reason);
                 SampleLogger.log("onConnected chennalId:" + connInfo.getChannelId()
                     + " userId:" + connInfo.getLocalUserId());
                 connConnected.set(true);
@@ -104,13 +99,11 @@ public class SendPcmFileTest {
 
             @Override
             public void onUserJoined(AgoraRtcConn agoraRtcConn, String userId) {
-                super.onUserJoined(agoraRtcConn, userId);
                 SampleLogger.log("onUserJoined userId:" + userId);
             }
 
             @Override
             public void onUserLeft(AgoraRtcConn agoraRtcConn, String userId, int reason) {
-                super.onUserLeft(agoraRtcConn, userId, reason);
                 SampleLogger.log("onUserLeft userId:" + userId + " reason:" + reason);
             }
 
@@ -137,12 +130,8 @@ public class SendPcmFileTest {
             return;
         }
 
-        audioFrameSender = mediaNodeFactory.createAudioPcmDataSender();
         // Create audio track
-        customAudioTrack = service.createCustomAudioTrackPcm(audioFrameSender);
-        // up to 16min,100000 frames, 10000 frames is enough
-        customAudioTrack.setMaxBufferedAudioFrameNumber(100000);
-        conn.getLocalUser().publishAudio(customAudioTrack);
+        conn.publishAudio();
 
         byte[] pcmData = Utils.readPcmFromFile(audioFilePath);
         // The data length must be an integer multiple of the data length of 1ms.If not,
@@ -161,15 +150,8 @@ public class SendPcmFileTest {
         long pcmDataTimeMs = finalPcmData.length / bytesPerMs;
 
         testTaskExecutorService.execute(() -> {
-            AudioFrame audioFrame = new AudioFrame();
-            audioFrame.setBuffer(ByteBuffer.wrap(finalPcmData));
-            audioFrame.setRenderTimeMs(0);
-            audioFrame.setSamplesPerChannel(finalPcmData.length / (2 * numOfChannels));
-            audioFrame.setBytesPerSample(2);
-            audioFrame.setChannels(numOfChannels);
-            audioFrame.setSamplesPerSec(sampleRate);
-            audioFrameSender.sendAudioPcmData(audioFrame);
-            SampleLogger.log("sendAudioPcmData " + finalPcmData.length);
+            conn.pushAudioPcmData(finalPcmData, sampleRate, numOfChannels);
+            SampleLogger.log("pushAudioPcmData " + finalPcmData.length);
         });
 
         try {
@@ -191,50 +173,24 @@ public class SendPcmFileTest {
 
         connConnected.set(false);
 
-        if (audioConsumerUtils != null) {
-            audioConsumerUtils.release();
-            audioConsumerUtils = null;
-        }
-
-        if (null != audioFrameSender) {
-            audioFrameSender.destroy();
-            audioFrameSender = null;
-        }
-
-        if (null != customAudioTrack) {
-            customAudioTrack.clearSenderBuffer();
-            conn.getLocalUser().unpublishAudio(customAudioTrack);
-            customAudioTrack.destroy();
-            customAudioTrack = null;
-        }
-
         int ret = conn.disconnect();
         if (ret != 0) {
             SampleLogger.log("conn.disconnect fail ret=" + ret);
         }
 
-        // Unregister connection observer
-        conn.unregisterObserver();
-        conn.getLocalUser().unregisterObserver();
-
         conn.destroy();
         conn = null;
-
-        testTaskExecutorService.shutdown();
 
         SampleLogger.log("Disconnected from Agora channel successfully");
     }
 
     private void releaseAgoraService() {
-        if (null != mediaNodeFactory) {
-            mediaNodeFactory.destroy();
-            mediaNodeFactory = null;
-        }
-
         if (service != null) {
             service.destroy();
             service = null;
         }
+        testTaskExecutorService.shutdown();
+
         SampleLogger.log("releaseAgoraService");
     }
 }

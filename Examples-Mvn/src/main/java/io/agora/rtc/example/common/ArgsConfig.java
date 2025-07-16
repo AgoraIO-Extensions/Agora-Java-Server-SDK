@@ -7,6 +7,7 @@ public class ArgsConfig {
     private String userId = "";
     private String channelId = "";
     private String remoteUserId = "";
+    private int audioScenario = -1;
     private String streamType = "";
     private String audioFile = "";
     private String audioOutFile = "";
@@ -85,6 +86,14 @@ public class ArgsConfig {
 
     public void setRemoteUserId(String remoteUserId) {
         this.remoteUserId = remoteUserId;
+    }
+
+    public int getAudioScenario() {
+        return audioScenario;
+    }
+
+    public void setAudioScenario(int audioScenario) {
+        this.audioScenario = audioScenario;
     }
 
     public String getStreamType() {
@@ -387,8 +396,8 @@ public class ArgsConfig {
         return isRecvAudioEncodedFrame;
     }
 
-    public void setRecvAudioEncodedFrame(boolean recvAudioEncodedFrame) {
-        this.isRecvAudioEncodedFrame = recvAudioEncodedFrame;
+    public void setRecvAudioEncodedFrame(boolean isRecvAudioEncodedFrame) {
+        this.isRecvAudioEncodedFrame = isRecvAudioEncodedFrame;
     }
 
     @Override
@@ -396,21 +405,21 @@ public class ArgsConfig {
         return "ArgsConfig{"
             + "appId='" + appId + '\'' + ", token='" + token + '\'' + ", userId='" + userId + '\''
             + ", channelId='" + channelId + '\'' + ", remoteUserId='" + remoteUserId + '\''
-            + ", streamType='" + streamType + '\'' + ", audioFile='" + audioFile + '\''
-            + ", audioOutFile='" + audioOutFile + '\'' + ", videoFile='" + videoFile + '\''
-            + ", lowVideoFile='" + lowVideoFile + '\'' + ", videoOutFile='" + videoOutFile + '\''
-            + ", expectedFile='" + expectedFile + '\'' + ", sampleRate='" + sampleRate + '\''
-            + ", numOfChannels='" + numOfChannels + '\'' + ", height='" + height + '\''
-            + ", width='" + width + '\'' + ", lowWidth='" + lowWidth + '\'' + ", lowHeight='"
-            + lowHeight + '\'' + ", fps='" + fps + '\'' + ", lowFps='" + lowFps + '\''
-            + ", connectionCount='" + connectionCount + '\'' + ", fileType='" + fileType + '\''
-            + ", encryptionMode='" + encryptionMode + '\'' + ", encryptionKey='" + encryptionKey
-            + '\'' + ", enableStringUid='" + enableStringUid + '\'' + ", enableLog='" + enableLog
-            + '\'' + ", enableEncryptionMode='" + enableEncryptionMode + '\''
-            + ", enableCloudProxy='" + enableCloudProxy + '\'' + ", enableSimulcastStream='"
-            + enableSimulcastStream + '\'' + ", enableSaveFile='" + enableSaveFile + '\''
-            + ", enableAlpha='" + enableAlpha + '\'' + ", enableVad='" + enableVad + '\''
-            + ", enableSendAudioMetaData='" + enableSendAudioMetaData + '\''
+            + ", audioScenario='" + audioScenario + '\'' + ", streamType='" + streamType + '\''
+            + ", audioFile='" + audioFile + '\'' + ", audioOutFile='" + audioOutFile + '\''
+            + ", videoFile='" + videoFile + '\'' + ", lowVideoFile='" + lowVideoFile + '\''
+            + ", videoOutFile='" + videoOutFile + '\'' + ", expectedFile='" + expectedFile + '\''
+            + ", sampleRate='" + sampleRate + '\'' + ", numOfChannels='" + numOfChannels + '\''
+            + ", height='" + height + '\'' + ", width='" + width + '\'' + ", lowWidth='"
+            + lowWidth + '\'' + ", lowHeight='" + lowHeight + '\'' + ", fps='" + fps + '\''
+            + ", lowFps='" + lowFps + '\'' + ", connectionCount='" + connectionCount + '\''
+            + ", fileType='" + fileType + '\'' + ", encryptionMode='" + encryptionMode + '\''
+            + ", encryptionKey='" + encryptionKey + '\'' + ", enableStringUid='" + enableStringUid
+            + '\'' + ", enableLog='" + enableLog + '\'' + ", enableEncryptionMode='"
+            + enableEncryptionMode + '\'' + ", enableCloudProxy='" + enableCloudProxy + '\''
+            + ", enableSimulcastStream='" + enableSimulcastStream + '\'' + ", enableSaveFile='"
+            + enableSaveFile + '\'' + ", enableAlpha='" + enableAlpha + '\'' + ", enableVad='"
+            + enableVad + '\'' + ", enableSendAudioMetaData='" + enableSendAudioMetaData + '\''
             + ", enableSendVideoMetaData='" + enableSendVideoMetaData + '\''
             + ", enableSingleChannel='" + enableSingleChannel + '\'' + ", enableStressTest='"
             + enableStressTest + '\'' + ", enableRecvDataStream='" + enableRecvDataStream + '\''
