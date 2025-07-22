@@ -11,7 +11,8 @@ import io.agora.rtc.RtcConnPublishConfig;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.AudioSenderHelper;
 import io.agora.rtc.example.utils.Utils;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class SendOpusTest {
     static {
@@ -34,7 +35,7 @@ public class SendOpusTest {
     private String audioFilePath = "test_data/send_audio.opus";
     private long testTime = 60 * 1000;
 
-    private final AtomicBoolean connConnected = new AtomicBoolean(false);
+    private final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
 
     public void start() {
         if (appId == null || token == null) {
@@ -94,13 +95,13 @@ public class SendOpusTest {
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
                 SampleLogger.log("onConnected chennalId:" + connInfo.getChannelId()
                     + " userId:" + connInfo.getLocalUserId());
-                connConnected.set(true);
                 userId = connInfo.getLocalUserId();
             }
 
             @Override
             public void onUserJoined(AgoraRtcConn agoraRtcConn, String userId) {
                 SampleLogger.log("onUserJoined userId:" + userId);
+                pushOpusData();
             }
 
             @Override
@@ -124,7 +125,6 @@ public class SendOpusTest {
         conn.publishAudio();
 
         audioSenderHelper = new AudioSenderHelper();
-
         audioSenderHelper.setCallback(new AudioSenderHelper.AudioSenderCallback() {
             @Override
             public void onTaskStart(AudioSenderHelper.TaskInfo task) {
@@ -141,26 +141,6 @@ public class SendOpusTest {
                 SampleLogger.log("onTaskCancel for task:" + task);
             }
         });
-        while (!connConnected.get()) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        audioSenderHelper.send(new AudioSenderHelper.TaskInfo(channelId, userId, audioFilePath,
-                                   AudioSenderHelper.FileType.OPUS, conn, 1),
-            true);
-
-        try {
-            Thread.sleep(10 * 1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        audioSenderHelper.send(new AudioSenderHelper.TaskInfo(channelId, userId, audioFilePath,
-                                   AudioSenderHelper.FileType.OPUS, conn, 1),
-            true);
 
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < testTime) {
@@ -177,13 +157,28 @@ public class SendOpusTest {
         System.exit(0);
     }
 
+    private void pushOpusData() {
+        testTaskExecutorService.execute(() -> {
+            audioSenderHelper.send(new AudioSenderHelper.TaskInfo(channelId, userId, audioFilePath,
+                                       AudioSenderHelper.FileType.OPUS, conn, 1),
+                true);
+
+            try {
+                Thread.sleep(10 * 1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            audioSenderHelper.send(new AudioSenderHelper.TaskInfo(channelId, userId, audioFilePath,
+                                       AudioSenderHelper.FileType.OPUS, conn, 1),
+                true);
+        });
+    }
+
     private void releaseConn() {
         SampleLogger.log("releaseConn for channelId:" + channelId + " userId:" + userId);
         if (conn == null) {
             return;
         }
-
-        connConnected.set(false);
 
         if (null != audioSenderHelper) {
             audioSenderHelper.destroy();

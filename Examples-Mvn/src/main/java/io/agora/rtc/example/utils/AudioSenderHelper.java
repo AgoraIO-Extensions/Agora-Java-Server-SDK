@@ -154,8 +154,12 @@ public class AudioSenderHelper {
                             encodedInfo.setSamplesPerChannel(
                                 audioFrameCache.getSamplesPerChannel());
                         }
-                        ((AgoraRtcConn) currentTask.getSender())
-                            .pushAudioEncodedData(sendData, encodedInfo);
+                        int ret = ((AgoraRtcConn) currentTask.getSender())
+                                      .pushAudioEncodedData(sendData, encodedInfo);
+                        if (ret != 0) {
+                            SampleLogger.log("sendData failed sendData.length: " + sendData.length
+                                + " ret: " + ret);
+                        }
                     }
                     break;
                 default:

@@ -20,7 +20,6 @@ import java.io.FileInputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SendYuvTest {
     private String appId;
@@ -42,7 +41,6 @@ public class SendYuvTest {
     private String videoFile = "test_data/360p_I420.yuv";
     private long testTime = 60 * 1000;
 
-    private final AtomicBoolean connConnected = new AtomicBoolean(false);
     private final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
 
     public void start() {
@@ -101,13 +99,13 @@ public class SendYuvTest {
         ret = conn.registerObserver(new IRtcConnObserver() {
             @Override
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
-                connConnected.set(true);
                 userId = connInfo.getLocalUserId();
             }
 
             @Override
             public void onUserJoined(AgoraRtcConn agoraRtcConn, String userId) {
                 SampleLogger.log("onUserJoined userId:" + userId);
+                pushYuvData();
             }
 
             @Override
@@ -146,108 +144,6 @@ public class SendYuvTest {
         // Publish video track
         conn.publishVideo();
 
-        int bufferLen = (int) (height * width * 1.5);
-        byte[] buffer = new byte[bufferLen];
-
-        FileSender yuvSender = new FileSender(videoFile, 1000 / fps) {
-            private int frameIndex = 0;
-            private ByteBuffer byteBuffer;
-            private ByteBuffer matedataByteBuffer;
-            private ByteBuffer alphaByteBuffer;
-
-            @Override
-            public void sendOneFrame(byte[] data, long timestamp) {
-                if (data == null) {
-                    return;
-                }
-
-                ExternalVideoFrame externalVideoFrame = new ExternalVideoFrame();
-                externalVideoFrame.setHeight(height);
-                if (null == byteBuffer) {
-                    byteBuffer = ByteBuffer.allocateDirect(data.length);
-                }
-                if (byteBuffer == null || byteBuffer.limit() < data.length) {
-                    return;
-                }
-                byteBuffer.put(data);
-                byteBuffer.flip();
-
-                externalVideoFrame.setBuffer(byteBuffer);
-                externalVideoFrame.setRotation(0);
-                externalVideoFrame.setFormat(Constants.EXTERNAL_VIDEO_FRAME_PIXEL_FORMAT_I420);
-                externalVideoFrame.setStride(width);
-                externalVideoFrame.setType(Constants.EXTERNAL_VIDEO_FRAME_BUFFER_TYPE_RAW_DATA);
-
-                String testMetaData = "testMetaData";
-                if (null == matedataByteBuffer) {
-                    matedataByteBuffer = ByteBuffer.allocateDirect(testMetaData.getBytes().length);
-                }
-                if (matedataByteBuffer == null
-                    || matedataByteBuffer.limit() < testMetaData.getBytes().length) {
-                    return;
-                }
-                matedataByteBuffer.put(testMetaData.getBytes());
-                matedataByteBuffer.flip();
-                externalVideoFrame.setMetadataBuffer(matedataByteBuffer);
-
-                if (enableAlpha) {
-                    if (null == alphaByteBuffer) {
-                        alphaByteBuffer = ByteBuffer.allocateDirect(data.length);
-                    }
-                    if (alphaByteBuffer == null || alphaByteBuffer.limit() < data.length) {
-                        return;
-                    }
-                    alphaByteBuffer.put(data);
-                    alphaByteBuffer.flip();
-                    externalVideoFrame.setAlphaBuffer(alphaByteBuffer);
-                    externalVideoFrame.setFillAlphaBuffer(1);
-                }
-
-                int ret = conn.pushVideoFrame(externalVideoFrame);
-                frameIndex++;
-
-                SampleLogger.log("send yuv frame data size:" + data.length + " ret:" + ret
-                    + " timestamp:" + timestamp + " frameIndex:" + frameIndex
-                    + " from channelId:" + channelId + " userId:" + userId);
-            }
-
-            @Override
-            public byte[] readOneFrame(FileInputStream fos) {
-                if (fos == null) {
-                    return null;
-                }
-                try {
-                    int size = fos.read(buffer, 0, bufferLen);
-                    if (size < 0) {
-                        reset();
-                        frameIndex = 0;
-                        return null;
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                return buffer;
-            }
-
-            @Override
-            public void release() {
-                super.release();
-                DirectBufferCleaner.release(byteBuffer);
-                DirectBufferCleaner.release(matedataByteBuffer);
-                DirectBufferCleaner.release(alphaByteBuffer);
-            }
-        };
-
-        while (!connConnected.get()) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        testTaskExecutorService.execute(yuvSender);
-
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < testTime) {
             try {
@@ -262,13 +158,115 @@ public class SendYuvTest {
         System.exit(0);
     }
 
+    private void pushYuvData() {
+        testTaskExecutorService.execute(() -> {
+            int bufferLen = (int) (height * width * 1.5);
+            byte[] buffer = new byte[bufferLen];
+
+            FileSender yuvSender = new FileSender(videoFile, 1000 / fps) {
+                private int frameIndex = 0;
+                private ByteBuffer byteBuffer;
+                private ByteBuffer matedataByteBuffer;
+                private ByteBuffer alphaByteBuffer;
+
+                @Override
+                public void sendOneFrame(byte[] data, long timestamp) {
+                    if (data == null) {
+                        return;
+                    }
+                    if (conn == null) {
+                        release();
+                        return;
+                    }
+
+                    ExternalVideoFrame externalVideoFrame = new ExternalVideoFrame();
+                    externalVideoFrame.setHeight(height);
+                    if (null == byteBuffer) {
+                        byteBuffer = ByteBuffer.allocateDirect(data.length);
+                    }
+                    if (byteBuffer == null || byteBuffer.limit() < data.length) {
+                        return;
+                    }
+                    byteBuffer.put(data);
+                    byteBuffer.flip();
+
+                    externalVideoFrame.setBuffer(byteBuffer);
+                    externalVideoFrame.setRotation(0);
+                    externalVideoFrame.setFormat(Constants.EXTERNAL_VIDEO_FRAME_PIXEL_FORMAT_I420);
+                    externalVideoFrame.setStride(width);
+                    externalVideoFrame.setType(Constants.EXTERNAL_VIDEO_FRAME_BUFFER_TYPE_RAW_DATA);
+
+                    String testMetaData = "testMetaData";
+                    if (null == matedataByteBuffer) {
+                        matedataByteBuffer =
+                            ByteBuffer.allocateDirect(testMetaData.getBytes().length);
+                    }
+                    if (matedataByteBuffer == null
+                        || matedataByteBuffer.limit() < testMetaData.getBytes().length) {
+                        return;
+                    }
+                    matedataByteBuffer.put(testMetaData.getBytes());
+                    matedataByteBuffer.flip();
+                    externalVideoFrame.setMetadataBuffer(matedataByteBuffer);
+
+                    if (enableAlpha) {
+                        if (null == alphaByteBuffer) {
+                            alphaByteBuffer = ByteBuffer.allocateDirect(data.length);
+                        }
+                        if (alphaByteBuffer == null || alphaByteBuffer.limit() < data.length) {
+                            return;
+                        }
+                        alphaByteBuffer.put(data);
+                        alphaByteBuffer.flip();
+                        externalVideoFrame.setAlphaBuffer(alphaByteBuffer);
+                        externalVideoFrame.setFillAlphaBuffer(1);
+                    }
+
+                    int ret = conn.pushVideoFrame(externalVideoFrame);
+                    frameIndex++;
+
+                    SampleLogger.log("send yuv frame data size:" + data.length + " ret:" + ret
+                        + " timestamp:" + timestamp + " frameIndex:" + frameIndex
+                        + " from channelId:" + channelId + " userId:" + userId);
+                }
+
+                @Override
+                public byte[] readOneFrame(FileInputStream fos) {
+                    if (fos == null) {
+                        return null;
+                    }
+                    try {
+                        int size = fos.read(buffer, 0, bufferLen);
+                        if (size < 0) {
+                            reset();
+                            frameIndex = 0;
+                            return null;
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    return buffer;
+                }
+
+                @Override
+                public void release() {
+                    super.release();
+                    DirectBufferCleaner.release(byteBuffer);
+                    DirectBufferCleaner.release(matedataByteBuffer);
+                    DirectBufferCleaner.release(alphaByteBuffer);
+                }
+            };
+
+            testTaskExecutorService.execute(yuvSender);
+        });
+    }
+
     private void releaseConn() {
         SampleLogger.log("releaseConn for channelId:" + channelId + " userId:" + userId);
         if (conn == null) {
             return;
         }
 
-        connConnected.set(false);
         testTaskExecutorService.shutdown();
 
         int ret = conn.disconnect();

@@ -36,9 +36,7 @@
                 <Delete basePath="${logPath}" maxDepth="1">
                     <IfFileName glob="${logFileName}-*.log.gz">
                         <!-- Delete archive files older than 7 days -->
-                        <IfLastModified age="7d">
-                            <Delete />
-                        </IfLastModified>
+                        <IfLastModified age="7d" />
                     </IfFileName>
                 </Delete>
             </DefaultRolloverStrategy>

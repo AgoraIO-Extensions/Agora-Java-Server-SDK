@@ -7,7 +7,7 @@
     "audioScenario": 9,
     "streamType": "",
     "audioFile": "",
-    "audioOutFile": "test_data_out/recv_audio_ai",
+    "audioOutFile": "test_data_out/ai_pcm_recv",
     "videoFile": "",
     "lowVideoFile": "",
     "videoOutFile": "",

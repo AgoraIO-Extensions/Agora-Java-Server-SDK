@@ -18,7 +18,6 @@ import io.agora.rtc.example.utils.Utils;
 import java.io.FileInputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SendH264Test {
     static {
@@ -43,8 +42,6 @@ public class SendH264Test {
     private boolean enableSimulcastStream = false;
     private String videoFile = "test_data/send_video.h264";
     private long testTime = 60 * 1000;
-
-    private final AtomicBoolean connConnected = new AtomicBoolean(false);
 
     private final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
     private final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
@@ -107,13 +104,13 @@ public class SendH264Test {
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
                 SampleLogger.log(
                     "onConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
-                connConnected.set(true);
                 userId = connInfo.getLocalUserId();
             }
 
             @Override
             public void onUserJoined(AgoraRtcConn agoraRtcConn, String userId) {
                 SampleLogger.log("onUserJoined userId:" + userId);
+                pushH264Data();
             }
 
             @Override
@@ -146,68 +143,6 @@ public class SendH264Test {
         ret = conn.publishVideo();
         SampleLogger.log("sendH264Task publishVideo ret:" + ret);
 
-        H264Reader h264Reader = new H264Reader(videoFile);
-        FileSender h264SendThread = new FileSender(videoFile, 1000 / fps) {
-            int lastFrameType = 0;
-            int frameIndex = 0;
-
-            @Override
-            public void sendOneFrame(byte[] data, long timestamp) {
-                if (data == null) {
-                    return;
-                }
-                EncodedVideoFrameInfo info = new EncodedVideoFrameInfo();
-                info.setFrameType(lastFrameType);
-                info.setStreamType(streamType.equals("high") ? Constants.VIDEO_STREAM_HIGH
-                                                             : Constants.VIDEO_STREAM_LOW);
-                info.setWidth(width);
-                info.setHeight(height);
-                info.setCodecType(Constants.VIDEO_CODEC_H264);
-                info.setFramesPerSecond(fps);
-                info.setRotation(0);
-
-                conn.pushVideoEncodedData(data, info);
-                frameIndex++;
-
-                singleExecutorService.execute(() -> {
-                    SampleLogger.log("send h264 frame data size:" + data.length
-                        + " timestamp:" + timestamp + " frameIndex:" + frameIndex
-                        + " from channelId:" + channelId + " userId:" + userId);
-                });
-            }
-
-            @Override
-            public byte[] readOneFrame(FileInputStream fos) {
-                H264Reader.H264Frame frame = h264Reader.readNextFrame();
-                if (frame == null) {
-                    h264Reader.reset();
-                    reset();
-                    return null;
-                }
-
-                lastFrameType = frame.frameType;
-                return frame.data;
-            }
-
-            @Override
-            public void release() {
-                super.release();
-                if (null != h264Reader) {
-                    h264Reader.close();
-                }
-            }
-        };
-
-        while (!connConnected.get()) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-        testTaskExecutorService.execute(h264SendThread);
-
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < testTime) {
             try {
@@ -222,12 +157,73 @@ public class SendH264Test {
         System.exit(0);
     }
 
+    private void pushH264Data() {
+        testTaskExecutorService.execute(() -> {
+            H264Reader h264Reader = new H264Reader(videoFile);
+            FileSender h264SendThread = new FileSender(videoFile, 1000 / fps) {
+                int lastFrameType = 0;
+                int frameIndex = 0;
+
+                @Override
+                public void sendOneFrame(byte[] data, long timestamp) {
+                    if (data == null) {
+                        return;
+                    }
+                    if (conn == null) {
+                        release();
+                        return;
+                    }
+                    EncodedVideoFrameInfo info = new EncodedVideoFrameInfo();
+                    info.setFrameType(lastFrameType);
+                    info.setStreamType(streamType.equals("high") ? Constants.VIDEO_STREAM_HIGH
+                                                                 : Constants.VIDEO_STREAM_LOW);
+                    info.setWidth(width);
+                    info.setHeight(height);
+                    info.setCodecType(Constants.VIDEO_CODEC_H264);
+                    info.setFramesPerSecond(fps);
+                    info.setRotation(0);
+
+                    conn.pushVideoEncodedData(data, info);
+                    frameIndex++;
+
+                    singleExecutorService.execute(() -> {
+                        SampleLogger.log("send h264 frame data size:" + data.length
+                            + " timestamp:" + timestamp + " frameIndex:" + frameIndex
+                            + " from channelId:" + channelId + " userId:" + userId);
+                    });
+                }
+
+                @Override
+                public byte[] readOneFrame(FileInputStream fos) {
+                    H264Reader.H264Frame frame = h264Reader.readNextFrame();
+                    if (frame == null) {
+                        h264Reader.reset();
+                        reset();
+                        return null;
+                    }
+
+                    lastFrameType = frame.frameType;
+                    return frame.data;
+                }
+
+                @Override
+                public void release() {
+                    super.release();
+                    if (null != h264Reader) {
+                        h264Reader.close();
+                    }
+                }
+            };
+
+            testTaskExecutorService.execute(h264SendThread);
+        });
+    }
+
     private void releaseConn() {
         SampleLogger.log("releaseConn for channelId:" + channelId + " userId:" + userId);
         if (conn == null) {
             return;
         }
-        connConnected.set(false);
 
         int ret = conn.disconnect();
         if (ret != 0) {

@@ -14,9 +14,9 @@ import io.agora.rtc.example.utils.Utils;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SendPcmRealTimeTest {
     private String appId;
@@ -33,10 +33,10 @@ public class SendPcmRealTimeTest {
     private String audioFilePath = "test_data/tts_ai_16k_1ch.pcm";
     private int numOfChannels = 1;
     private int sampleRate = 16000;
-    private long testTime = 60 * 1000;
 
-    private final AtomicBoolean connConnected = new AtomicBoolean(false);
     private final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
+
+    private CountDownLatch taskFinishLatch = new CountDownLatch(1);
 
     public void start() {
         if (appId == null || token == null) {
@@ -96,13 +96,13 @@ public class SendPcmRealTimeTest {
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
                 SampleLogger.log("onConnected chennalId:" + connInfo.getChannelId()
                     + " userId:" + connInfo.getLocalUserId());
-                connConnected.set(true);
                 userId = connInfo.getLocalUserId();
             }
 
             @Override
             public void onUserJoined(AgoraRtcConn agoraRtcConn, String userId) {
                 SampleLogger.log("onUserJoined userId:" + userId);
+                pushPcmData();
             }
 
             @Override
@@ -126,80 +126,10 @@ public class SendPcmRealTimeTest {
         // Create audio track
         conn.publishAudio();
 
-        int interval = 10; // ms
-
-        int oneFramePcmDataSize = numOfChannels * (sampleRate / 1000) * interval * 2;
-        // one frame pcm data size
-        byte[] buffer = new byte[oneFramePcmDataSize];
-
-        // first cache 10 frames data for 10ms interval, avoid sending silence packet due to
-        // insufficient data in sdk
-        ByteBuffer cachePcmDataBuffer = ByteBuffer.allocate(oneFramePcmDataSize * 10);
-
-        FileSender pcmSendThread = new FileSender(audioFilePath, interval) {
-            @Override
-            public void sendOneFrame(byte[] data, long timestamp) {
-                if (data == null) {
-                    return;
-                }
-
-                if (null != data) {
-                    int ret = conn.pushAudioPcmData(data, sampleRate, numOfChannels);
-                    if (ret != 0) {
-                        SampleLogger.log("pushAudioPcmData fail ret:" + ret);
-                    }
-                }
-            }
-
-            @Override
-            public byte[] readOneFrame(FileInputStream fos) {
-                if (fos != null) {
-                    try {
-                        int size = fos.read(buffer, 0, oneFramePcmDataSize);
-                        if (size < 0) {
-                            reset();
-                            return null;
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                if (cachePcmDataBuffer.position() < cachePcmDataBuffer.capacity()) {
-                    cachePcmDataBuffer.put(buffer);
-                    if (cachePcmDataBuffer.position() < cachePcmDataBuffer.capacity()) {
-                        return null;
-                    } else {
-                        return cachePcmDataBuffer.array();
-                    }
-                } else {
-                    return buffer;
-                }
-            }
-
-            @Override
-            public void release() {
-                super.release();
-                cachePcmDataBuffer.clear();
-            }
-        };
-
-        while (!connConnected.get()) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        testTaskExecutorService.execute(pcmSendThread);
-
-        long startTime = System.currentTimeMillis();
-        while (System.currentTimeMillis() - startTime < testTime) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        try {
+            taskFinishLatch.await();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         releaseConn();
@@ -207,13 +137,83 @@ public class SendPcmRealTimeTest {
         System.exit(0);
     }
 
+    private void pushPcmData() {
+        testTaskExecutorService.execute(() -> {
+            int interval = 10; // ms
+
+            int oneFramePcmDataSize = numOfChannels * (sampleRate / 1000) * interval * 2;
+            // one frame pcm data size
+            byte[] buffer = new byte[oneFramePcmDataSize];
+
+            // first cache 10 frames data for 10ms interval, avoid sending silence packet due to
+            // insufficient data in sdk
+            ByteBuffer cachePcmDataBuffer = ByteBuffer.allocate(oneFramePcmDataSize * 10);
+
+            FileSender pcmSendThread = new FileSender(audioFilePath, interval) {
+                private boolean isStartPushAudioData = false;
+                @Override
+                public void sendOneFrame(byte[] data, long timestamp) {
+                    if (null != data) {
+                        int ret = conn.pushAudioPcmData(data, sampleRate, numOfChannels);
+                        if (ret != 0) {
+                            SampleLogger.log("pushAudioPcmData fail ret:" + ret);
+                        }
+                        if (!isStartPushAudioData) {
+                            SampleLogger.log("pushAudioPcmData start");
+                            isStartPushAudioData = true;
+                        }
+                    }
+
+                    if (isStartPushAudioData) {
+                        if (conn.isPushToRtcCompleted()) {
+                            SampleLogger.log("pushAudioPcmData completed");
+                            release();
+                            taskFinishLatch.countDown();
+                        }
+                    }
+                }
+
+                @Override
+                public byte[] readOneFrame(FileInputStream fos) {
+                    if (fos != null) {
+                        try {
+                            int size = fos.read(buffer, 0, oneFramePcmDataSize);
+                            if (size < 0) {
+                                return null;
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    if (cachePcmDataBuffer.position() < cachePcmDataBuffer.capacity()) {
+                        cachePcmDataBuffer.put(buffer);
+                        if (cachePcmDataBuffer.position() < cachePcmDataBuffer.capacity()) {
+                            return null;
+                        } else {
+                            return cachePcmDataBuffer.array();
+                        }
+                    } else {
+                        return buffer;
+                    }
+                }
+
+                @Override
+                public void release() {
+                    super.release();
+                    cachePcmDataBuffer.clear();
+                }
+            };
+
+            testTaskExecutorService.execute(pcmSendThread);
+        });
+    }
+
     private void releaseConn() {
         SampleLogger.log("releaseConn for channelId:" + channelId + " userId:" + userId);
         if (conn == null) {
             return;
         }
-
-        connConnected.set(false);
 
         int ret = conn.disconnect();
         if (ret != 0) {

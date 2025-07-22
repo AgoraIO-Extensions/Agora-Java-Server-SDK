@@ -1,6 +1,6 @@
 package io.agora.rtc.example.common;
 
-public class ArgsConfig {
+public class ArgsConfig implements Cloneable {
     private String appId = "";
     private String token = "";
 
@@ -398,6 +398,71 @@ public class ArgsConfig {
 
     public void setRecvAudioEncodedFrame(boolean isRecvAudioEncodedFrame) {
         this.isRecvAudioEncodedFrame = isRecvAudioEncodedFrame;
+    }
+
+    @Override
+    public ArgsConfig clone() {
+        try {
+            return (ArgsConfig) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException("Clone not supported", e);
+        }
+    }
+
+    /**
+     * create a deep copy of ArgsConfig
+     * @return deep copy of ArgsConfig
+     */
+    public ArgsConfig deepClone() {
+        ArgsConfig cloned = new ArgsConfig();
+
+        // Copy all fields
+        cloned.appId = this.appId;
+        cloned.token = this.token;
+        cloned.userId = this.userId;
+        cloned.channelId = this.channelId;
+        cloned.remoteUserId = this.remoteUserId;
+        cloned.audioScenario = this.audioScenario;
+        cloned.streamType = this.streamType;
+        cloned.audioFile = this.audioFile;
+        cloned.audioOutFile = this.audioOutFile;
+        cloned.videoFile = this.videoFile;
+        cloned.lowVideoFile = this.lowVideoFile;
+        cloned.videoOutFile = this.videoOutFile;
+        cloned.expectedFile = this.expectedFile;
+        cloned.sampleRate = this.sampleRate;
+        cloned.numOfChannels = this.numOfChannels;
+        cloned.height = this.height;
+        cloned.width = this.width;
+        cloned.lowWidth = this.lowWidth;
+        cloned.lowHeight = this.lowHeight;
+        cloned.fps = this.fps;
+        cloned.lowFps = this.lowFps;
+        cloned.connectionCount = this.connectionCount;
+        cloned.fileType = this.fileType;
+        cloned.encryptionMode = this.encryptionMode;
+        cloned.encryptionKey = this.encryptionKey;
+        cloned.enableStringUid = this.enableStringUid;
+        cloned.enableLog = this.enableLog;
+        cloned.enableEncryptionMode = this.enableEncryptionMode;
+        cloned.enableCloudProxy = this.enableCloudProxy;
+        cloned.enableSimulcastStream = this.enableSimulcastStream;
+        cloned.enableSaveFile = this.enableSaveFile;
+        cloned.enableAlpha = this.enableAlpha;
+        cloned.enableVad = this.enableVad;
+        cloned.enableSendAudioMetaData = this.enableSendAudioMetaData;
+        cloned.enableSendVideoMetaData = this.enableSendVideoMetaData;
+        cloned.enableSingleChannel = this.enableSingleChannel;
+        cloned.enableStressTest = this.enableStressTest;
+        cloned.enableRecvDataStream = this.enableRecvDataStream;
+        cloned.logFilter = this.logFilter;
+        cloned.testTime = this.testTime;
+        cloned.sleepTime = this.sleepTime;
+        cloned.timeForStressLeave = this.timeForStressLeave;
+        cloned.isSender = this.isSender;
+        cloned.isRecvAudioEncodedFrame = this.isRecvAudioEncodedFrame;
+
+        return cloned;
     }
 
     @Override

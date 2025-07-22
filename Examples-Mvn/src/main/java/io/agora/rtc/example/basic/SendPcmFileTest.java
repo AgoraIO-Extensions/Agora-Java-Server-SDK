@@ -11,9 +11,9 @@ import io.agora.rtc.RtcConnPublishConfig;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.Utils;
 import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SendPcmFileTest {
     private String appId;
@@ -31,9 +31,9 @@ public class SendPcmFileTest {
     private int numOfChannels = 1;
     private int sampleRate = 16000;
 
-    private final AtomicBoolean connConnected = new AtomicBoolean(false);
-
     private final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
+
+    private CountDownLatch taskFinishLatch = new CountDownLatch(1);
 
     public void start() {
         if (appId == null || token == null) {
@@ -93,13 +93,13 @@ public class SendPcmFileTest {
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
                 SampleLogger.log("onConnected chennalId:" + connInfo.getChannelId()
                     + " userId:" + connInfo.getLocalUserId());
-                connConnected.set(true);
                 userId = connInfo.getLocalUserId();
             }
 
             @Override
             public void onUserJoined(AgoraRtcConn agoraRtcConn, String userId) {
                 SampleLogger.log("onUserJoined userId:" + userId);
+                pushPcmData();
             }
 
             @Override
@@ -133,30 +133,9 @@ public class SendPcmFileTest {
         // Create audio track
         conn.publishAudio();
 
-        byte[] pcmData = Utils.readPcmFromFile(audioFilePath);
-        // The data length must be an integer multiple of the data length of 1ms.If not,
-        // then the remaining audio needs to be saved and sent together with the next audio.
-        // Assuming 16-bit samples (2 bytes per sample).
-        int bytesPerMs = numOfChannels * (sampleRate / 1000) * 2;
-        if (bytesPerMs > 0 && pcmData.length % bytesPerMs != 0) {
-            int newLength = (pcmData.length / bytesPerMs) * bytesPerMs;
-            SampleLogger.log(String.format("sendPcmTask: pcmData length is not a multiple of "
-                    + "1ms data bytes. Truncating from %d to %d bytes.",
-                pcmData.length, newLength));
-            pcmData = Arrays.copyOf(pcmData, newLength);
-        }
-
-        final byte[] finalPcmData = pcmData;
-        long pcmDataTimeMs = finalPcmData.length / bytesPerMs;
-
-        testTaskExecutorService.execute(() -> {
-            conn.pushAudioPcmData(finalPcmData, sampleRate, numOfChannels);
-            SampleLogger.log("pushAudioPcmData " + finalPcmData.length);
-        });
-
         try {
-            Thread.sleep(pcmDataTimeMs + 1000);
-        } catch (InterruptedException e) {
+            taskFinishLatch.await();
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -165,13 +144,42 @@ public class SendPcmFileTest {
         System.exit(0);
     }
 
+    private void pushPcmData() {
+        testTaskExecutorService.execute(() -> {
+            byte[] pcmData = Utils.readPcmFromFile(audioFilePath);
+            // The data length must be an integer multiple of the data length of 1ms.If not,
+            // then the remaining audio needs to be saved and sent together with the next audio.
+            // Assuming 16-bit samples (2 bytes per sample).
+            int bytesPerMs = numOfChannels * (sampleRate / 1000) * 2;
+            if (bytesPerMs > 0 && pcmData.length % bytesPerMs != 0) {
+                int newLength = (pcmData.length / bytesPerMs) * bytesPerMs;
+                SampleLogger.log(String.format("sendPcmTask: pcmData length is not a multiple of "
+                        + "1ms data bytes. Truncating from %d to %d bytes.",
+                    pcmData.length, newLength));
+                pcmData = Arrays.copyOf(pcmData, newLength);
+            }
+
+            int ret = conn.pushAudioPcmData(pcmData, sampleRate, numOfChannels);
+            SampleLogger.log("pushAudioPcmData " + pcmData.length + " ret: " + ret);
+
+            while (!conn.isPushToRtcCompleted()) {
+                SampleLogger.log("pushAudioPcmData not completed");
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            SampleLogger.log("pushAudioPcmData completed");
+            taskFinishLatch.countDown();
+        });
+    }
+
     private void releaseConn() {
         SampleLogger.log("releaseConn for channelId:" + channelId + " userId:" + userId);
         if (conn == null) {
             return;
         }
-
-        connConnected.set(false);
 
         int ret = conn.disconnect();
         if (ret != 0) {

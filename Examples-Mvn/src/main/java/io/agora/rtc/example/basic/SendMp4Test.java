@@ -18,7 +18,8 @@ import io.agora.rtc.example.ffmpegutils.MediaDecode;
 import io.agora.rtc.example.ffmpegutils.MediaDecodeUtils;
 import io.agora.rtc.example.utils.Utils;
 import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class SendMp4Test {
     private String appId;
@@ -35,10 +36,12 @@ public class SendMp4Test {
 
     private long testTime = 60 * 1000;
 
-    private final AtomicBoolean connConnected = new AtomicBoolean(false);
+    private MediaDecodeUtils mediaDecodeUtils;
 
     private final MediaDecodeUtils.DecodedMediaType decodedMediaType =
         MediaDecodeUtils.DecodedMediaType.PCM_H264;
+
+    private final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
 
     public void start() {
         if (appId == null || token == null) {
@@ -105,13 +108,13 @@ public class SendMp4Test {
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
                 SampleLogger.log("onConnected chennalId:" + connInfo.getChannelId()
                     + " userId:" + connInfo.getLocalUserId());
-                connConnected.set(true);
                 userId = connInfo.getLocalUserId();
             }
 
             @Override
             public void onUserJoined(AgoraRtcConn agoraRtcConn, String userId) {
                 SampleLogger.log("onUserJoined userId:" + userId);
+                pushMp4Data();
             }
 
             @Override
@@ -131,7 +134,7 @@ public class SendMp4Test {
             return;
         }
 
-        MediaDecodeUtils mediaDecodeUtils = new MediaDecodeUtils();
+        mediaDecodeUtils = new MediaDecodeUtils();
 
         boolean initRet = mediaDecodeUtils.init(
             filePath, 50, -1, decodedMediaType, new MediaDecodeUtils.MediaDecodeCallback() {
@@ -225,17 +228,6 @@ public class SendMp4Test {
 
         SampleLogger.log("send mp4 initRet:" + initRet);
 
-        while (!connConnected.get()) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        if (initRet) {
-            mediaDecodeUtils.start();
-        }
-
         try {
             Thread.sleep(testTime);
         } catch (InterruptedException e) {
@@ -250,13 +242,15 @@ public class SendMp4Test {
         System.exit(0);
     }
 
+    private void pushMp4Data() {
+        testTaskExecutorService.execute(() -> { mediaDecodeUtils.start(); });
+    }
+
     private void releaseConn() {
         SampleLogger.log("releaseConn for channelId:" + channelId + " userId:" + userId);
         if (conn == null) {
             return;
         }
-
-        connConnected.set(false);
 
         int ret = conn.disconnect();
         if (ret != 0) {

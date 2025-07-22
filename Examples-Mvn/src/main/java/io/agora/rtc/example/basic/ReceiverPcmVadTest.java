@@ -6,8 +6,10 @@ import io.agora.rtc.AgoraRtcConn;
 import io.agora.rtc.AgoraService;
 import io.agora.rtc.AgoraServiceConfig;
 import io.agora.rtc.AudioFrame;
+import io.agora.rtc.AudioVolumeInfo;
 import io.agora.rtc.Constants;
 import io.agora.rtc.IAudioFrameObserver;
+import io.agora.rtc.ILocalUserObserver;
 import io.agora.rtc.IRtcConnObserver;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
@@ -16,6 +18,7 @@ import io.agora.rtc.VadProcessResult;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.Utils;
 import io.agora.rtc.utils.VadDumpUtils;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -94,6 +97,9 @@ public class ReceiverPcmVadTest {
             return;
         }
 
+        ret = conn.getLocalUser().setAudioVolumeIndicationParameters(50, 3, true);
+        SampleLogger.log("setAudioVolumeIndicationParameters ret:" + ret);
+
         ret = conn.registerObserver(new IRtcConnObserver() {
             @Override
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
@@ -112,6 +118,15 @@ public class ReceiverPcmVadTest {
             }
         });
         SampleLogger.log("registerObserver ret:" + ret);
+
+        conn.registerLocalUserObserver(new ILocalUserObserver() {
+            @Override
+            public void onAudioVolumeIndication(
+                AgoraLocalUser agoraLocalUser, AudioVolumeInfo[] speakers, int totalVolume) {
+                SampleLogger.log("onAudioVolumeIndication speakers:" + Arrays.toString(speakers)
+                    + " totalVolume:" + totalVolume);
+            }
+        });
 
         if (!remoteUserId.isEmpty()) {
             conn.getLocalUser().subscribeAudio(remoteUserId);

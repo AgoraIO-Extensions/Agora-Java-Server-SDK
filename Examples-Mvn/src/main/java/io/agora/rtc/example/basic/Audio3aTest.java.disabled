@@ -36,7 +36,7 @@ public class Audio3aTest {
         String license = keys[1];
         String maskedLicense = license.length() > 5 ? license.substring(0, 5) + "xxxxx" : license;
         SampleLogger.log(
-            "read appId: " + appId + " license: " + maskedLicense + " from .keys_gateway");
+                "read appId: " + appId + " license: " + maskedLicense + " from .keys_gateway");
         SampleLogger.log("AgoraAudioProcessor version: " + AgoraAudioProcessor.getSdkVersion());
 
         for (int i = 0; i < MAX_TASK_COUNT; i++) {
@@ -53,30 +53,29 @@ public class Audio3aTest {
                 // set model path
                 config.setModelPath("./resources/model/");
 
-                int ret =
-                    audioProcessor.init(appId, license, new IAgoraAudioProcessorEventHandler() {
-                        @Override
-                        public void onEvent(Constants.AgoraAudioProcessorEventType eventType) {
-                            SampleLogger.log("onEvent: " + eventType);
-                        }
+                int ret = audioProcessor.init(appId, license, new IAgoraAudioProcessorEventHandler() {
+                    @Override
+                    public void onEvent(Constants.AgoraAudioProcessorEventType eventType) {
+                        SampleLogger.log("onEvent: " + eventType);
+                    }
 
-                        @Override
-                        public void onError(int errorCode) {
-                            SampleLogger.log("onError: " + errorCode);
-                        }
-                    }, config);
+                    @Override
+                    public void onError(int errorCode) {
+                        SampleLogger.log("onError: " + errorCode);
+                    }
+                }, config);
 
                 SampleLogger.log("init ret: " + ret);
 
                 final int bufferSize = sampleRate / 1000 * INTERVAL * numOfChannels
-                    * Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue();
+                        * Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue();
                 AgoraAudioFrame nearAudioFrame = new AgoraAudioFrame();
                 nearAudioFrame.setType(Constants.AudioFrameType.PCM16.getValue());
                 nearAudioFrame.setSampleRate(sampleRate);
                 nearAudioFrame.setChannels(numOfChannels);
                 nearAudioFrame.setSamplesPerChannel(sampleRate / 1000 * INTERVAL);
                 nearAudioFrame.setBytesPerSample(
-                    Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue());
+                        Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue());
 
                 AgoraAudioFrame farAudioFrame = new AgoraAudioFrame();
                 farAudioFrame.setType(Constants.AudioFrameType.PCM16.getValue());
@@ -84,7 +83,7 @@ public class Audio3aTest {
                 farAudioFrame.setChannels(numOfChannels);
                 farAudioFrame.setSamplesPerChannel(sampleRate / 1000 * INTERVAL);
                 farAudioFrame.setBytesPerSample(
-                    Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue());
+                        Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue());
 
                 ByteBuffer nearAudioBuffer = ByteBuffer.allocateDirect(bufferSize);
                 ByteBuffer farAudioBuffer = ByteBuffer.allocateDirect(bufferSize);
@@ -93,7 +92,7 @@ public class Audio3aTest {
                 File farFile = new File(farAudioFile);
                 if (!nearFile.exists() || !farFile.exists()) {
                     SampleLogger.log(
-                        "Audio file does not exist: " + nearAudioFile + " or " + farAudioFile);
+                            "Audio file does not exist: " + nearAudioFile + " or " + farAudioFile);
                     taskFinishLatch.countDown();
                     return;
                 }
@@ -104,12 +103,17 @@ public class Audio3aTest {
                 if (!outFile.getParentFile().exists()) {
                     outFile.getParentFile().mkdirs();
                 }
+                FileOutputStream fos = null;
                 try (FileInputStream nearFis = new FileInputStream(nearFile);
-                    FileInputStream farFis = new FileInputStream(farFile);
-                    FileOutputStream fos = new FileOutputStream(audio3aOutFile, true)) {
+                        FileInputStream farFis = new FileInputStream(farFile)) {
+                    fos = new FileOutputStream(audio3aOutFile, true);
                     byte[] nearBuffer = new byte[bufferSize];
                     byte[] farBuffer = new byte[bufferSize];
                     int readLen;
+
+                    CountDownLatch writeFinishLatch = new CountDownLatch(1);
+                    AtomicInteger writeTaskCount = new AtomicInteger(0);
+
                     while ((readLen = nearFis.read(nearBuffer)) != -1) {
                         farFis.read(farBuffer);
                         byte[] dataToPut;
@@ -131,14 +135,13 @@ public class Audio3aTest {
                         farAudioFrame.setBuffer(farAudioBuffer);
 
                         long startTime = System.nanoTime();
-                        AgoraAudioFrame outFrame =
-                            audioProcessor.process(nearAudioFrame, farAudioFrame);
+                        AgoraAudioFrame outFrame = audioProcessor.process(nearAudioFrame, farAudioFrame);
                         long estimatedTime = (System.nanoTime() - startTime) / 1000;
                         totalProcessTime += estimatedTime;
                         processCount++;
                         SampleLogger.log(
-                            String.format("Task %d process cost: %d us, average cost: %.2f us",
-                                taskId, estimatedTime, (double) totalProcessTime / processCount));
+                                String.format("Task %d process cost: %d us, average cost: %.2f us",
+                                        taskId, estimatedTime, (double) totalProcessTime / processCount));
                         if (null != outFrame && outFrame.getBuffer() != null) {
                             // The buffer returned by process() is owned by the SDK and may be
                             // reused. We need to copy the data out of it if we want to use it
@@ -147,24 +150,41 @@ public class Audio3aTest {
                             final byte[] outData = new byte[outBuffer.remaining()];
                             outBuffer.get(outData);
 
+                            writeTaskCount.incrementAndGet();
+                            final FileOutputStream finalFos = fos;
                             audioWriteExecutor.execute(() -> {
                                 try {
-                                    fos.write(outData);
+                                    finalFos.write(outData);
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                     SampleLogger.log(
-                                        "Exception occurred while writing audio file: " + e);
+                                            "Exception occurred while writing audio file: " + e);
+                                } finally {
+                                    if (writeTaskCount.decrementAndGet() == 0) {
+                                        writeFinishLatch.countDown();
+                                    }
                                 }
                             });
                         } else {
                             SampleLogger.log("outFrame is null");
                         }
                     }
+                    if (writeTaskCount.get() == 0) {
+                        writeFinishLatch.countDown();
+                    }
+                    writeFinishLatch.await();
                     SampleLogger.log("Audio file reading finished for task " + taskId);
                 } catch (Exception e) {
                     e.printStackTrace();
                     SampleLogger.log("Exception occurred while reading audio file: " + e);
                 } finally {
+                    if (fos != null) {
+                        try {
+                            fos.close();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
                     taskFinishLatch.countDown();
                 }
 

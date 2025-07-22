@@ -1046,7 +1046,7 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             String configFileName = "vp8_send.json";
             ArgsConfig argsConfig = agoraTaskManager.parseArgsConfig(configFileName);
             agoraTaskManager.startTask(
-                configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_VP8_PCM);
+                configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_VP8);
 
             String recvConfigFileName = "vp8_recv.json";
             ArgsConfig recvArgsConfig = agoraTaskManager.parseArgsConfig(recvConfigFileName);
