@@ -7,16 +7,16 @@ import io.agora.rtc.AgoraServiceConfig;
 import io.agora.rtc.AgoraVideoEncodedFrameObserver;
 import io.agora.rtc.AudioFrame;
 import io.agora.rtc.Constants;
-import io.agora.rtc.DefaultRtcConnObserver;
 import io.agora.rtc.EncodedVideoFrameInfo;
 import io.agora.rtc.IAudioFrameObserver;
+import io.agora.rtc.IRtcConnObserver;
+import io.agora.rtc.IVideoEncodedFrameObserver;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
+import io.agora.rtc.RtcConnPublishConfig;
 import io.agora.rtc.VadProcessResult;
 import io.agora.rtc.VideoSubscriptionOptions;
-import io.agora.rtc.example.common.SampleAudioFrameObserver;
 import io.agora.rtc.example.common.SampleLogger;
-import io.agora.rtc.example.common.SampleVideoEncodedFrameObserver;
 import io.agora.rtc.example.utils.Utils;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
@@ -29,7 +29,7 @@ public class ReceiverPcmH264Test {
     private final int DEFAULT_LOG_SIZE = 5 * 1024; // default log size is 5 mb
 
     private static AgoraService service;
-    private static AgoraRtcConn conn;
+    private AgoraRtcConn conn;
 
     private IAudioFrameObserver audioFrameObserver;
     private AgoraVideoEncodedFrameObserver videoEncodedFrameObserver;
@@ -63,7 +63,7 @@ public class ReceiverPcmH264Test {
             config.setEnableAudioProcessor(1);
             config.setEnableVideo(1);
             config.setUseStringUid(0);
-            config.setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
+            config.setAudioScenario(Constants.AUDIO_SCENARIO_AI_SERVER);
             config.setLogFilePath(DEFAULT_LOG_PATH);
             config.setLogFileSize(DEFAULT_LOG_SIZE);
             config.setLogFilters(Constants.LOG_FILTER_DEBUG);
@@ -83,30 +83,34 @@ public class ReceiverPcmH264Test {
         ccfg.setAutoSubscribeVideo(0);
         ccfg.setChannelProfile(Constants.CHANNEL_PROFILE_LIVE_BROADCASTING);
 
-        conn = service.agoraRtcConnCreate(ccfg);
+        RtcConnPublishConfig publishConfig = new RtcConnPublishConfig();
+        publishConfig.setAudioScenario(Constants.AUDIO_SCENARIO_AI_SERVER);
+        publishConfig.setAudioProfile(Constants.AUDIO_PROFILE_DEFAULT);
+        publishConfig.setIsPublishAudio(false);
+        publishConfig.setIsPublishVideo(false);
+        publishConfig.setAudioPublishType(Constants.AudioPublishType.NO_PUBLISH);
+        publishConfig.setVideoPublishType(Constants.VideoPublishType.NO_PUBLISH);
+        conn = service.agoraRtcConnCreate(ccfg, publishConfig);
         if (conn == null) {
             SampleLogger.log("AgoraService.agoraRtcConnCreate fail");
             releaseAgoraService();
             return;
         }
 
-        ret = conn.registerObserver(new DefaultRtcConnObserver() {
+        ret = conn.registerObserver(new IRtcConnObserver() {
             @Override
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
-                super.onConnected(agoraRtcConn, connInfo, reason);
                 SampleLogger.log("onConnected connInfo :" + connInfo + " reason:" + reason);
                 userId = connInfo.getLocalUserId();
             }
 
             @Override
             public void onUserJoined(AgoraRtcConn agoraRtcConn, String userId) {
-                super.onUserJoined(agoraRtcConn, userId);
                 SampleLogger.log("onUserJoined userId:" + userId);
             }
 
             @Override
             public void onUserLeft(AgoraRtcConn agoraRtcConn, String userId, int reason) {
-                super.onUserLeft(agoraRtcConn, userId, reason);
                 SampleLogger.log("onUserLeft userId:" + userId + " reason:" + reason);
             }
         });
@@ -129,35 +133,35 @@ public class ReceiverPcmH264Test {
             return;
         }
 
-        audioFrameObserver =
-            new SampleAudioFrameObserver(audioOutFile + "_" + channelId + "_" + userId + ".pcm") {
-                @Override
-                public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser,
-                    String channelId, String userId, AudioFrame frame, VadProcessResult vadResult) {
-                    if (null == frame) {
-                        return 0;
-                    }
-                    // Note: To improve data transmission efficiency, the buffer of the frame
-                    // object is a DirectByteBuffer.
-                    // Be sure to extract the byte array value in the callback synchronously
-                    // and then transfer it to the asynchronous thread for processing.
-                    // You can refer to {@link io.agora.rtc.utils.Utils#getBytes(ByteBuffer)}.
-                    byte[] byteArray = io.agora.rtc.utils.Utils.getBytes(frame.getBuffer());
-                    if (byteArray == null) {
-                        return 0;
-                    }
-
-                    singleExecutorService.execute(() -> {
-                        SampleLogger.log("onPlaybackAudioFrameBeforeMixing frame:" + frame
-                            + " audioFrame size " + byteArray.length + " channelId:" + channelId
-                            + " userId:" + userId);
-                        writeAudioFrameToFile(byteArray);
-                    });
-
-                    return 1;
+        audioOutFile = audioOutFile + "_" + channelId + "_" + userId + ".pcm";
+        audioFrameObserver = new IAudioFrameObserver() {
+            @Override
+            public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser,
+                String channelId, String userId, AudioFrame frame, VadProcessResult vadResult) {
+                if (null == frame) {
+                    return 0;
                 }
-            };
-        conn.getLocalUser().registerAudioFrameObserver(audioFrameObserver, false, null);
+                // Note: To improve data transmission efficiency, the buffer of the frame
+                // object is a DirectByteBuffer.
+                // Be sure to extract the byte array value in the callback synchronously
+                // and then transfer it to the asynchronous thread for processing.
+                // You can refer to {@link io.agora.rtc.utils.Utils#getBytes(ByteBuffer)}.
+                byte[] byteArray = io.agora.rtc.utils.Utils.getBytes(frame.getBuffer());
+                if (byteArray == null) {
+                    return 0;
+                }
+
+                singleExecutorService.execute(() -> {
+                    SampleLogger.log("onPlaybackAudioFrameBeforeMixing frame:" + frame
+                        + " audioFrame size " + byteArray.length + " channelId:" + channelId
+                        + " userId:" + userId);
+                    Utils.writeBytesToFile(byteArray, audioOutFile);
+                });
+
+                return 1;
+            }
+        };
+        conn.registerAudioFrameObserver(audioFrameObserver, false, null);
 
         VideoSubscriptionOptions subscriptionOptions = new VideoSubscriptionOptions();
         subscriptionOptions.setEncodedFrameOnly(1);
@@ -169,9 +173,9 @@ public class ReceiverPcmH264Test {
             conn.getLocalUser().subscribeAllVideo(subscriptionOptions);
         }
 
+        videoOutFile = videoOutFile + "_" + channelId + "_" + userId + ".h264";
         videoEncodedFrameObserver =
-            new AgoraVideoEncodedFrameObserver(new SampleVideoEncodedFrameObserver(
-                videoOutFile + "_" + channelId + "_" + userId + ".h264") {
+            new AgoraVideoEncodedFrameObserver(new IVideoEncodedFrameObserver() {
                 @Override
                 public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int userId,
                     ByteBuffer buffer, EncodedVideoFrameInfo info) {
@@ -187,16 +191,17 @@ public class ReceiverPcmH264Test {
                     if (byteArray == null) {
                         return 0;
                     }
+
                     singleExecutorService.execute(() -> {
                         SampleLogger.log("onEncodedVideoFrame userId:" + userId + " length "
                             + byteArray.length + " with current channelId:" + channelId
                             + "  userId:" + userId + " info:" + info);
-                        writeVideoDataToFile(byteArray);
+                        Utils.writeBytesToFile(byteArray, videoOutFile);
                     });
                     return 1;
                 }
             });
-        conn.getLocalUser().registerVideoEncodedFrameObserver(videoEncodedFrameObserver);
+        conn.registerVideoEncodedFrameObserver(videoEncodedFrameObserver);
 
         ret = conn.connect(token, channelId, userId);
         SampleLogger.log(
@@ -228,30 +233,13 @@ public class ReceiverPcmH264Test {
             return;
         }
 
-        if (null != audioFrameObserver) {
-            conn.getLocalUser().unregisterAudioFrameObserver();
-            audioFrameObserver = null;
-        }
-
-        if (null != videoEncodedFrameObserver) {
-            conn.getLocalUser().unregisterVideoEncodedFrameObserver(videoEncodedFrameObserver);
-            videoEncodedFrameObserver.destroy();
-            videoEncodedFrameObserver = null;
-        }
-
         int ret = conn.disconnect();
         if (ret != 0) {
             SampleLogger.log("conn.disconnect fail ret=" + ret);
         }
 
-        // Unregister connection observer
-        conn.unregisterObserver();
-        conn.getLocalUser().unregisterObserver();
-
         conn.destroy();
         conn = null;
-
-        singleExecutorService.shutdown();
 
         SampleLogger.log("Disconnected from Agora channel successfully");
     }
@@ -261,6 +249,8 @@ public class ReceiverPcmH264Test {
             service.destroy();
             service = null;
         }
+        singleExecutorService.shutdown();
+
         SampleLogger.log("releaseAgoraService");
     }
 }

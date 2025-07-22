@@ -1,6 +1,5 @@
 package io.agora.rtc.example.common;
 
-import io.agora.rtc.AgoraMediaNodeFactory;
 import io.agora.rtc.AgoraParameter;
 import io.agora.rtc.AgoraService;
 import io.agora.rtc.AgoraServiceConfig;
@@ -10,11 +9,12 @@ import java.io.File;
 
 public class AgoraServiceInitializer {
     private static AgoraService service;
-    private static AgoraMediaNodeFactory mediaNodeFactory;
     private static AgoraParameter parameter;
 
     public static String DEFAULT_LOG_PATH = "logs/agora_logs/agorasdk.log";
     public static int DEFAULT_LOG_SIZE = 5 * 1024; // default log size is 5 mb
+    public static String DEFAULT_CONFIG_DIR = "logs/agora_logs/config/";
+    public static String DEFAULT_DATA_DIR = "logs/agora_logs/data/";
 
     public static boolean isFirstInit = true;
 
@@ -41,11 +41,13 @@ public class AgoraServiceInitializer {
         config.setEnableAudioProcessor(enableAudioProcessor);
         config.setEnableVideo(enableVideo);
         config.setUseStringUid(argsConfig.isEnableStringUid() ? 1 : 0);
-        config.setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
+        config.setAudioScenario(Constants.AUDIO_SCENARIO_AI_SERVER);
 
         config.setLogFilePath(DEFAULT_LOG_PATH);
         config.setLogFileSize(DEFAULT_LOG_SIZE);
         config.setLogFilters(argsConfig.getLogFilter());
+        config.setConfigDir(DEFAULT_CONFIG_DIR);
+        config.setDataDir(DEFAULT_DATA_DIR);
 
         SampleLogger.log("initAgoraService config=" + config);
 
@@ -55,15 +57,13 @@ public class AgoraServiceInitializer {
             return -1;
         }
 
-        mediaNodeFactory = service.createMediaNodeFactory();
-
         initAgoraParameter();
 
         return 0;
     }
 
     private static void initData(ArgsConfig argsConfig) {
-        //SampleLogger.enableLog(argsConfig.isEnableLog());
+        // SampleLogger.enableLog(argsConfig.isEnableLog());
 
         if (argsConfig.getConnectionCount() <= 0) {
             argsConfig.setConnectionCount(1);
@@ -112,10 +112,6 @@ public class AgoraServiceInitializer {
         return service;
     }
 
-    public static AgoraMediaNodeFactory getMediaNodeFactory() {
-        return mediaNodeFactory;
-    }
-
     public static AgoraParameter getParameter() {
         return parameter;
     }
@@ -123,10 +119,6 @@ public class AgoraServiceInitializer {
     public static void destroyAgoraService() {
         if (parameter != null) {
             parameter = null;
-        }
-        if (mediaNodeFactory != null) {
-            mediaNodeFactory.destroy();
-            mediaNodeFactory = null;
         }
 
         if (service != null) {

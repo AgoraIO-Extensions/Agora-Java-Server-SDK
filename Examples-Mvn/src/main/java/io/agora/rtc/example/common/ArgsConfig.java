@@ -1,12 +1,13 @@
 package io.agora.rtc.example.common;
 
-public class ArgsConfig {
+public class ArgsConfig implements Cloneable {
     private String appId = "";
     private String token = "";
 
     private String userId = "";
     private String channelId = "";
     private String remoteUserId = "";
+    private int audioScenario = -1;
     private String streamType = "";
     private String audioFile = "";
     private String audioOutFile = "";
@@ -85,6 +86,14 @@ public class ArgsConfig {
 
     public void setRemoteUserId(String remoteUserId) {
         this.remoteUserId = remoteUserId;
+    }
+
+    public int getAudioScenario() {
+        return audioScenario;
+    }
+
+    public void setAudioScenario(int audioScenario) {
+        this.audioScenario = audioScenario;
     }
 
     public String getStreamType() {
@@ -387,8 +396,73 @@ public class ArgsConfig {
         return isRecvAudioEncodedFrame;
     }
 
-    public void setRecvAudioEncodedFrame(boolean recvAudioEncodedFrame) {
-        this.isRecvAudioEncodedFrame = recvAudioEncodedFrame;
+    public void setRecvAudioEncodedFrame(boolean isRecvAudioEncodedFrame) {
+        this.isRecvAudioEncodedFrame = isRecvAudioEncodedFrame;
+    }
+
+    @Override
+    public ArgsConfig clone() {
+        try {
+            return (ArgsConfig) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException("Clone not supported", e);
+        }
+    }
+
+    /**
+     * create a deep copy of ArgsConfig
+     * @return deep copy of ArgsConfig
+     */
+    public ArgsConfig deepClone() {
+        ArgsConfig cloned = new ArgsConfig();
+
+        // Copy all fields
+        cloned.appId = this.appId;
+        cloned.token = this.token;
+        cloned.userId = this.userId;
+        cloned.channelId = this.channelId;
+        cloned.remoteUserId = this.remoteUserId;
+        cloned.audioScenario = this.audioScenario;
+        cloned.streamType = this.streamType;
+        cloned.audioFile = this.audioFile;
+        cloned.audioOutFile = this.audioOutFile;
+        cloned.videoFile = this.videoFile;
+        cloned.lowVideoFile = this.lowVideoFile;
+        cloned.videoOutFile = this.videoOutFile;
+        cloned.expectedFile = this.expectedFile;
+        cloned.sampleRate = this.sampleRate;
+        cloned.numOfChannels = this.numOfChannels;
+        cloned.height = this.height;
+        cloned.width = this.width;
+        cloned.lowWidth = this.lowWidth;
+        cloned.lowHeight = this.lowHeight;
+        cloned.fps = this.fps;
+        cloned.lowFps = this.lowFps;
+        cloned.connectionCount = this.connectionCount;
+        cloned.fileType = this.fileType;
+        cloned.encryptionMode = this.encryptionMode;
+        cloned.encryptionKey = this.encryptionKey;
+        cloned.enableStringUid = this.enableStringUid;
+        cloned.enableLog = this.enableLog;
+        cloned.enableEncryptionMode = this.enableEncryptionMode;
+        cloned.enableCloudProxy = this.enableCloudProxy;
+        cloned.enableSimulcastStream = this.enableSimulcastStream;
+        cloned.enableSaveFile = this.enableSaveFile;
+        cloned.enableAlpha = this.enableAlpha;
+        cloned.enableVad = this.enableVad;
+        cloned.enableSendAudioMetaData = this.enableSendAudioMetaData;
+        cloned.enableSendVideoMetaData = this.enableSendVideoMetaData;
+        cloned.enableSingleChannel = this.enableSingleChannel;
+        cloned.enableStressTest = this.enableStressTest;
+        cloned.enableRecvDataStream = this.enableRecvDataStream;
+        cloned.logFilter = this.logFilter;
+        cloned.testTime = this.testTime;
+        cloned.sleepTime = this.sleepTime;
+        cloned.timeForStressLeave = this.timeForStressLeave;
+        cloned.isSender = this.isSender;
+        cloned.isRecvAudioEncodedFrame = this.isRecvAudioEncodedFrame;
+
+        return cloned;
     }
 
     @Override
@@ -396,21 +470,21 @@ public class ArgsConfig {
         return "ArgsConfig{"
             + "appId='" + appId + '\'' + ", token='" + token + '\'' + ", userId='" + userId + '\''
             + ", channelId='" + channelId + '\'' + ", remoteUserId='" + remoteUserId + '\''
-            + ", streamType='" + streamType + '\'' + ", audioFile='" + audioFile + '\''
-            + ", audioOutFile='" + audioOutFile + '\'' + ", videoFile='" + videoFile + '\''
-            + ", lowVideoFile='" + lowVideoFile + '\'' + ", videoOutFile='" + videoOutFile + '\''
-            + ", expectedFile='" + expectedFile + '\'' + ", sampleRate='" + sampleRate + '\''
-            + ", numOfChannels='" + numOfChannels + '\'' + ", height='" + height + '\''
-            + ", width='" + width + '\'' + ", lowWidth='" + lowWidth + '\'' + ", lowHeight='"
-            + lowHeight + '\'' + ", fps='" + fps + '\'' + ", lowFps='" + lowFps + '\''
-            + ", connectionCount='" + connectionCount + '\'' + ", fileType='" + fileType + '\''
-            + ", encryptionMode='" + encryptionMode + '\'' + ", encryptionKey='" + encryptionKey
-            + '\'' + ", enableStringUid='" + enableStringUid + '\'' + ", enableLog='" + enableLog
-            + '\'' + ", enableEncryptionMode='" + enableEncryptionMode + '\''
-            + ", enableCloudProxy='" + enableCloudProxy + '\'' + ", enableSimulcastStream='"
-            + enableSimulcastStream + '\'' + ", enableSaveFile='" + enableSaveFile + '\''
-            + ", enableAlpha='" + enableAlpha + '\'' + ", enableVad='" + enableVad + '\''
-            + ", enableSendAudioMetaData='" + enableSendAudioMetaData + '\''
+            + ", audioScenario='" + audioScenario + '\'' + ", streamType='" + streamType + '\''
+            + ", audioFile='" + audioFile + '\'' + ", audioOutFile='" + audioOutFile + '\''
+            + ", videoFile='" + videoFile + '\'' + ", lowVideoFile='" + lowVideoFile + '\''
+            + ", videoOutFile='" + videoOutFile + '\'' + ", expectedFile='" + expectedFile + '\''
+            + ", sampleRate='" + sampleRate + '\'' + ", numOfChannels='" + numOfChannels + '\''
+            + ", height='" + height + '\'' + ", width='" + width + '\'' + ", lowWidth='"
+            + lowWidth + '\'' + ", lowHeight='" + lowHeight + '\'' + ", fps='" + fps + '\''
+            + ", lowFps='" + lowFps + '\'' + ", connectionCount='" + connectionCount + '\''
+            + ", fileType='" + fileType + '\'' + ", encryptionMode='" + encryptionMode + '\''
+            + ", encryptionKey='" + encryptionKey + '\'' + ", enableStringUid='" + enableStringUid
+            + '\'' + ", enableLog='" + enableLog + '\'' + ", enableEncryptionMode='"
+            + enableEncryptionMode + '\'' + ", enableCloudProxy='" + enableCloudProxy + '\''
+            + ", enableSimulcastStream='" + enableSimulcastStream + '\'' + ", enableSaveFile='"
+            + enableSaveFile + '\'' + ", enableAlpha='" + enableAlpha + '\'' + ", enableVad='"
+            + enableVad + '\'' + ", enableSendAudioMetaData='" + enableSendAudioMetaData + '\''
             + ", enableSendVideoMetaData='" + enableSendVideoMetaData + '\''
             + ", enableSingleChannel='" + enableSingleChannel + '\'' + ", enableStressTest='"
             + enableStressTest + '\'' + ", enableRecvDataStream='" + enableRecvDataStream + '\''

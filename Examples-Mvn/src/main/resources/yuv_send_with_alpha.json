@@ -4,7 +4,7 @@
     "userId": "0",
     "channelId": "yuvChannelAlpha",
     "remoteUserId": "",
-    "streamType": "",
+    "streamType": "high",
     "audioFile": "",
     "audioOutFile": "",
     "videoFile": "test_data/360p_I420.yuv",

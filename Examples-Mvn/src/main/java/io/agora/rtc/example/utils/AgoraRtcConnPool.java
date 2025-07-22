@@ -1,16 +1,15 @@
 package io.agora.rtc.example.utils;
 
+import io.agora.rtc.AgoraRtcConn;
+import io.agora.rtc.AgoraService;
+import io.agora.rtc.RtcConnConfig;
+import io.agora.rtc.RtcConnPublishConfig;
+import io.agora.rtc.example.common.SampleLogger;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.agora.rtc.AgoraRtcConn;
-import io.agora.rtc.AgoraService;
-import io.agora.rtc.RtcConnConfig;
-import io.agora.rtc.example.common.SampleLogger;
-
 public class AgoraRtcConnPool {
-
     private final Queue<AgoraRtcConn> idleConnections = new ConcurrentLinkedQueue<>();
     private final AtomicInteger totalConnections = new AtomicInteger(0);
     private final int maxPoolSize;
@@ -19,7 +18,8 @@ public class AgoraRtcConnPool {
         this.maxPoolSize = maxPoolSize;
     }
 
-    public synchronized AgoraRtcConn getRtcConn(AgoraService service, RtcConnConfig ccfg, boolean forceNew) {
+    public synchronized AgoraRtcConn getRtcConn(AgoraService service, RtcConnConfig ccfg,
+        RtcConnPublishConfig publishConfig, boolean forceNew) {
         AgoraRtcConn conn = null;
 
         if (!forceNew) {
@@ -28,7 +28,7 @@ public class AgoraRtcConnPool {
 
         if (conn == null) {
             if (totalConnections.get() < maxPoolSize) {
-                conn = service.agoraRtcConnCreate(ccfg);
+                conn = service.agoraRtcConnCreate(ccfg, publishConfig);
                 SampleLogger.log("agoraRtcConnCreate conn: " + conn);
                 totalConnections.incrementAndGet();
             } else {

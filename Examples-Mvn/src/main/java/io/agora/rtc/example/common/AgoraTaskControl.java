@@ -3,6 +3,8 @@ package io.agora.rtc.example.common;
 import io.agora.rtc.AgoraRtcConn;
 import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
+import io.agora.rtc.RtcConnPublishConfig;
+import io.agora.rtc.SenderOptions;
 import io.agora.rtc.example.utils.Utils;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -52,6 +54,7 @@ public class AgoraTaskControl {
         SEND_DATA_STREAM,
         SEND_PCM_YUV,
         SEND_PCM_H264,
+        SEND_PCM_AI,
         RECEIVE_PCM,
         RECEIVE_YUV,
         RECEIVE_H264,
@@ -59,7 +62,8 @@ public class AgoraTaskControl {
         RECEIVE_MIXED_AUDIO,
         RECEIVE_ENCODED_AUDIO,
         SEND_RECEIVE_PCM_YUV,
-        RECEIVE_DATA_STREAM
+        RECEIVE_DATA_STREAM,
+        RECEIVE_PCM_AI
     }
 
     private AgoraTaskManager.AgoraTaskListener agoraTaskListener;
@@ -89,21 +93,21 @@ public class AgoraTaskControl {
             final CountDownLatch connectedLatch = new CountDownLatch(1);
             AtomicInteger leftTestTaskCount = new AtomicInteger(0);
             AgoraConnectionTask connTask =
-                new AgoraConnectionTask(AgoraServiceInitializer.getService(),
-                    AgoraServiceInitializer.getMediaNodeFactory(), argsConfig);
+                new AgoraConnectionTask(AgoraServiceInitializer.getService(), argsConfig);
             connTasksList.add(connTask);
             connTask.setCallback(new AgoraConnectionTask.TaskCallback() {
                 @Override
                 public void onConnected(String userId) {
                     threadLocalUserId.set(userId);
+                    connectedLatch.countDown();
                     if (agoraTaskListener != null) {
                         agoraTaskListener.onConnected(channelId, threadLocalUserId.get());
                     }
-                    connectedLatch.countDown();
                 }
 
                 @Override
                 public void onUserJoined(String userId) {
+                    // userJoinLatch.countDown();
                 }
 
                 @Override
@@ -123,179 +127,248 @@ public class AgoraTaskControl {
                     onStreamMessageReceive(userId, streamId, data);
                 }
             });
+
+            boolean needConnect = true;
+            RtcConnPublishConfig publishConfig = new RtcConnPublishConfig();
+            publishConfig.setAudioScenario(Constants.AUDIO_SCENARIO_AI_SERVER);
+            publishConfig.setAudioProfile(Constants.AUDIO_PROFILE_DEFAULT);
+            SenderOptions option = new SenderOptions();
+            if (argsConfig.getAudioScenario() != -1) {
+                publishConfig.setAudioScenario(argsConfig.getAudioScenario());
+            }
+            switch (testTask) {
+                case SEND_PCM:
+                    publishConfig.setIsPublishAudio(true);
+                    publishConfig.setIsPublishVideo(false);
+                    publishConfig.setAudioPublishType(Constants.AudioPublishType.PCM);
+                    publishConfig.setVideoPublishType(Constants.VideoPublishType.NO_PUBLISH);
+                    break;
+                case SEND_PCM_YUV:
+                    publishConfig.setIsPublishAudio(true);
+                    publishConfig.setIsPublishVideo(true);
+                    publishConfig.setAudioPublishType(Constants.AudioPublishType.PCM);
+                    publishConfig.setVideoPublishType(Constants.VideoPublishType.YUV);
+                    break;
+                case SEND_PCM_H264:
+                    publishConfig.setIsPublishAudio(true);
+                    publishConfig.setIsPublishVideo(true);
+                    publishConfig.setAudioPublishType(Constants.AudioPublishType.PCM);
+                    publishConfig.setVideoPublishType(Constants.VideoPublishType.ENCODED_IMAGE);
+                    break;
+                case SEND_AAC:
+                    publishConfig.setIsPublishAudio(true);
+                    publishConfig.setIsPublishVideo(false);
+                    publishConfig.setAudioPublishType(Constants.AudioPublishType.ENCODED_PCM);
+                    publishConfig.setVideoPublishType(Constants.VideoPublishType.NO_PUBLISH);
+                    break;
+                case SEND_OPUS:
+                    publishConfig.setIsPublishAudio(true);
+                    publishConfig.setIsPublishVideo(false);
+                    publishConfig.setAudioPublishType(Constants.AudioPublishType.ENCODED_PCM);
+                    publishConfig.setVideoPublishType(Constants.VideoPublishType.NO_PUBLISH);
+                    break;
+                case SEND_YUV:
+                case SEND_YUV_DUAL_STREAM:
+                    publishConfig.setIsPublishAudio(false);
+                    publishConfig.setIsPublishVideo(true);
+                    publishConfig.setAudioPublishType(Constants.AudioPublishType.NO_PUBLISH);
+                    publishConfig.setVideoPublishType(Constants.VideoPublishType.YUV);
+                    break;
+                case SEND_H264:
+                    publishConfig.setIsPublishAudio(false);
+                    publishConfig.setIsPublishVideo(true);
+                    publishConfig.setAudioPublishType(Constants.AudioPublishType.NO_PUBLISH);
+                    publishConfig.setVideoPublishType(Constants.VideoPublishType.ENCODED_IMAGE);
+                    break;
+                case SEND_H264_DUAL_STREAM:
+                    publishConfig.setIsPublishAudio(false);
+                    publishConfig.setIsPublishVideo(true);
+                    publishConfig.setAudioPublishType(Constants.AudioPublishType.NO_PUBLISH);
+                    publishConfig.setVideoPublishType(Constants.VideoPublishType.ENCODED_IMAGE);
+                    option.setCcMode(Constants.TCC_ENABLED);
+                    publishConfig.setSenderOptions(option);
+                    break;
+                case SEND_RGBA:
+                    publishConfig.setIsPublishAudio(false);
+                    publishConfig.setIsPublishVideo(true);
+                    publishConfig.setAudioPublishType(Constants.AudioPublishType.NO_PUBLISH);
+                    publishConfig.setVideoPublishType(Constants.VideoPublishType.YUV);
+                    break;
+                case SEND_RGBA_PCM:
+                    publishConfig.setIsPublishAudio(true);
+                    publishConfig.setIsPublishVideo(true);
+                    publishConfig.setAudioPublishType(Constants.AudioPublishType.PCM);
+                    publishConfig.setVideoPublishType(Constants.VideoPublishType.YUV);
+                    break;
+                case SEND_VP8:
+                    publishConfig.setIsPublishAudio(false);
+                    publishConfig.setIsPublishVideo(true);
+                    publishConfig.setAudioPublishType(Constants.AudioPublishType.NO_PUBLISH);
+                    publishConfig.setVideoPublishType(Constants.VideoPublishType.ENCODED_IMAGE);
+                    option.setCcMode(Constants.TCC_ENABLED);
+                    publishConfig.setSenderOptions(option);
+                    break;
+                case SEND_VP8_PCM:
+                    publishConfig.setIsPublishAudio(true);
+                    publishConfig.setIsPublishVideo(true);
+                    publishConfig.setAudioPublishType(Constants.AudioPublishType.PCM);
+                    publishConfig.setVideoPublishType(Constants.VideoPublishType.ENCODED_IMAGE);
+                    option.setCcMode(Constants.TCC_ENABLED);
+                    publishConfig.setSenderOptions(option);
+                    break;
+                case SEND_MP4:
+                    publishConfig.setIsPublishAudio(true);
+                    publishConfig.setIsPublishVideo(true);
+                    publishConfig.setAudioPublishType(Constants.AudioPublishType.PCM);
+                    publishConfig.setVideoPublishType(Constants.VideoPublishType.YUV);
+                    break;
+                case SEND_PCM_AI:
+                    publishConfig.setIsPublishAudio(true);
+                    publishConfig.setIsPublishVideo(false);
+                    publishConfig.setAudioPublishType(Constants.AudioPublishType.PCM);
+                    publishConfig.setVideoPublishType(Constants.VideoPublishType.NO_PUBLISH);
+                    break;
+                case SEND_DATA_STREAM:
+                case RECEIVE_DATA_STREAM:
+                    publishConfig.setIsPublishAudio(false);
+                    publishConfig.setIsPublishVideo(false);
+                    publishConfig.setAudioPublishType(Constants.AudioPublishType.NO_PUBLISH);
+                    publishConfig.setVideoPublishType(Constants.VideoPublishType.NO_PUBLISH);
+                    break;
+                case RECEIVE_PCM:
+                case RECEIVE_PCM_H264:
+                case RECEIVE_MIXED_AUDIO:
+                case RECEIVE_YUV:
+                case RECEIVE_H264:
+                case RECEIVE_ENCODED_AUDIO:
+                    publishConfig.setIsPublishAudio(false);
+                    publishConfig.setIsPublishVideo(false);
+                    publishConfig.setAudioPublishType(Constants.AudioPublishType.NO_PUBLISH);
+                    publishConfig.setVideoPublishType(Constants.VideoPublishType.NO_PUBLISH);
+                    needConnect = false;
+                    break;
+                case SEND_RECEIVE_PCM_YUV:
+                    break;
+                case RECEIVE_PCM_AI:
+                    publishConfig.setIsPublishAudio(false);
+                    publishConfig.setIsPublishVideo(false);
+                    publishConfig.setAudioPublishType(Constants.AudioPublishType.NO_PUBLISH);
+                    publishConfig.setVideoPublishType(Constants.VideoPublishType.NO_PUBLISH);
+                    needConnect = false;
+                    break;
+                case NONE:
+                default:
+                    // No specific task
+                    break;
+            }
+
             try {
-                connTask.createConnection(ccfg, channelId, userId);
+                connTask.createConnection(ccfg, publishConfig, needConnect);
             } catch (Exception e) {
                 e.printStackTrace();
                 SampleLogger.log("createConnection failed, exit");
             }
 
-            try {
-                boolean connected = connectedLatch.await(5, TimeUnit.SECONDS);
-                if (!connected) {
-                    SampleLogger.error("createConnectionAndTest connect timeout for testTask:"
-                        + testTask + " channelId:" + channelId + " userId:" + userId
-                        + " and exit current test");
-                    connTask.releaseConn();
-                    connTasksList.remove(connTask);
-                    connTask = null;
-                    return;
+            if (needConnect) {
+                try {
+                    boolean connected = connectedLatch.await(5, TimeUnit.SECONDS);
+                    if (!connected) {
+                        SampleLogger.error("createConnectionAndTest connect timeout for testTask:"
+                            + testTask + " channelId:" + channelId + " userId:" + userId
+                            + " and exit current test");
+                        connTask.releaseConn();
+                        connTasksList.remove(connTask);
+                        connTask = null;
+                        return;
+                    }
+                    // wait user join
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
 
-            onConnected(connTask.getConn(), channelId, threadLocalUserId.get(), testTask);
+            // onConnected(connTask.getConn(), channelId, threadLocalUserId.get(), testTask);
 
             switch (testTask) {
                 case SEND_PCM:
-                    connTask.sendPcmTask(argsConfig.getAudioFile(), 10,
-                        argsConfig.getNumOfChannels(), argsConfig.getSampleRate(), true);
+                    connTask.sendPcmTask(true, false);
                     break;
                 case SEND_PCM_YUV:
-                    connTask.sendPcmTask(argsConfig.getAudioFile(), 10,
-                        argsConfig.getNumOfChannels(), argsConfig.getSampleRate(), false);
-                    connTask.sendYuvTask(argsConfig.getVideoFile(), 1000 / argsConfig.getFps(),
-                        argsConfig.getHeight(), argsConfig.getWidth(), argsConfig.getFps(),
-                        Constants.VIDEO_STREAM_HIGH, true);
+                    connTask.sendYuvTask(false);
+                    connTask.sendPcmTask(true, false);
                     break;
                 case SEND_PCM_H264:
-                    connTask.sendPcmTask(argsConfig.getAudioFile(), 10,
-                        argsConfig.getNumOfChannels(), argsConfig.getSampleRate(), false);
-                    connTask.sendH264Task(argsConfig.getVideoFile(), 1000 / argsConfig.getFps(), 0,
-                        0, Constants.VIDEO_STREAM_HIGH, true);
+                    connTask.sendH264Task(false);
+                    connTask.sendPcmTask(true, false);
                     break;
                 case SEND_AAC:
-                    connTask.sendAacTask(argsConfig.getAudioFile(), 20,
-                        argsConfig.getNumOfChannels(), argsConfig.getSampleRate(), true);
+                    connTask.sendAacTask(true);
                     break;
                 case SEND_OPUS:
-                    connTask.sendOpusTask(argsConfig.getAudioFile(), 20, true);
+                    connTask.sendOpusTask(true);
                     break;
                 case SEND_YUV:
-                    connTask.sendYuvTask(argsConfig.getVideoFile(), 1000 / argsConfig.getFps(),
-                        argsConfig.getHeight(), argsConfig.getWidth(), argsConfig.getFps(),
-                        Constants.VIDEO_STREAM_HIGH, true);
-                    break;
                 case SEND_YUV_DUAL_STREAM:
-                    connTask.sendYuvTask(argsConfig.getVideoFile(), 1000 / argsConfig.getFps(),
-                        argsConfig.getHeight(), argsConfig.getWidth(), argsConfig.getFps(),
-                        Constants.VIDEO_STREAM_HIGH, true);
+                    connTask.sendYuvTask(true);
                     break;
                 case SEND_H264:
-                    connTask.sendH264Task(argsConfig.getVideoFile(), 1000 / argsConfig.getFps(),
-                        argsConfig.getHeight(), argsConfig.getWidth(), Constants.VIDEO_STREAM_HIGH,
-                        true);
-                    break;
                 case SEND_H264_DUAL_STREAM:
-                    connTask.sendH264Task(argsConfig.getLowVideoFile(),
-                        1000 / argsConfig.getLowFps(), argsConfig.getLowHeight(),
-                        argsConfig.getLowWidth(), Constants.VIDEO_STREAM_LOW, false);
-                    connTask.sendH264Task(argsConfig.getVideoFile(), 1000 / argsConfig.getFps(),
-                        argsConfig.getHeight(), argsConfig.getWidth(), Constants.VIDEO_STREAM_HIGH,
-                        true);
+                    connTask.sendH264Task(true);
                     break;
                 case SEND_RGBA:
-                    connTask.sendRgbaTask(argsConfig.getVideoFile(), 1000 / argsConfig.getFps(),
-                        argsConfig.getHeight(), argsConfig.getWidth(), argsConfig.getFps(), true);
+                    connTask.sendRgbaTask(true);
                     break;
                 case SEND_RGBA_PCM:
-                    connTask.sendPcmTask(argsConfig.getAudioFile(), 10,
-                        argsConfig.getNumOfChannels(), argsConfig.getSampleRate(), false);
-                    connTask.sendRgbaTask(argsConfig.getVideoFile(), 1000 / argsConfig.getFps(),
-                        argsConfig.getHeight(), argsConfig.getWidth(), argsConfig.getFps(), true);
+                    connTask.sendRgbaTask(false);
+                    connTask.sendPcmTask(true, false);
                     break;
                 case SEND_VP8:
-                    connTask.sendVp8Task(argsConfig.getVideoFile(), 1000 / argsConfig.getFps(),
-                        argsConfig.getHeight(), argsConfig.getWidth(), argsConfig.getFps(),
-                        Constants.VIDEO_STREAM_HIGH, true);
+                    connTask.sendVp8Task(true);
                     break;
                 case SEND_VP8_PCM:
-                    connTask.sendPcmTask(argsConfig.getAudioFile(), 10,
-                        argsConfig.getNumOfChannels(), argsConfig.getSampleRate(), false);
-                    connTask.sendVp8Task(argsConfig.getVideoFile(), 1000 / argsConfig.getFps(),
-                        argsConfig.getHeight(), argsConfig.getWidth(), argsConfig.getFps(),
-                        Constants.VIDEO_STREAM_HIGH, true);
+                    connTask.sendPcmTask(false, false);
+                    connTask.sendVp8Task(true);
                     break;
                 case SEND_MP4:
-                    connTask.sendAvMediaTask(argsConfig.getVideoFile(), 50);
+                    connTask.sendAvMediaTask();
                     break;
                 case SEND_DATA_STREAM:
-                    connTask.sendDataStreamTask(1, 50, true);
+                    connTask.sendDataStreamTask(50, true);
+                    break;
+                case SEND_PCM_AI:
+                    connTask.sendPcmTask(true, true);
                     break;
                 case RECEIVE_PCM:
-                    connTask.registerPcmObserverTask(argsConfig.getRemoteUserId(),
-                        ("".equals(argsConfig.getAudioOutFile()))
-                            ? ""
-                            : (argsConfig.getAudioOutFile() + "_" + channelId + "_"
-                                  + threadLocalUserId.get() + ".pcm"),
-                        argsConfig.getNumOfChannels(), argsConfig.getSampleRate(), true);
+                    connTask.registerPcmObserverTask(true, false);
                     break;
                 case RECEIVE_PCM_H264:
-                    connTask.registerPcmObserverTask(argsConfig.getRemoteUserId(),
-                        ("".equals(argsConfig.getAudioOutFile()))
-                            ? ""
-                            : (argsConfig.getAudioOutFile() + "_" + channelId + "_"
-                                  + threadLocalUserId.get() + ".pcm"),
-                        argsConfig.getNumOfChannels(), argsConfig.getSampleRate(), false);
-                    connTask.registerH264ObserverTask(argsConfig.getRemoteUserId(),
-                        ("".equals(argsConfig.getVideoOutFile()))
-                            ? ""
-                            : (argsConfig.getVideoOutFile() + "_" + channelId + "_"
-                                  + threadLocalUserId.get() + ".h264"),
-                        argsConfig.getStreamType(), true);
+                    connTask.registerPcmObserverTask(false, false);
+                    connTask.registerH264ObserverTask(true);
                     break;
                 case RECEIVE_MIXED_AUDIO:
-                    connTask.registerMixedAudioObserverTask(argsConfig.getRemoteUserId(),
-                        ("".equals(argsConfig.getAudioOutFile()))
-                            ? ""
-                            : (argsConfig.getAudioOutFile() + "_" + channelId + "_"
-                                  + threadLocalUserId.get() + ".pcm"),
-                        argsConfig.getNumOfChannels(), argsConfig.getSampleRate(), true);
+                    connTask.registerMixedAudioObserverTask(true);
                     break;
                 case RECEIVE_YUV:
-                    connTask.registerYuvObserverTask(argsConfig.getRemoteUserId(),
-                        ("".equals(argsConfig.getVideoOutFile()))
-                            ? ""
-                            : (argsConfig.getVideoOutFile() + "_" + channelId + "_"
-                                  + threadLocalUserId.get() + ".yuv"),
-                        argsConfig.getStreamType(), true);
+                    connTask.registerYuvObserverTask(true);
                     break;
                 case RECEIVE_H264:
-                    connTask.registerH264ObserverTask(argsConfig.getRemoteUserId(),
-                        ("".equals(argsConfig.getVideoOutFile()))
-                            ? ""
-                            : (argsConfig.getVideoOutFile() + "_" + channelId + "_"
-                                  + threadLocalUserId.get() + ".h264"),
-                        argsConfig.getStreamType(), true);
+                    connTask.registerH264ObserverTask(true);
                     break;
                 case RECEIVE_ENCODED_AUDIO:
-                    connTask.registerEncodedAudioObserverTask(argsConfig.getRemoteUserId(),
-                        ("".equals(argsConfig.getAudioOutFile())) ? ""
-                                                                    : argsConfig.getAudioOutFile(),
-                        argsConfig.getFileType(), true);
+                    connTask.registerEncodedAudioObserverTask(true);
                     break;
                 case SEND_RECEIVE_PCM_YUV:
-                    connTask.sendPcmTask(argsConfig.getAudioFile(), 10,
-                        argsConfig.getNumOfChannels(), argsConfig.getSampleRate(), false);
-                    connTask.sendYuvTask(argsConfig.getVideoFile(), 1000 / argsConfig.getFps(),
-                        argsConfig.getHeight(), argsConfig.getWidth(), argsConfig.getFps(),
-                        Constants.VIDEO_STREAM_HIGH, false);
-                    connTask.registerPcmObserverTask(argsConfig.getRemoteUserId(),
-                        ("".equals(argsConfig.getAudioOutFile()))
-                            ? ""
-                            : (argsConfig.getAudioOutFile() + "_" + channelId + "_"
-                                  + threadLocalUserId.get() + ".pcm"),
-                        argsConfig.getNumOfChannels(), argsConfig.getSampleRate(), false);
-                    connTask.registerYuvObserverTask(argsConfig.getRemoteUserId(),
-                        ("".equals(argsConfig.getVideoOutFile()))
-                            ? ""
-                            : (argsConfig.getVideoOutFile() + "_" + channelId + "_"
-                                  + threadLocalUserId.get() + ".yuv"),
-                        argsConfig.getStreamType(), true);
+                    connTask.sendPcmTask(false, false);
+                    connTask.sendYuvTask(false);
+                    connTask.registerPcmObserverTask(false, false);
+                    connTask.registerYuvObserverTask(true);
                     break;
                 case RECEIVE_DATA_STREAM:
                     connTask.recvDataStreamTask(true);
+                    break;
+                case RECEIVE_PCM_AI:
+                    connTask.registerPcmObserverTask(true, true);
                     break;
                 case NONE:
                 default:

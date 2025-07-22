@@ -70,6 +70,7 @@
           - [主要方法 (Setters/Getters)](#主要方法-settersgetters)
       - [使用示例](#使用示例-2)
   - [更新日志](#更新日志)
+    - [v4.4.32.100（2025-07-22）](#v44321002025-07-22)
     - [v4.4.32.1（2025-06-12）](#v443212025-06-12)
       - [API 变更](#api-变更)
       - [改进与优化](#改进与优化)
@@ -100,7 +101,7 @@
 
 ## 简介
 
-Agora Linux Server Java SDK (v4.4.32.1) 为您提供了强大的实时音视频通信能力，可无缝集成到 Linux 服务器端 Java 应用程序中。借助此 SDK，您的服务器可以作为数据源或处理节点加入 Agora 频道，实时获取和处理音视频流，从而实现多种业务相关的其他高级功能。
+Agora Linux Server Java SDK (v4.4.32.100) 为您提供了强大的实时音视频通信能力，可无缝集成到 Linux 服务器端 Java 应用程序中。借助此 SDK，您的服务器可以作为数据源或处理节点加入 Agora 频道，实时获取和处理音视频流，从而实现多种业务相关的其他高级功能。
 
 Agora Linux Gateway SDK 暂未发布，相关功能暂未支持。
 
@@ -130,13 +131,13 @@ Agora Linux Gateway SDK 暂未发布，相关功能暂未支持。
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.1</version>
+    <version>4.4.32.100</version>
 </dependency>
 ```
 
 ### CDN 下载
 
-[Agora-Linux-Java-SDK-v4.4.32.1-x86_64-675656-1c0b814025-20250612_105900](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.1-x86_64-675656-1c0b814025-20250612_105900.zip)
+[Agora-Linux-Java-SDK-v4.4.32.100-x86_64-791283-69786a6fd3-20250722_142202](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.100-x86_64-791283-69786a6fd3-20250722_142202.zip)
 
 ## 集成 SDK
 
@@ -155,7 +156,7 @@ Maven 集成是最简单的方式，可以自动管理 Java 依赖关系。
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.1</version>
+    <version>4.4.32.100</version>
 </dependency>
 ```
 
@@ -190,7 +191,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32.1 \
+  -Dversion=4.4.32.100 \
   -Dpackaging=jar \
   -DgeneratePom=true
 ```
@@ -202,7 +203,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32.1 \
+  -Dversion=4.4.32.100 \
   -Dpackaging=jar \
   -DgeneratePom=true \
   -Djavadoc=sdk/agora-sdk-javadoc.jar
@@ -214,7 +215,7 @@ mvn install:install-file \
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.1</version>
+    <version>4.4.32.100</version>
 </dependency>
 ```
 
@@ -263,7 +264,7 @@ Agora Linux Server Java SDK 依赖于底层的 C++ 原生库（`.so` 文件）�
     jar xvf agora-sdk.jar
 
     # 如果使用 Maven 集成方式，JAR 文件在 Maven 缓存中，例如：
-    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.1/linux-java-sdk-4.4.32.1.jar
+    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.100/linux-java-sdk-4.4.32.100.jar
     ```
 
 3.  提取后，`libs` 目录下会生成 `native/linux/x86_64` 子目录，其中包含所需的 `.so` 文件：
@@ -372,21 +373,33 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
 
    参考 [Maven 安装指南](https://maven.apache.org/install.html)
 
-2. **C++ 编译环境 (如果需要编译native库)**
+   ```bash
+   sudo apt-get install maven -y
+   sudo apt-get install lsof -y
+   ```
+
+2. **C++ 编译环境 (如果需要编译native库, 默认可以跳过)**
 
    安装基本编译工具：
    ```bash
    sudo apt-get update
-   sudo apt-get install build-essential pkg-config
+   sudo apt-get install build-essential pkg-config gcc g++
    ```
 
-3. **FFmpeg 依赖 (如果需要编译FFmpeg相关功能)**
+3. **安装 C++ 运行时库**
+
+   SDK 的原生库依赖于 `libc++` 运行时。请安装它以避免链接错误：
+   ```bash
+   sudo apt-get install libc++1
+   ```
+
+4. **FFmpeg 依赖 (如果需要编译FFmpeg相关功能, 默认可以跳过)**
 
    ```bash
    sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libswresample-dev
    ```
 
-4. **确保 JAVA_HOME 环境变量设置正确**
+5. **确保 JAVA_HOME 环境变量设置正确**
 
    ```bash
    export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
@@ -421,15 +434,13 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
    LICENSE=your_license
    ```
 
-3. **运行时配置 (run_config)**
+3. 运行时配置 (run_config)
 
    `run_config` 文件用于配置运行时的各种选项，位于 `Examples-Mvn/run_config`。您可以根据需要修改以下配置：
 
-   | 配置项           | 类型    | 默认值 | 描述                                                              |
-   | ---------------- | ------- | ------ | ----------------------------------------------------------------- |
-   | enable_jni_check | boolean | false  | 是否启用 JNI 检查，用于调试 JNI 相关问题                          |
+   | 配置项 | 类型 | 默认值 | 描述 |
+   | ------ | ---- | ------ | ---- ||
    | enable_asan      | boolean | false  | 是否启用 AddressSanitizer，用于内存错误检测                       |
-   | enable_aed_vad   | boolean | false  | 是否启用 AED VAD (Audio Event Detection Voice Activity Detection) |
    | enable_gateway   | boolean | false  | 是否启用 Gateway SDK 模式，启用后可使用 VAD 和 Audio 3A 等功能    |
 
    **配置示例：**
@@ -437,35 +448,69 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
    ```bash
    # 启用 Gateway SDK 功能
    enable_gateway=true
-   
-   # 启用 JNI 检查（调试模式）
-   enable_jni_check=true
-   
+  
    # 启用内存检查（调试模式）
    enable_asan=true
-   
-   # 启用 AED VAD 功能
-   enable_aed_vad=true
    ```
 
    > **注意**：
-   > - 启用 `enable_gateway=true` 后，可以使用 VAD 和 Audio 3A 等高级功能
-   > - 启用 `enable_jni_check=true` 或 `enable_asan=true` 会影响性能，仅建议在调试时使用
    > - 修改配置后需要重新编译项目
 
-4. **更新Linux Java SDK版本号**
+4. 配置Java SDK
 
-   确保 `pom.xml` 文件中的Linux Java SDK版本号与实际使用的版本一致：
+本节介绍如何为您的Maven项目配置Linux Java SDK依赖。
 
-   ```xml
-   <dependency>
-       <groupId>io.agora.rtc</groupId>
-       <artifactId>linux-java-sdk</artifactId>
-       <version>4.4.32.1</version>  <!-- 确保版本号正确 -->
-   </dependency>
-   ```
+4.1 步骤 1: 配置JAR包依赖
+您有两种方式来配置项目的JAR依赖：
 
-   > **注意**：版本号不匹配可能导致编译错误或运行时问题，请确保使用与您下载的SDK包对应的正确版本号。
+方式一：使用Maven中央仓库（推荐）
+如果您的项目可以直接从Maven中央仓库获取依赖，请确保 `pom.xml` 中配置了正确的版本号。
+```xml
+<dependency>
+    <groupId>io.agora.rtc</groupId>
+    <artifactId>linux-java-sdk</artifactId>
+    <version>4.4.32.100</version>  <!-- 确保版本号与您需要使用的版本一致 -->
+</dependency>
+```
+
+方式二：使用本地SDK包
+如果您需要使用本地的SDK包（例如，经过定制化修改或内部版本），请遵循以下步骤：
+
+1.  **放置SDK构件**: 将下载的SDK JAR包 (例如 `agora-sdk.jar`) 和对应的Javadoc包 (`agora-sdk-javadoc.jar`) 放置到 `Examples-Mvn/libs/` 目录下。
+
+2.  **安装至本地Maven仓库**: 在 `linux_server_java` 目录下，执行以下脚本。该脚本会将 `libs` 目录下的JAR文件作为Maven构件安装到您的本地仓库中（通常位于 `~/.m2/repository`）。
+    ```bash
+    ./build_install_local_maven.sh
+    ```
+
+4.2 步骤 2: 配置原生库 (`.so`)
+为了确保Java程序在运行时能成功加载原生库 (`.so` 文件)，需要将它们放置在指定的路径。
+
+1.  **进入`libs`目录**:
+    ```bash
+    cd linux_server_java/Examples-Mvn/libs/
+    ```
+
+2.  **从JAR包中解压原生库**:
+         ```bash
+         # -x: extract, -v: verbose, -f: file
+         jar -xvf agora-sdk.jar native/
+         ```
+    此命令会从 `agora-sdk.jar` 中提取 `native` 目录，其中包含了所有平台的原生库。
+
+3.  **验证目录结构**:
+    解压后，`libs` 目录结构应如下所示，确保 `.so` 文件位于 `native/linux/x86_64/` 路径下：
+    ```text
+    libs/
+    ├── agora-sdk.jar
+    ├── agora-sdk-javadoc.jar
+    └── native/
+        └── linux/
+            └── x86_64/
+                ├── libagora_rtc_sdk.so
+                ├── libagora-fdkaac.so
+                └── ... (其他 .so 文件)
+    ```
 
 #### 编译构建
 
@@ -1177,6 +1222,10 @@ public class Audio3AProcessingExample {
 ```
 
 ## 更新日志
+
+### v4.4.32.100（2025-07-22）
+
+- 该版本支持AIQoS，同时API有变更，请参考[AIQoS升级指南](AIQoS_Upgrade_Guide.md)
 
 ### v4.4.32.1（2025-06-12）
 

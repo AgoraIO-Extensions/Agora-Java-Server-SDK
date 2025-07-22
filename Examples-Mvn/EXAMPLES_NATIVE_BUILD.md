@@ -108,9 +108,7 @@ sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
 项目仍然支持`run_config`文件来控制功能开关：
 
 ```properties
-enable_jni_check=false
 enable_asan=false
-enable_aed_vad=false
 enable_gateway=false
 ```
 

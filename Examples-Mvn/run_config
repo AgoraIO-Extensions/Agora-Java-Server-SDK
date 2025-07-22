@@ -1,4 +1,2 @@
-enable_jni_check=false
 enable_asan=false
-enable_aed_vad=false
 enable_gateway=false

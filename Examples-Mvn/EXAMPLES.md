@@ -114,7 +114,8 @@ http://10.200.0.85:18080/api/server/start?configFileName=mixed_audio_recv.json
 http://10.200.0.85:18080/api/server/start?configFileName=yuv_recv.json
 http://10.200.0.85:18080/api/server/start?configFileName=h264_recv.json
 http://10.200.0.85:18080/api/server/start?configFileName=pcm_h264_recv.json
-
+http://10.200.0.85:18080/api/server/start?configFileName=ai_pcm_send.json
+http://10.200.0.85:18080/api/server/start?configFileName=ai_pcm_recv.json
 
 http://10.200.0.85:18080/api/server/basic?taskName=ReceiverPcmDirectSendTest
 http://10.200.0.85:18080/api/server/basic?taskName=ReceiverPcmH264Test
@@ -127,6 +128,7 @@ http://10.200.0.85:18080/api/server/basic?taskName=SendPcmFileTest
 http://10.200.0.85:18080/api/server/basic?taskName=SendPcmRealTimeTest
 http://10.200.0.85:18080/api/server/basic?taskName=SendReceiverStreamMessageTest
 http://10.200.0.85:18080/api/server/basic?taskName=SendYuvTest
+http://10.200.0.85:18080/api/server/basic?taskName=AIReceiverSendPcmTest
 
 // gateway sdk
 http://10.200.0.85:18080/api/server/basic?taskName=VadV1Test
