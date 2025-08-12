@@ -30,6 +30,7 @@ public class SendPcmFileTest {
     private String audioFilePath = "test_data/tts_ai_16k_1ch.pcm";
     private int numOfChannels = 1;
     private int sampleRate = 16000;
+    private int pushMaxCount = 100;
 
     private final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
 
@@ -61,7 +62,7 @@ public class SendPcmFileTest {
             ret = service.initialize(config);
             if (ret != 0) {
                 SampleLogger.log(
-                    "createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
+                        "createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
                 releaseAgoraService();
                 return;
             }
@@ -92,7 +93,7 @@ public class SendPcmFileTest {
             @Override
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
                 SampleLogger.log("onConnected chennalId:" + connInfo.getChannelId()
-                    + " userId:" + connInfo.getLocalUserId());
+                        + " userId:" + connInfo.getLocalUserId());
                 userId = connInfo.getLocalUserId();
             }
 
@@ -121,7 +122,7 @@ public class SendPcmFileTest {
 
         ret = conn.connect(token, channelId, userId);
         SampleLogger.log(
-            "Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
+                "Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
 
         if (ret != 0) {
             SampleLogger.log("conn.connect fail ret=" + ret);
@@ -148,29 +149,37 @@ public class SendPcmFileTest {
         testTaskExecutorService.execute(() -> {
             byte[] pcmData = Utils.readPcmFromFile(audioFilePath);
             // The data length must be an integer multiple of the data length of 1ms.If not,
-            // then the remaining audio needs to be saved and sent together with the next audio.
+            // then the remaining audio needs to be saved and sent together with the next
+            // audio.
             // Assuming 16-bit samples (2 bytes per sample).
             int bytesPerMs = numOfChannels * (sampleRate / 1000) * 2;
             if (bytesPerMs > 0 && pcmData.length % bytesPerMs != 0) {
                 int newLength = (pcmData.length / bytesPerMs) * bytesPerMs;
                 SampleLogger.log(String.format("sendPcmTask: pcmData length is not a multiple of "
                         + "1ms data bytes. Truncating from %d to %d bytes.",
-                    pcmData.length, newLength));
+                        pcmData.length, newLength));
                 pcmData = Arrays.copyOf(pcmData, newLength);
             }
 
-            int ret = conn.pushAudioPcmData(pcmData, sampleRate, numOfChannels);
-            SampleLogger.log("pushAudioPcmData " + pcmData.length + " ret: " + ret);
+            SampleLogger.log("pushPcmData start pcm data length:" + pcmData.length + " time:"
+                    + (pcmData.length / bytesPerMs) + "ms");
 
-            while (!conn.isPushToRtcCompleted()) {
-                SampleLogger.log("pushAudioPcmData not completed");
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            int count = 1;
+            while (count <= pushMaxCount) {
+                int ret = conn.pushAudioPcmData(pcmData, sampleRate, numOfChannels);
+                SampleLogger.log("pushAudioPcmData " + pcmData.length + " ret: " + ret);
+
+                while (!conn.isPushToRtcCompleted()) {
+                    // SampleLogger.log("pushAudioPcmData not completed");
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
+                SampleLogger.log("pushAudioPcmData completed count:" + count);
+                count++;
             }
-            SampleLogger.log("pushAudioPcmData completed");
             taskFinishLatch.countDown();
         });
     }

@@ -24,7 +24,7 @@ public class Audio3aTest {
     private String audioOutFile = "test_data_out/recv_near_out_3a";
     // 10ms one frame
     private final int INTERVAL = 10; // ms
-    private final int MAX_TASK_COUNT = 1;
+    private final int MAX_TASK_COUNT = 10;
 
     private final ExecutorService taskExecutor = Executors.newCachedThreadPool();
     private final ExecutorService audioWriteExecutor = Executors.newSingleThreadExecutor();
@@ -52,6 +52,7 @@ public class Audio3aTest {
                 AgoraAudioProcessorConfig config = new AgoraAudioProcessorConfig();
                 // set model path
                 config.setModelPath("./resources/model/");
+                SampleLogger.log("Task " + taskId + " config: " + config);
 
                 int ret = audioProcessor.init(appId, license, new IAgoraAudioProcessorEventHandler() {
                     @Override
