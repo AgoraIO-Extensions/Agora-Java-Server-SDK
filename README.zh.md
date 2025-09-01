@@ -70,40 +70,43 @@
           - [主要方法 (Setters/Getters)](#主要方法-settersgetters)
       - [使用示例](#使用示例-2)
   - [更新日志](#更新日志)
+    - [v4.4.32.101（2025-09-01）](#v44321012025-09-01)
     - [v4.4.32.100（2025-07-22）](#v44321002025-07-22)
     - [v4.4.32.1（2025-06-12）](#v443212025-06-12)
-      - [API 变更](#api-变更)
-      - [改进与优化](#改进与优化)
+      - [**API 变更**](#api-变更)
+      - [**改进与优化**](#改进与优化)
     - [v4.4.32（2025-05-27）](#v44322025-05-27)
-      - [API 变更](#api-变更-1)
-      - [改进与优化](#改进与优化-1)
+      - [**API 变更**](#api-变更-1)
+      - [**改进与优化**](#改进与优化-1)
     - [v4.4.31.4（2025-03-21）](#v443142025-03-21)
-      - [改进与优化](#改进与优化-2)
+      - [**改进与优化**](#改进与优化-2)
     - [v4.4.31.3（2025-02-26）](#v443132025-02-26)
-      - [改进与优化](#改进与优化-3)
+      - [**改进与优化**](#改进与优化-3)
     - [v4.4.31.2（2025-02-19）](#v443122025-02-19)
-      - [API 变更](#api-变更-2)
-      - [改进与优化](#改进与优化-4)
+      - [**API 变更**](#api-变更-2)
+      - [**改进与优化**](#改进与优化-4)
     - [v4.4.31.1（2025-01-06）](#v443112025-01-06)
-      - [改进与优化](#改进与优化-5)
+      - [**改进与优化**](#改进与优化-5)
     - [v4.4.31（2024-12-23）](#v44312024-12-23)
-      - [API 变更](#api-变更-3)
-      - [改进与优化](#改进与优化-6)
+      - [**API 变更**](#api-变更-3)
+      - [**改进与优化**](#改进与优化-6)
     - [v4.4.30.2（2024-11-20）](#v443022024-11-20)
-      - [API 变更](#api-变更-4)
-      - [改进与优化](#改进与优化-7)
+      - [**API 变更**](#api-变更-4)
+      - [**改进与优化**](#改进与优化-7)
     - [v4.4.30.1（2024-11-12）](#v443012024-11-12)
-      - [API 变更](#api-变更-5)
-      - [改进与优化](#改进与优化-8)
+      - [**API 变更**](#api-变更-5)
+      - [**改进与优化**](#改进与优化-8)
     - [v4.4.30（2024-10-24）](#v44302024-10-24)
   - [其他参考](#其他参考)
   - [其他参考](#其他参考-1)
 
 ## 简介
 
-Agora Linux Server Java SDK (v4.4.32.100) 为您提供了强大的实时音视频通信能力，可无缝集成到 Linux 服务器端 Java 应用程序中。借助此 SDK，您的服务器可以作为数据源或处理节点加入 Agora 频道，实时获取和处理音视频流，从而实现多种业务相关的其他高级功能。
+Agora Linux Server Java SDK (v4.4.32.101) 为您提供了强大的实时音视频通信能力，可无缝集成到 Linux 服务器端 Java 应用程序中。借助此 SDK，您的服务器可以作为数据源或处理节点加入 Agora 频道，实时获取和处理音视频流，从而实现多种业务相关的其他高级功能。
 
 Agora Linux Gateway SDK 暂未发布，相关功能暂未支持。
+
+> 注意：如果您是从 v4.4.32.100 之前的版本升级到 v4.4.32.100 及以后版本，请参考《[AIQoS 版本升级指南](./AIQoS_Upgrade_Guide.md)》完成必要的 API 适配与集成变更。
 
 ## 开发环境要求
 
@@ -131,13 +134,13 @@ Agora Linux Gateway SDK 暂未发布，相关功能暂未支持。
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.100</version>
+    <version>4.4.32.101</version>
 </dependency>
 ```
 
 ### CDN 下载
 
-[Agora-Linux-Java-SDK-v4.4.32.100-x86_64-791283-69786a6fd3-20250722_142202](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.100-x86_64-791283-69786a6fd3-20250722_142202.zip)
+[Agora-Linux-Java-SDK-v4.4.32.101-x86_64-860822-199c582312-20250901_154513](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.101-x86_64-860822-199c582312-20250901_154513.zip)
 
 ## 集成 SDK
 
@@ -156,7 +159,7 @@ Maven 集成是最简单的方式，可以自动管理 Java 依赖关系。
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.100</version>
+    <version>4.4.32.101</version>
 </dependency>
 ```
 
@@ -191,7 +194,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32.100 \
+  -Dversion=4.4.32.101 \
   -Dpackaging=jar \
   -DgeneratePom=true
 ```
@@ -203,7 +206,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32.100 \
+  -Dversion=4.4.32.101 \
   -Dpackaging=jar \
   -DgeneratePom=true \
   -Djavadoc=sdk/agora-sdk-javadoc.jar
@@ -215,7 +218,7 @@ mvn install:install-file \
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.100</version>
+    <version>4.4.32.101</version>
 </dependency>
 ```
 
@@ -264,7 +267,7 @@ Agora Linux Server Java SDK 依赖于底层的 C++ 原生库（`.so` 文件）�
     jar xvf agora-sdk.jar
 
     # 如果使用 Maven 集成方式，JAR 文件在 Maven 缓存中，例如：
-    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.100/linux-java-sdk-4.4.32.100.jar
+    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.101/linux-java-sdk-4.4.32.101.jar
     ```
 
 3.  提取后，`libs` 目录下会生成 `native/linux/x86_64` 子目录，其中包含所需的 `.so` 文件：
@@ -469,7 +472,7 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.100</version>  <!-- 确保版本号与您需要使用的版本一致 -->
+    <version>4.4.32.101</version>  <!-- 确保版本号与您需要使用的版本一致 -->
 </dependency>
 ```
 
@@ -1223,23 +1226,34 @@ public class Audio3AProcessingExample {
 
 ## 更新日志
 
+### v4.4.32.101（2025-09-01）
+
+- **API 变更**
+  - **AudioFrame**: 新增 `presentationMs` 字段及 getter/setter，用于透传音频帧 PTS（毫秒）。
+  - **EncodedVideoFrameInfo**: 新增 `presentationMs` 字段及构造参数；可用于传入视频帧 PTS（毫秒）。
+  - **EncodedAudioFrameInfo**: 新增 `captureTimeMs` 字段及构造参数；用于记录采集时间戳（毫秒）。
+  - **AgoraRtcConn**: 新增重载 `pushAudioPcmData(byte[] data, int sampleRate, int channels, long presentationMs)`；原有 `pushAudioPcmData(byte[] data, int sampleRate, int channels)` 仍可用（等价于 `presentationMs=0`）。
+
+- **改进与优化**
+  - 修复 `IAudioFrameObserver` 回调在极端场景下可能出现的异常问题，提升回调稳定性。
+
 ### v4.4.32.100（2025-07-22）
 
 - 该版本支持AIQoS，同时API有变更，请参考[AIQoS升级指南](AIQoS_Upgrade_Guide.md)
 
 ### v4.4.32.1（2025-06-12）
 
-#### API 变更
+#### **API 变更**
 
 - 优化 `ILocalUserObserver` 接口的 `onStreamMessage` 回调参数，将原有的 `onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data, long length)` 修改为 `onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, byte[] data)`，提升消息处理的灵活性和效率。
 
-#### 改进与优化
+#### **改进与优化**
 
 - 修复了 `AgoraServiceConfig` 的 `setLogFileSize` 方法，单位为 KB 时实际生效单位为 Byte 的问题，现已正确按 KB 设置日志文件大小。
 
 ### v4.4.32（2025-05-27）
 
-#### API 变更
+#### **API 变更**
 
 - `AgoraService` 新增 `getSdkVersion` 方法，用于获取 SDK 版本号
 - `AgoraAudioEncodedFrameSender` 移除 `send(byte[] payloadData, int payloadSize, EncodedAudioFrameInfo info)` 方法，新增 `sendEncodedAudioFrame(byte[] payloadData, EncodedAudioFrameInfo info)` 方法替代
@@ -1248,42 +1262,42 @@ int numberOfChannels, int sampleRate) ` 方法标位不推荐，新增 `sendAudi
 - `AgoraVideoEncodedImageSender` 移除 `send(byte[] imageBuffer, int length, EncodedVideoFrameInfo info` 方法，新增 `sendEncodedVideoImage(byte[] imageBuffer, EncodedVideoFrameInfo info)` 方法替代
 - `AgoraVideoFrameSender` 移除 `send(ExternalVideoFrame frame)` 方法，新增 `sendVideoFrame(ExternalVideoFrame frame)` 方法替代
 
-#### 改进与优化
+#### **改进与优化**
 
 - 修复了 `destroy` 方法可能导致的崩溃问题
 
 ### v4.4.31.4（2025-03-21）
 
-#### 改进与优化
+#### **改进与优化**
 
 - 修复了多线程环境下可能导致的异常崩溃问题
 - 改进了错误处理流程，增强了异常情况下的恢复能力
 
 ### v4.4.31.3（2025-02-26）
 
-#### 改进与优化
+#### **改进与优化**
 
 - 修复了由于内存复用可能导致的异常处理问题
 
 ### v4.4.31.2（2025-02-19）
 
-#### API 变更
+#### **API 变更**
 
 - 新增 `sendStreamMessage(int streamId, byte[] messageData)` 方法，弃用 `sendStreamMessage(int streamId, String message, int length)` 方法
 
-#### 改进与优化
+#### **改进与优化**
 
 - 优化代码处理，提高系统稳健性
 
 ### v4.4.31.1（2025-01-06）
 
-#### 改进与优化
+#### **改进与优化**
 
 - 优化 VAD 功能配置，现在默认开启 VAD 功能，无需手动配置
 
 ### v4.4.31（2024-12-23）
 
-#### API 变更
+#### **API 变更**
 
 - 在 `AgoraServiceConfig` 中新增 `DomainLimit` 配置选项，用于域名限制管理
 - 新增 `VadDumpUtils` 工具类，支持导出 VAD 处理过程的调试数据
@@ -1294,7 +1308,7 @@ int numberOfChannels, int sampleRate) ` 方法标位不推荐，新增 `sendAudi
 - 在 `ILocalUserObserver` 类中新增 `onAudioMetaDataReceived` 回调，用于接收音频元数据
 - 在 `ExternalVideoFrame` 类中增加 `ColorSpace` 属性，支持自定义颜色空间设置
 
-#### 改进与优化
+#### **改进与优化**
 
 - 优化代码逻辑架构，显著提升内存使用效率
 - 修复多处内存泄露问题，提高系统稳定性
@@ -1302,24 +1316,24 @@ int numberOfChannels, int sampleRate) ` 方法标位不推荐，新增 `sendAudi
 
 ### v4.4.30.2（2024-11-20）
 
-#### API 变更
+#### **API 变更**
 
 - 增强了 AgoraAudioVadV2 的 `processFrame` 处理，新增 `START_SPEAKING` 和 `STOP_SPEAKING` 状态回调
 - 改进了编码帧回调的参数类型，`onEncodedAudioFrameReceived`、`onEncodedVideoImageReceived`、`onEncodedVideoFrame` 现在使用 `ByteBuffer` 替代 `Byte` 数组
 
-#### 改进与优化
+#### **改进与优化**
 
 - VAD 插件启动优化，`enableExtension` 现在在 SDK 内部实现，应用程序不再需要手动调用此方法
 - 修复了 `VideoFrame` 中 `alphaBuffer` 和 `metadataBuffer` 的处理问题
 
 ### v4.4.30.1（2024-11-12）
 
-#### API 变更
+#### **API 变更**
 
 - 增加 AgoraAudioVad2 相关 `Vad2` 接口，移除 AgoraAudioVad 相关 `Vad` 接口
 - 新增接收编码音频回调接口 `IAudioEncodedFrameObserver`
 
-#### 改进与优化
+#### **改进与优化**
 
 - 修复 `LocalAudioDetailedStats` 相关回调崩溃问题
 - 修改 `onAudioVolumeIndication` 回调参数类型

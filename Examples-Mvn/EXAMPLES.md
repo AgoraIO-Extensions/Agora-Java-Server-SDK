@@ -96,6 +96,7 @@ export JAVA_OPTS="$JAVA_OPTS -Djava.library.path=/home/xxx/Examples-Mvn/libs/nat
 http://10.200.0.85:18080/api/server/start?configFileName=pcm_send.json
 http://10.200.0.85:18080/api/server/start?configFileName=pcm_yuv_send.json
 http://10.200.0.85:18080/api/server/start?configFileName=pcm_h264_send.json
+http://10.200.0.85:18080/api/server/start?configFileName=encoded_audio_recv.json
 http://10.200.0.85:18080/api/server/start?configFileName=aac_send.json
 http://10.200.0.85:18080/api/server/start?configFileName=opus_send.json
 http://10.200.0.85:18080/api/server/start?configFileName=yuv_send.json
@@ -116,6 +117,12 @@ http://10.200.0.85:18080/api/server/start?configFileName=h264_recv.json
 http://10.200.0.85:18080/api/server/start?configFileName=pcm_h264_recv.json
 http://10.200.0.85:18080/api/server/start?configFileName=ai_pcm_send.json
 http://10.200.0.85:18080/api/server/start?configFileName=ai_pcm_recv.json
+http://10.200.0.85:18080/api/server/start?configFileName=stress_recv_pcm_h264.json
+http://10.200.0.85:18080/api/server/start?configFileName=stress_recv_yuv.json
+http://10.200.0.85:18080/api/server/start?configFileName=stress_send_pcm_h264.json
+http://10.200.0.85:18080/api/server/start?configFileName=stress_send_yuv.json
+
+curl "http://127.0.0.1:18080/api/server/start?configFileName=stress_recv_pcm_h264.json"
 
 http://10.200.0.85:18080/api/server/basic?taskName=ReceiverPcmDirectSendTest
 http://10.200.0.85:18080/api/server/basic?taskName=ReceiverPcmH264Test

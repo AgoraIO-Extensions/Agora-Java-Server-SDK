@@ -70,56 +70,59 @@
           - [Main Methods (Setters/Getters)](#main-methods-settersgetters)
       - [Usage Example](#usage-example-2)
   - [Changelog](#changelog)
+    - [v4.4.32.101 (2025-09-01)](#v4432101-2025-09-01)
     - [v4.4.32.100（2025-07-22）](#v44321002025-07-22)
     - [v4.4.32.1 (2025-06-12)](#v44321-2025-06-12)
-      - [API Changes](#api-changes)
-      - [Improvements \& Optimizations](#improvements--optimizations)
+      - [**API Changes**](#api-changes)
+      - [**Improvements \& Optimizations**](#improvements--optimizations)
     - [v4.4.32 (2025-05-27)](#v4432-2025-05-27)
-      - [API Changes](#api-changes-1)
-      - [Improvements \& Optimizations](#improvements--optimizations-1)
+      - [**API Changes**](#api-changes-1)
+      - [**Improvements \& Optimizations**](#improvements--optimizations-1)
     - [v4.4.31.4 (2025-03-21)](#v44314-2025-03-21)
-      - [Improvements \& Optimizations](#improvements--optimizations-2)
+      - [**Improvements \& Optimizations**](#improvements--optimizations-2)
     - [v4.4.31.3 (2025-02-26)](#v44313-2025-02-26)
-      - [Improvements \& Optimizations](#improvements--optimizations-3)
+      - [**Improvements \& Optimizations**](#improvements--optimizations-3)
     - [v4.4.31.2 (2025-02-19)](#v44312-2025-02-19)
-      - [API Changes](#api-changes-2)
-      - [Improvements \& Optimizations](#improvements--optimizations-4)
+      - [**API Changes**](#api-changes-2)
+      - [**Improvements \& Optimizations**](#improvements--optimizations-4)
     - [v4.4.31.1 (2025-01-06)](#v44311-2025-01-06)
-      - [Improvements \& Optimizations](#improvements--optimizations-5)
+      - [**Improvements \& Optimizations**](#improvements--optimizations-5)
     - [v4.4.31 (2024-12-23)](#v4431-2024-12-23)
-      - [API Changes](#api-changes-3)
-      - [Improvements \& Optimizations](#improvements--optimizations-6)
+      - [**API Changes**](#api-changes-3)
+      - [**Improvements \& Optimizations**](#improvements--optimizations-6)
     - [v4.4.30.2 (2024-11-20)](#v44302-2024-11-20)
-      - [API Changes](#api-changes-4)
-      - [Improvements \& Optimizations](#improvements--optimizations-7)
+      - [**API Changes**](#api-changes-4)
+      - [**Improvements \& Optimizations**](#improvements--optimizations-7)
     - [v4.4.30.1 (2024-11-12)](#v44301-2024-11-12)
-      - [API Changes](#api-changes-5)
-      - [Improvements \& Optimizations](#improvements--optimizations-8)
+      - [**API Changes**](#api-changes-5)
+      - [**Improvements \& Optimizations**](#improvements--optimizations-8)
     - [v4.4.30 (2024-10-24)](#v4430-2024-10-24)
   - [Other References](#other-references)
-      - [Improvements \& Optimizations](#improvements--optimizations-9)
+      - [**Improvements \& Optimizations**](#improvements--optimizations-9)
     - [v4.4.31.2 (2025-02-19)](#v44312-2025-02-19-1)
-      - [API Changes](#api-changes-6)
-      - [Improvements \& Optimizations](#improvements--optimizations-10)
+      - [**API Changes**](#api-changes-6)
+      - [**Improvements \& Optimizations**](#improvements--optimizations-10)
     - [v4.4.31.1 (2025-01-06)](#v44311-2025-01-06-1)
-      - [Improvements \& Optimizations](#improvements--optimizations-11)
+      - [**Improvements \& Optimizations**](#improvements--optimizations-11)
     - [v4.4.31 (2024-12-23)](#v4431-2024-12-23-1)
-      - [API Changes](#api-changes-7)
-      - [Improvements \& Optimizations](#improvements--optimizations-12)
+      - [**API Changes**](#api-changes-7)
+      - [**Improvements \& Optimizations**](#improvements--optimizations-12)
     - [v4.4.30.2 (2024-11-20)](#v44302-2024-11-20-1)
-      - [API Changes](#api-changes-8)
-      - [Improvements \& Optimizations](#improvements--optimizations-13)
+      - [**API Changes**](#api-changes-8)
+      - [**Improvements \& Optimizations**](#improvements--optimizations-13)
     - [v4.4.30.1 (2024-11-12)](#v44301-2024-11-12-1)
-      - [API Changes](#api-changes-9)
-      - [Improvements \& Optimizations](#improvements--optimizations-14)
+      - [**API Changes**](#api-changes-9)
+      - [**Improvements \& Optimizations**](#improvements--optimizations-14)
     - [v4.4.30 (2024-10-24)](#v4430-2024-10-24-1)
   - [Other References](#other-references-1)
 
 ## Introduction
 
-The Agora Linux Server Java SDK (v4.4.32.100) provides powerful real-time audio and video communication capabilities that can be seamlessly integrated into Linux server-side Java applications. With this SDK, your server can join Agora channels as a data source or processing node, accessing and processing audio and video streams in real-time to implement various business-related advanced features.
+The Agora Linux Server Java SDK (v4.4.32.101) provides powerful real-time audio and video communication capabilities that can be seamlessly integrated into Linux server-side Java applications. With this SDK, your server can join Agora channels as a data source or processing node, accessing and processing audio and video streams in real-time to implement various business-related advanced features.
 
 The Agora Linux Gateway SDK has not been released yet, and related features are currently not supported.
+
+> Note: If you are upgrading from a version earlier than v4.4.32.100 to v4.4.32.100 or later, please refer to the [AIQoS Upgrade Guide](./AIQoS_Upgrade_Guide.md) for required API and integration changes.
 
 ## Development Environment Requirements
 
@@ -147,13 +150,13 @@ The Agora Linux Gateway SDK has not been released yet, and related features are 
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.100</version>
+    <version>4.4.32.101</version>
 </dependency>
 ```
 
 ### CDN Download
 
-[Agora-Linux-Java-SDK-v4.4.32.100-x86_64-791283-69786a6fd3-20250722_142202](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.100-x86_64-791283-69786a6fd3-20250722_142202.zip)
+[Agora-Linux-Java-SDK-v4.4.32.101-x86_64-860822-199c582312-20250901_154513](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.101-x86_64-860822-199c582312-20250901_154513.zip)
 
 ## Integrate the SDK
 
@@ -172,7 +175,7 @@ Add the following dependency to your project's `pom.xml` file:
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.100</version>
+    <version>4.4.32.101</version>
 </dependency>
 ```
 
@@ -207,7 +210,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32.100 \
+  -Dversion=4.4.32.101 \
   -Dpackaging=jar \
   -DgeneratePom=true
 ```
@@ -219,7 +222,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32.100 \
+  -Dversion=4.4.32.101 \
   -Dpackaging=jar \
   -DgeneratePom=true \
   -Djavadoc=sdk/agora-sdk-javadoc.jar
@@ -231,7 +234,7 @@ After installation, add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.100</version>
+    <version>4.4.32.101</version>
 </dependency>
 ```
 
@@ -280,7 +283,7 @@ The `.so` files are contained within the `agora-sdk.jar` or `linux-java-sdk-x.x.
     jar xvf agora-sdk.jar
 
     # If using Maven integration, the JAR file is in the Maven cache, e.g.:
-    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.100/linux-java-sdk-4.4.32.100.jar
+    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.101/linux-java-sdk-4.4.32.101.jar
     ```
 
 3.  After extraction, a `native/linux/x86_64` subdirectory will be generated within the `libs` directory, containing the required `.so` files:
@@ -486,7 +489,7 @@ This project has integrated C++ code compilation functionality, which can automa
     <dependency>
         <groupId>io.agora.rtc</groupId>
         <artifactId>linux-java-sdk</artifactId>
-        <version>4.4.32.100</version>  <!-- Ensure the version number is consistent with the one you need to use -->
+        <version>4.4.32.101</version>  <!-- Ensure the version number is consistent with the one you need to use -->
     </dependency>
     ```
 
@@ -1250,23 +1253,34 @@ public class Audio3AProcessingExample {
 
 ## Changelog
 
+### v4.4.32.101 (2025-09-01)
+
+- **API Changes**
+  - **AudioFrame**: Added `presentationMs` field and getter/setter to carry audio frame PTS (ms).
+  - **EncodedVideoFrameInfo**: Added `presentationMs` field and constructor parameter; can be used to pass video frame PTS (ms).
+  - **EncodedAudioFrameInfo**: Added `captureTimeMs` field and constructor parameter; records capture timestamp (ms).
+  - **AgoraRtcConn**: Added overload `pushAudioPcmData(byte[] data, int sampleRate, int channels, long presentationMs)`; the original `pushAudioPcmData(byte[] data, int sampleRate, int channels)` remains (equivalent to `presentationMs=0`).
+
+- **Improvements & Optimizations**
+  - Fixed a potential exception in `IAudioFrameObserver` callback under extreme scenarios, improving stability.
+
 ### v4.4.32.100（2025-07-22）
 
 - This version supports AIQoS, and the API has changed, please refer to [AIQoS Upgrade Guide](AIQoS_Upgrade_Guide.md)
 
 ### v4.4.32.1 (2025-06-12)
 
-#### API Changes
+#### **API Changes**
 
 - Optimized the `onStreamMessage` callback parameters in the `ILocalUserObserver` interface. The original method `onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data, long length)` has been changed to `onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, byte[] data)` to improve flexibility and efficiency in message handling.
 
-#### Improvements & Optimizations
+#### **Improvements & Optimizations**
 
 - Fixed an issue in the `setLogFileSize` method of `AgoraServiceConfig` where the unit was incorrectly applied as bytes when set in KB. The log file size is now correctly set in KB.
 
 ### v4.4.32 (2025-05-27)
 
-#### API Changes
+#### **API Changes**
 
 - `AgoraService`: Added `getSdkVersion` method to obtain the SDK version.
 - `AgoraAudioEncodedFrameSender`: Removed `send(byte[] payloadData, int payloadSize, EncodedAudioFrameInfo info)` method, replaced with `sendEncodedAudioFrame(byte[] payloadData, EncodedAudioFrameInfo info)`.
@@ -1274,42 +1288,42 @@ public class Audio3AProcessingExample {
 - `AgoraVideoEncodedImageSender`: Removed `send(byte[] imageBuffer, int length, EncodedVideoFrameInfo info)` method, replaced with `sendEncodedVideoImage(byte[] imageBuffer, EncodedVideoFrameInfo info)`.
 - `AgoraVideoFrameSender`: Removed `send(ExternalVideoFrame frame)` method, replaced with `sendVideoFrame(ExternalVideoFrame frame)`.
 
-#### Improvements & Optimizations
+#### **Improvements & Optimizations**
 
 - Fixed a potential crash issue caused by the `destroy` method.
 
 ### v4.4.31.4 (2025-03-21)
 
-#### Improvements & Optimizations
+#### **Improvements & Optimizations**
 
 - Fixed potential crashes caused by exceptions in multi-threaded environments.
 - Improved error handling processes, enhancing recovery capabilities in exceptional circumstances.
 
 ### v4.4.31.3 (2025-02-26)
 
-#### Improvements & Optimizations
+#### **Improvements & Optimizations**
 
 - Fixed exception handling issues potentially caused by memory reuse.
 
 ### v4.4.31.2 (2025-02-19)
 
-#### API Changes
+#### **API Changes**
 
 - Added `sendStreamMessage(int streamId, byte[] messageData)` method, deprecated `sendStreamMessage(int streamId, String message, int length)` method.
 
-#### Improvements & Optimizations
+#### **Improvements & Optimizations**
 
 - Optimized code handling, improving system robustness.
 
 ### v4.4.31.1 (2025-01-06)
 
-#### Improvements & Optimizations
+#### **Improvements & Optimizations**
 
 - Optimized VAD function configuration; VAD is now enabled by default, manual configuration is not required.
 
 ### v4.4.31 (2024-12-23)
 
-#### API Changes
+#### **API Changes**
 
 - Added `DomainLimit` configuration option in `AgoraServiceConfig` for domain limit management.
 - Added `VadDumpUtils` utility class, supporting export of debug data from the VAD process.
@@ -1320,7 +1334,7 @@ public class Audio3AProcessingExample {
 - Added `onAudioMetaDataReceived` callback in `ILocalUserObserver` class for receiving audio metadata.
 - Added `ColorSpace` property in `ExternalVideoFrame` class to support custom color space settings.
 
-#### Improvements & Optimizations
+#### **Improvements & Optimizations**
 
 - Optimized code logic architecture, significantly improving memory usage efficiency.
 - Fixed multiple memory leak issues, enhancing system stability.
@@ -1328,24 +1342,24 @@ public class Audio3AProcessingExample {
 
 ### v4.4.30.2 (2024-11-20)
 
-#### API Changes
+#### **API Changes**
 
 - Enhanced `processFrame` handling in AgoraAudioVadV2, adding `START_SPEAKING` and `STOP_SPEAKING` state callbacks.
 - Improved parameter types for encoded frame callbacks: `onEncodedAudioFrameReceived`, `onEncodedVideoImageReceived`, `onEncodedVideoFrame` now use `ByteBuffer` instead of `Byte` arrays.
 
-#### Improvements & Optimizations
+#### **Improvements & Optimizations**
 
 - VAD plugin startup optimization: `enableExtension` is now handled internally by the SDK; applications no longer need to call this method manually.
 - Fixed handling issues with `alphaBuffer` and `metadataBuffer` in `VideoFrame`.
 
 ### v4.4.30.1 (2024-11-12)
 
-#### API Changes
+#### **API Changes**
 
 - Added AgoraAudioVad2 related `Vad2` interface, removed AgoraAudioVad related `Vad` interface.
 - Added callback interface `IAudioEncodedFrameObserver` for receiving encoded audio.
 
-#### Improvements & Optimizations
+#### **Improvements & Optimizations**
 
 - Fixed crash issues related to `LocalAudioDetailedStats` callbacks.
 - Modified parameter types for the `onAudioVolumeIndication` callback.
@@ -1361,29 +1375,29 @@ Refer to the official website for details (<https://docs.agora.io/en/rtc-server-
 Official API documentation [Agora Server Java SDK API Reference](https://docs.agora.io/en/rtc-server-sdk/java/reference/api-overview/)
 
 
-#### Improvements & Optimizations
+#### **Improvements & Optimizations**
 
 - Fixed exception handling issues potentially caused by memory reuse.
 
 ### v4.4.31.2 (2025-02-19)
 
-#### API Changes
+#### **API Changes**
 
 - Added `sendStreamMessage(int streamId, byte[] messageData)` method, deprecated `sendStreamMessage(int streamId, String message, int length)` method.
 
-#### Improvements & Optimizations
+#### **Improvements & Optimizations**
 
 - Optimized code handling, improving system robustness.
 
 ### v4.4.31.1 (2025-01-06)
 
-#### Improvements & Optimizations
+#### **Improvements & Optimizations**
 
 - Optimized VAD function configuration; VAD is now enabled by default, manual configuration is not required.
 
 ### v4.4.31 (2024-12-23)
 
-#### API Changes
+#### **API Changes**
 
 - Added `DomainLimit` configuration option in `AgoraServiceConfig` for domain limit management.
 - Added `VadDumpUtils` utility class, supporting export of debug data from the VAD process.
@@ -1394,7 +1408,7 @@ Official API documentation [Agora Server Java SDK API Reference](https://docs.ag
 - Added `onAudioMetaDataReceived` callback in `ILocalUserObserver` class for receiving audio metadata.
 - Added `ColorSpace` property in `ExternalVideoFrame` class to support custom color space settings.
 
-#### Improvements & Optimizations
+#### **Improvements & Optimizations**
 
 - Optimized code logic architecture, significantly improving memory usage efficiency.
 - Fixed multiple memory leak issues, enhancing system stability.
@@ -1402,24 +1416,24 @@ Official API documentation [Agora Server Java SDK API Reference](https://docs.ag
 
 ### v4.4.30.2 (2024-11-20)
 
-#### API Changes
+#### **API Changes**
 
 - Enhanced `processFrame` handling in AgoraAudioVadV2, adding `START_SPEAKING` and `STOP_SPEAKING` state callbacks.
 - Improved parameter types for encoded frame callbacks: `onEncodedAudioFrameReceived`, `onEncodedVideoImageReceived`, `onEncodedVideoFrame` now use `ByteBuffer` instead of `Byte` arrays.
 
-#### Improvements & Optimizations
+#### **Improvements & Optimizations**
 
 - VAD plugin startup optimization: `enableExtension` is now handled internally by the SDK; applications no longer need to call this method manually.
 - Fixed handling issues with `alphaBuffer` and `metadataBuffer` in `VideoFrame`.
 
 ### v4.4.30.1 (2024-11-12)
 
-#### API Changes
+#### **API Changes**
 
 - Added AgoraAudioVad2 related `Vad2` interface, removed AgoraAudioVad related `Vad` interface.
 - Added callback interface `IAudioEncodedFrameObserver` for receiving encoded audio.
 
-#### Improvements & Optimizations
+#### **Improvements & Optimizations**
 
 - Fixed crash issues related to `LocalAudioDetailedStats` callbacks.
 - Modified parameter types for the `onAudioVolumeIndication` callback.

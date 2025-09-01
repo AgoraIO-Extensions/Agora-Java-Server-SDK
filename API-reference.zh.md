@@ -657,6 +657,7 @@ RTC 连接的信息。
 - **`trackId`**: `int` - 多轨视频的轨道 ID。
 - **`captureTimeMs`**: `long` - 视频被捕获时的时间戳。
 - **`decodeTimeMs`**: `long` - 渲染视频的时间戳。
+- **`presentationMs`**: `long` - 视频帧的显示时间戳（PTS，毫秒）。
 - **`uid`**: `int` - 用户 ID。
 - **`streamType`**: `int` - 视频帧的流类型。
 
@@ -669,6 +670,7 @@ RTC 连接的信息。
 - **`sampleRateHz`**: `int` - 音频帧的采样率（Hz）。
 - **`samplesPerChannel`**: `int` - 每个音频通道的样本数。
 - **`numberOfChannels`**: `int` - 音频通道的数量。
+- **`captureTimeMs`**: `long` - 采集时间戳（毫秒）。
 
 ### EncodedAudioFrameReceiverInfo
 编码音频帧接收者的信息。
@@ -882,6 +884,7 @@ RTC 连接的统计信息。
 - **`samplesPerChannel`**: `int` - 此帧中每个通道的样本数。
 - **`bytesPerSample`**: `int` - 每个样本的字节数。
 - **`buffer`**: `ByteBuffer` - 音频帧的数据缓冲区。
+- **`presentationMs`**: `long` - 音频帧的显示时间戳（PTS，毫秒）。
 
 ---
 

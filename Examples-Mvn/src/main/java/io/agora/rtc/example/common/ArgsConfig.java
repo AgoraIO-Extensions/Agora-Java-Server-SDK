@@ -44,8 +44,9 @@ public class ArgsConfig implements Cloneable {
     private int testTime = 0;
     private float sleepTime = 0;
     private int timeForStressLeave = 0;
-    private boolean isSender = false;
+    private boolean isBroadcaster = false;
     private boolean isRecvAudioEncodedFrame = false;
+    private boolean enableAssistantDevice = false;
 
     // Getter and Setter methods
     public String getAppId() {
@@ -384,12 +385,12 @@ public class ArgsConfig implements Cloneable {
         this.logFilter = logFilter;
     }
 
-    public boolean isSender() {
-        return isSender;
+    public boolean isBroadcaster() {
+        return isBroadcaster;
     }
 
-    public void setSender(boolean sender) {
-        this.isSender = sender;
+    public void setBroadcaster(boolean broadcaster) {
+        this.isBroadcaster = broadcaster;
     }
 
     public boolean isRecvAudioEncodedFrame() {
@@ -398,6 +399,14 @@ public class ArgsConfig implements Cloneable {
 
     public void setRecvAudioEncodedFrame(boolean isRecvAudioEncodedFrame) {
         this.isRecvAudioEncodedFrame = isRecvAudioEncodedFrame;
+    }
+
+    public boolean isEnableAssistantDevice() {
+        return enableAssistantDevice;
+    }
+
+    public void setEnableAssistantDevice(boolean enableAssistantDevice) {
+        this.enableAssistantDevice = enableAssistantDevice;
     }
 
     @Override
@@ -411,6 +420,7 @@ public class ArgsConfig implements Cloneable {
 
     /**
      * create a deep copy of ArgsConfig
+     * 
      * @return deep copy of ArgsConfig
      */
     public ArgsConfig deepClone() {
@@ -459,38 +469,39 @@ public class ArgsConfig implements Cloneable {
         cloned.testTime = this.testTime;
         cloned.sleepTime = this.sleepTime;
         cloned.timeForStressLeave = this.timeForStressLeave;
-        cloned.isSender = this.isSender;
+        cloned.isBroadcaster = this.isBroadcaster;
         cloned.isRecvAudioEncodedFrame = this.isRecvAudioEncodedFrame;
-
+        cloned.enableAssistantDevice = this.enableAssistantDevice;
         return cloned;
     }
 
     @Override
     public String toString() {
         return "ArgsConfig{"
-            + "appId='" + appId + '\'' + ", token='" + token + '\'' + ", userId='" + userId + '\''
-            + ", channelId='" + channelId + '\'' + ", remoteUserId='" + remoteUserId + '\''
-            + ", audioScenario='" + audioScenario + '\'' + ", streamType='" + streamType + '\''
-            + ", audioFile='" + audioFile + '\'' + ", audioOutFile='" + audioOutFile + '\''
-            + ", videoFile='" + videoFile + '\'' + ", lowVideoFile='" + lowVideoFile + '\''
-            + ", videoOutFile='" + videoOutFile + '\'' + ", expectedFile='" + expectedFile + '\''
-            + ", sampleRate='" + sampleRate + '\'' + ", numOfChannels='" + numOfChannels + '\''
-            + ", height='" + height + '\'' + ", width='" + width + '\'' + ", lowWidth='"
-            + lowWidth + '\'' + ", lowHeight='" + lowHeight + '\'' + ", fps='" + fps + '\''
-            + ", lowFps='" + lowFps + '\'' + ", connectionCount='" + connectionCount + '\''
-            + ", fileType='" + fileType + '\'' + ", encryptionMode='" + encryptionMode + '\''
-            + ", encryptionKey='" + encryptionKey + '\'' + ", enableStringUid='" + enableStringUid
-            + '\'' + ", enableLog='" + enableLog + '\'' + ", enableEncryptionMode='"
-            + enableEncryptionMode + '\'' + ", enableCloudProxy='" + enableCloudProxy + '\''
-            + ", enableSimulcastStream='" + enableSimulcastStream + '\'' + ", enableSaveFile='"
-            + enableSaveFile + '\'' + ", enableAlpha='" + enableAlpha + '\'' + ", enableVad='"
-            + enableVad + '\'' + ", enableSendAudioMetaData='" + enableSendAudioMetaData + '\''
-            + ", enableSendVideoMetaData='" + enableSendVideoMetaData + '\''
-            + ", enableSingleChannel='" + enableSingleChannel + '\'' + ", enableStressTest='"
-            + enableStressTest + '\'' + ", enableRecvDataStream='" + enableRecvDataStream + '\''
-            + ", logFilter='" + logFilter + '\'' + ", testTime='" + testTime + '\''
-            + ", sleepTime='" + sleepTime + '\'' + ", timeForStressLeave='" + timeForStressLeave
-            + '\'' + ", isSender='" + isSender + '\'' + ", isRecvAudioEncodedFrame='"
-            + isRecvAudioEncodedFrame + '\'' + '}';
+                + "appId='" + appId + '\'' + ", token='" + token + '\'' + ", userId='" + userId + '\''
+                + ", channelId='" + channelId + '\'' + ", remoteUserId='" + remoteUserId + '\''
+                + ", audioScenario='" + audioScenario + '\'' + ", streamType='" + streamType + '\''
+                + ", audioFile='" + audioFile + '\'' + ", audioOutFile='" + audioOutFile + '\''
+                + ", videoFile='" + videoFile + '\'' + ", lowVideoFile='" + lowVideoFile + '\''
+                + ", videoOutFile='" + videoOutFile + '\'' + ", expectedFile='" + expectedFile + '\''
+                + ", sampleRate='" + sampleRate + '\'' + ", numOfChannels='" + numOfChannels + '\''
+                + ", height='" + height + '\'' + ", width='" + width + '\'' + ", lowWidth='"
+                + lowWidth + '\'' + ", lowHeight='" + lowHeight + '\'' + ", fps='" + fps + '\''
+                + ", lowFps='" + lowFps + '\'' + ", connectionCount='" + connectionCount + '\''
+                + ", fileType='" + fileType + '\'' + ", encryptionMode='" + encryptionMode + '\''
+                + ", encryptionKey='" + encryptionKey + '\'' + ", enableStringUid='" + enableStringUid
+                + '\'' + ", enableLog='" + enableLog + '\'' + ", enableEncryptionMode='"
+                + enableEncryptionMode + '\'' + ", enableCloudProxy='" + enableCloudProxy + '\''
+                + ", enableSimulcastStream='" + enableSimulcastStream + '\'' + ", enableSaveFile='"
+                + enableSaveFile + '\'' + ", enableAlpha='" + enableAlpha + '\'' + ", enableVad='"
+                + enableVad + '\'' + ", enableSendAudioMetaData='" + enableSendAudioMetaData + '\''
+                + ", enableSendVideoMetaData='" + enableSendVideoMetaData + '\''
+                + ", enableSingleChannel='" + enableSingleChannel + '\'' + ", enableStressTest='"
+                + enableStressTest + '\'' + ", enableRecvDataStream='" + enableRecvDataStream + '\''
+                + ", logFilter='" + logFilter + '\'' + ", testTime='" + testTime + '\''
+                + ", sleepTime='" + sleepTime + '\'' + ", timeForStressLeave='" + timeForStressLeave
+                + '\'' + ", isBroadcaster='" + isBroadcaster + '\'' + ", isRecvAudioEncodedFrame='"
+                + isRecvAudioEncodedFrame + '\'' + ", enableAssistantDevice='" + enableAssistantDevice
+                + '\'' + '}';
     }
 }

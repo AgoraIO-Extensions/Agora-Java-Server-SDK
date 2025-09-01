@@ -22,11 +22,11 @@
         <!-- Rolling File Appender -->
         <RollingFile name="RollingFile"
             fileName="${logPath}/${logFileName}.log"
-            filePattern="${logPath}/${logFileName}-%d{yyyy-MM-dd}-%i.log.gz">
+            filePattern="${logPath}/${logFileName}-%d{yyyy-MM-dd}-%i.log">
             <PatternLayout pattern="${logPattern}" />
             <Policies>
-                <!-- Rollover when file size reaches 10 MB -->
-                <SizeBasedTriggeringPolicy size="10 MB" />
+                <!-- Rollover when file size reaches 1024 MB -->
+                <SizeBasedTriggeringPolicy size="1024 MB" />
                 <!-- Rollover daily (optional, remove if only size-based is needed) -->
                 <TimeBasedTriggeringPolicy interval="1" modulate="true" />
             </Policies>
@@ -34,7 +34,7 @@
             <DefaultRolloverStrategy max="10">
                 <!-- Delete old log files -->
                 <Delete basePath="${logPath}" maxDepth="1">
-                    <IfFileName glob="${logFileName}-*.log.gz">
+                    <IfFileName glob="${logFileName}-*.log">
                         <!-- Delete archive files older than 7 days -->
                         <IfLastModified age="7d" />
                     </IfFileName>

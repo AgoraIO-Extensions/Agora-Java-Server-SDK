@@ -33,8 +33,8 @@
     "enableStressTest": false,
     "logFilter": 2063,
     "timeForStressLeave": 5,
-    "testTime": 2,
+    "testTime": 5,
     "sleepTime": 1.0,
-    "isSender": true,
+    "isBroadcaster": true,
     "isRecvAudioEncodedFrame": false
 }

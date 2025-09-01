@@ -23,7 +23,7 @@ public class AgoraTaskManager {
 
     public interface AgoraTaskListener {
         default void onTaskStart(
-            String taskName, String channelId, String userId, String configFileName) {
+                String taskName, String channelId, String userId, String configFileName) {
         }
 
         default void onConnected(String channelId, String userId) {
@@ -42,7 +42,7 @@ public class AgoraTaskManager {
         this.gson = new Gson();
         this.random = new Random();
         this.taskExecutorService = new ThreadPoolExecutor(
-            0, Integer.MAX_VALUE, 1L, TimeUnit.SECONDS, new SynchronousQueue<>());
+                0, Integer.MAX_VALUE, 1L, TimeUnit.SECONDS, new SynchronousQueue<>());
     }
 
     private String readFileFromResources(String fileName) {
@@ -55,7 +55,7 @@ public class AgoraTaskManager {
         }
 
         try (InputStream inputStream = resourceStream;
-            InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
+                InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
             char[] buffer = new char[1024];
             StringBuilder stringBuilder = new StringBuilder();
             int numRead;
@@ -63,7 +63,7 @@ public class AgoraTaskManager {
                 stringBuilder.append(buffer, 0, numRead);
             }
             SampleLogger.log("Successfully read file from resources: " + fileName
-                + ", content length: " + stringBuilder.length());
+                    + ", content length: " + stringBuilder.length());
             return stringBuilder.toString();
         } catch (Exception e) {
             SampleLogger.error("Error reading file from resources: " + fileName);
@@ -83,7 +83,7 @@ public class AgoraTaskManager {
     }
 
     public void startTask(
-        String configFileName, ArgsConfig argsConfig, AgoraTaskControl.TestTask task) {
+            String configFileName, ArgsConfig argsConfig, AgoraTaskControl.TestTask task) {
         if (argsConfig == null) {
             SampleLogger.error("argsConfig is null");
             return;
@@ -94,7 +94,7 @@ public class AgoraTaskManager {
         RtcConnConfig ccfg = new RtcConnConfig();
         ccfg.setAutoSubscribeAudio(0);
         ccfg.setAutoSubscribeVideo(0);
-        if (argsConfig.isSender()) {
+        if (argsConfig.isBroadcaster()) {
             ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
         } else {
             ccfg.setClientRoleType(Constants.CLIENT_ROLE_AUDIENCE);
@@ -106,7 +106,7 @@ public class AgoraTaskManager {
         }
         ccfg.setChannelProfile(Constants.CHANNEL_PROFILE_LIVE_BROADCASTING);
 
-        if (!argsConfig.isSender() && argsConfig.getSampleRate() > 0) {
+        if (!argsConfig.isBroadcaster() && argsConfig.getSampleRate() > 0) {
             AudioSubscriptionOptions audioSubOpt = new AudioSubscriptionOptions();
             audioSubOpt.setBytesPerSample(2 * argsConfig.getNumOfChannels());
             audioSubOpt.setNumberOfChannels(argsConfig.getNumOfChannels());
@@ -121,7 +121,7 @@ public class AgoraTaskManager {
                 argsConfig.setUserId(connUserId);
                 agoraTaskControl.createConnectionAndTest(ccfg, argsConfig, task);
                 agoraTaskListener.onTaskStart(
-                    task.name(), argsConfig.getChannelId(), argsConfig.getUserId(), configFileName);
+                        task.name(), argsConfig.getChannelId(), argsConfig.getUserId(), configFileName);
             }
         } else {
             String argsChannelId = argsConfig.getChannelId();
@@ -133,7 +133,7 @@ public class AgoraTaskManager {
                 argsConfig.setChannelId(connChannelId);
                 agoraTaskControl.createConnectionAndTest(ccfg, argsConfig, task);
                 agoraTaskListener.onTaskStart(
-                    task.name(), argsConfig.getChannelId(), argsConfig.getUserId(), configFileName);
+                        task.name(), argsConfig.getChannelId(), argsConfig.getUserId(), configFileName);
                 try {
                     Thread.sleep((long) (argsConfig.getSleepTime() * 1000));
                 } catch (Exception e) {
@@ -159,7 +159,7 @@ public class AgoraTaskManager {
 
         agoraTaskControl.createConnectionAndTest(ccfg, argsConfig, AgoraTaskControl.TestTask.NONE);
         agoraTaskListener.onTaskStart("testAgoraParameterTask", argsConfig.getChannelId(),
-            argsConfig.getUserId(), configFileName);
+                argsConfig.getUserId(), configFileName);
         try {
             // sleep 2 seconds for rtc connection to be established
             Thread.sleep(2 * 1000);
@@ -187,7 +187,7 @@ public class AgoraTaskManager {
                     testResultPass = true;
                 } else {
                     SampleLogger.error("AgoraParameterTest setInt test fail for channelId:"
-                        + argsConfig.getChannelId() + " userId:" + argsConfig.getUserId());
+                            + argsConfig.getChannelId() + " userId:" + argsConfig.getUserId());
                     return;
                 }
 
@@ -203,7 +203,7 @@ public class AgoraTaskManager {
                     testResultPass = true;
                 } else {
                     SampleLogger.error("AgoraParameterTest setBool test fail for channelId:"
-                        + argsConfig.getChannelId() + " userId:" + argsConfig.getUserId());
+                            + argsConfig.getChannelId() + " userId:" + argsConfig.getUserId());
                     return;
                 }
 
@@ -219,7 +219,7 @@ public class AgoraTaskManager {
                     testResultPass = true;
                 } else {
                     SampleLogger.error("AgoraParameterTest setUint test fail for channelId:"
-                        + argsConfig.getChannelId() + " userId:" + argsConfig.getUserId());
+                            + argsConfig.getChannelId() + " userId:" + argsConfig.getUserId());
                     return;
                 }
 
@@ -235,7 +235,7 @@ public class AgoraTaskManager {
                     testResultPass = true;
                 } else {
                     SampleLogger.error("AgoraParameterTest setNumber test fail for channelId:"
-                        + argsConfig.getChannelId() + " userId:" + argsConfig.getUserId());
+                            + argsConfig.getChannelId() + " userId:" + argsConfig.getUserId());
                     return;
                 }
 
@@ -253,7 +253,7 @@ public class AgoraTaskManager {
                     testResultPass = true;
                 } else {
                     SampleLogger.error("AgoraParameterTest setParameters test fail for channelId:"
-                        + argsConfig.getChannelId() + " userId:" + argsConfig.getUserId());
+                            + argsConfig.getChannelId() + " userId:" + argsConfig.getUserId());
                     return;
                 }
 
@@ -269,12 +269,12 @@ public class AgoraTaskManager {
                     testResultPass = true;
                 } else {
                     SampleLogger.error("AgoraParameterTest setString fail for channelId:"
-                        + argsConfig.getChannelId() + " userId:" + argsConfig.getUserId());
+                            + argsConfig.getChannelId() + " userId:" + argsConfig.getUserId());
                     return;
                 }
 
                 SampleLogger.log("testAgoraParameterTask pass for channelId:"
-                    + argsConfig.getChannelId() + " userId:" + argsConfig.getUserId());
+                        + argsConfig.getChannelId() + " userId:" + argsConfig.getUserId());
                 agoraTaskListener.onAllTaskFinished();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -284,8 +284,8 @@ public class AgoraTaskManager {
         }
     }
 
-    public void startStressTask(boolean isSender, String configFileName, ArgsConfig argsConfig,
-        AgoraTaskControl.TestTask task) {
+    public void startStressTask(boolean isBroadcaster, String configFileName, ArgsConfig argsConfig,
+            AgoraTaskControl.TestTask task) {
         if (argsConfig == null) {
             SampleLogger.error("argsConfig is null");
             return;
@@ -297,7 +297,7 @@ public class AgoraTaskManager {
         String userId = argsConfig.getUserId();
 
         RtcConnConfig ccfg = new RtcConnConfig();
-        if (isSender) {
+        if (isBroadcaster) {
             ccfg.setClientRoleType(Constants.CLIENT_ROLE_BROADCASTER);
         } else {
             ccfg.setClientRoleType(Constants.CLIENT_ROLE_AUDIENCE);
@@ -309,24 +309,24 @@ public class AgoraTaskManager {
         for (int i = 0; i < argsConfig.getConnectionCount(); i++) {
             final int threadId = i;
             taskExecutorService.execute(() -> {
+                ArgsConfig localArgsConfig = argsConfig.deepClone();
                 int index = 0;
                 while (checkTestTime(testStartTime, testTime)) {
-                    int t1 = random.nextInt((int) (argsConfig.getSleepTime()
-                                 - argsConfig.getTimeForStressLeave()))
-                        + 1;
-                    String connChannelId =
-                        argsConfig.getConnectionCount() == 1 ? channelId : channelId + threadId;
-                    String connUserId =
-                        argsConfig.getUserId().equals("0") ? userId : userId + threadId + (index++);
-                    argsConfig.setTestTime(t1);
-                    argsConfig.setUserId(connUserId);
-                    argsConfig.setChannelId(connChannelId);
-                    agoraTaskControl.createConnectionAndTest(ccfg, argsConfig, task);
+                    int t1 = random.nextInt((int) (localArgsConfig.getSleepTime()
+                            - localArgsConfig.getTimeForStressLeave()))
+                            + 1;
+                    String connChannelId = localArgsConfig.getConnectionCount() == 1 ? channelId : channelId + threadId;
+                    String connUserId = localArgsConfig.getUserId().equals("0") ? userId
+                            : userId + threadId + (index++);
+                    localArgsConfig.setTestTime(t1);
+                    localArgsConfig.setUserId(connUserId);
+                    localArgsConfig.setChannelId(connChannelId);
+                    agoraTaskControl.createConnectionAndTest(ccfg, localArgsConfig, task);
                     agoraTaskListener.onTaskStart(
-                        task.name(), connChannelId, connUserId, configFileName);
+                            task.name(), connChannelId, connUserId, configFileName);
 
                     try {
-                        Thread.sleep((long) (argsConfig.getSleepTime() * 1000));
+                        Thread.sleep((long) (localArgsConfig.getSleepTime() * 1000));
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }

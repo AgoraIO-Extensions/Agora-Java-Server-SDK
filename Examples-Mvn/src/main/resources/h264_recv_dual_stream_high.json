@@ -37,6 +37,6 @@
     "testTime": 0,
     "sleepTime": 1.0,
     "frameCount": 60,
-    "isSender": false,
+    "isBroadcaster": false,
     "isRecvAudioEncodedFrame": false
 }

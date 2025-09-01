@@ -19,11 +19,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class AgoraTaskControl {
     private final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
     private final ThreadPoolExecutor testTaskExecutorService = new ThreadPoolExecutor(
-        0, Integer.MAX_VALUE, 1L, TimeUnit.SECONDS, new SynchronousQueue<>());
+            0, Integer.MAX_VALUE, 1L, TimeUnit.SECONDS, new SynchronousQueue<>());
 
     private AtomicInteger testTaskCount = new AtomicInteger(0);
     private final Object taskCountLock = new Object();
     private final List<AgoraConnectionTask> connTasksList = new CopyOnWriteArrayList<>();
+
+    private final static String TEST_TASK_SEND_PCM_AI_WITH_PTS = "send_pcm_ai_with_pts";
+    private final static String TEST_TASK_RECEIVE_PCM_AI_WITH_PTS = "receive_pcm_ai_with_pts";
 
     class UserIdHolder {
         private volatile String userId;
@@ -55,6 +58,7 @@ public class AgoraTaskControl {
         SEND_PCM_YUV,
         SEND_PCM_H264,
         SEND_PCM_AI,
+        SEND_PCM_AI_WITH_PTS,
         RECEIVE_PCM,
         RECEIVE_YUV,
         RECEIVE_H264,
@@ -63,7 +67,8 @@ public class AgoraTaskControl {
         RECEIVE_ENCODED_AUDIO,
         SEND_RECEIVE_PCM_YUV,
         RECEIVE_DATA_STREAM,
-        RECEIVE_PCM_AI
+        RECEIVE_PCM_AI,
+        RECEIVE_PCM_AI_WITH_PTS
     }
 
     private AgoraTaskManager.AgoraTaskListener agoraTaskListener;
@@ -73,17 +78,17 @@ public class AgoraTaskControl {
     }
 
     public boolean createConnectionAndTest(
-        RtcConnConfig ccfg, ArgsConfig argsConfig, TestTask testTask) {
+            RtcConnConfig ccfg, ArgsConfig argsConfig, TestTask testTask) {
         String channelId = argsConfig.getChannelId();
         String userId = argsConfig.getUserId();
         long testTime = argsConfig.getTestTime();
         SampleLogger.log("createConnectionAndTest start ccfg:" + ccfg + " channelId:" + channelId
-            + " userId:" + userId + " testTask:" + testTask + " testTime:" + testTime);
+                + " userId:" + userId + " testTask:" + testTask + " testTime:" + testTime);
         synchronized (taskCountLock) {
             testTaskCount.incrementAndGet();
             System.out.println(Utils.formatTimestamp(System.currentTimeMillis())
-                + " testTaskCount:" + testTaskCount.get() + " testTask:" + testTask
-                + " channelId:" + channelId + " userId:" + userId);
+                    + " testTaskCount:" + testTaskCount.get() + " testTask:" + testTask
+                    + " channelId:" + channelId + " userId:" + userId);
             SampleLogger.log("test start testTaskCount:" + testTaskCount.get());
         }
         AgoraServiceInitializer.initAgoraService(0, 1, 1, argsConfig);
@@ -91,9 +96,10 @@ public class AgoraTaskControl {
             UserIdHolder threadLocalUserId = new UserIdHolder();
             final CountDownLatch testFinishLatch = new CountDownLatch(1);
             final CountDownLatch connectedLatch = new CountDownLatch(1);
+            final CountDownLatch userJoinedLatch = new CountDownLatch(1);
+            final CountDownLatch testStartLatch = new CountDownLatch(1);
             AtomicInteger leftTestTaskCount = new AtomicInteger(0);
-            AgoraConnectionTask connTask =
-                new AgoraConnectionTask(AgoraServiceInitializer.getService(), argsConfig);
+            AgoraConnectionTask connTask = new AgoraConnectionTask(AgoraServiceInitializer.getService(), argsConfig);
             connTasksList.add(connTask);
             connTask.setCallback(new AgoraConnectionTask.TaskCallback() {
                 @Override
@@ -107,7 +113,7 @@ public class AgoraTaskControl {
 
                 @Override
                 public void onUserJoined(String userId) {
-                    // userJoinLatch.countDown();
+                    userJoinedLatch.countDown();
                 }
 
                 @Override
@@ -125,6 +131,11 @@ public class AgoraTaskControl {
                 @Override
                 public void onStreamMessage(String userId, int streamId, byte[] data) {
                     onStreamMessageReceive(userId, streamId, data);
+                }
+
+                @Override
+                public void onTestTaskStart() {
+                    testStartLatch.countDown();
                 }
             });
 
@@ -223,6 +234,7 @@ public class AgoraTaskControl {
                     publishConfig.setVideoPublishType(Constants.VideoPublishType.YUV);
                     break;
                 case SEND_PCM_AI:
+                case SEND_PCM_AI_WITH_PTS:
                     publishConfig.setIsPublishAudio(true);
                     publishConfig.setIsPublishVideo(false);
                     publishConfig.setAudioPublishType(Constants.AudioPublishType.PCM);
@@ -256,6 +268,13 @@ public class AgoraTaskControl {
                     publishConfig.setVideoPublishType(Constants.VideoPublishType.NO_PUBLISH);
                     needConnect = false;
                     break;
+                case RECEIVE_PCM_AI_WITH_PTS:
+                    publishConfig.setIsPublishAudio(false);
+                    publishConfig.setIsPublishVideo(false);
+                    publishConfig.setAudioPublishType(Constants.AudioPublishType.NO_PUBLISH);
+                    publishConfig.setVideoPublishType(Constants.VideoPublishType.NO_PUBLISH);
+                    needConnect = true;
+                    break;
                 case NONE:
                 default:
                     // No specific task
@@ -274,8 +293,8 @@ public class AgoraTaskControl {
                     boolean connected = connectedLatch.await(5, TimeUnit.SECONDS);
                     if (!connected) {
                         SampleLogger.error("createConnectionAndTest connect timeout for testTask:"
-                            + testTask + " channelId:" + channelId + " userId:" + userId
-                            + " and exit current test");
+                                + testTask + " channelId:" + channelId + " userId:" + userId
+                                + " and exit current test");
                         connTask.releaseConn();
                         connTasksList.remove(connTask);
                         connTask = null;
@@ -287,8 +306,32 @@ public class AgoraTaskControl {
                     e.printStackTrace();
                 }
             }
+            if (argsConfig.isEnableAssistantDevice()) {
+                try {
+                    userJoinedLatch.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            switch (testTask) {
+                case SEND_PCM_AI_WITH_PTS:
+                    connTask.sendTestTaskMessage(TEST_TASK_SEND_PCM_AI_WITH_PTS);
+                    break;
+                case RECEIVE_PCM_AI_WITH_PTS:
+                    connTask.sendTestTaskMessage(TEST_TASK_RECEIVE_PCM_AI_WITH_PTS);
+                    break;
+            }
 
-            // onConnected(connTask.getConn(), channelId, threadLocalUserId.get(), testTask);
+            if (argsConfig.isEnableAssistantDevice()) {
+                try {
+                    testStartLatch.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            // onConnected(connTask.getConn(), channelId, threadLocalUserId.get(),
+            // testTask);
 
             switch (testTask) {
                 case SEND_PCM:
@@ -337,6 +380,7 @@ public class AgoraTaskControl {
                     connTask.sendDataStreamTask(50, true);
                     break;
                 case SEND_PCM_AI:
+                case SEND_PCM_AI_WITH_PTS:
                     connTask.sendPcmTask(true, true);
                     break;
                 case RECEIVE_PCM:
@@ -368,6 +412,7 @@ public class AgoraTaskControl {
                     connTask.recvDataStreamTask(true);
                     break;
                 case RECEIVE_PCM_AI:
+                case RECEIVE_PCM_AI_WITH_PTS:
                     connTask.registerPcmObserverTask(true, true);
                     break;
                 case NONE:
@@ -402,16 +447,16 @@ public class AgoraTaskControl {
                 agoraTaskListener.onAllTaskFinished();
             }
             SampleLogger.log("test finished for connTask:" + testTask + " channelId:" + channelId
-                + " userId:" + threadLocalUserId.get()
-                + " with left testTaskCount:" + leftTestTaskCount.get() + "\n");
+                    + " userId:" + threadLocalUserId.get()
+                    + " with left testTaskCount:" + leftTestTaskCount.get() + "\n");
         });
         return true;
     }
 
     protected void onConnected(
-        AgoraRtcConn conn, String channelId, String userId, TestTask testTask) {
+            AgoraRtcConn conn, String channelId, String userId, TestTask testTask) {
         SampleLogger.log(
-            "onConnected for task:" + testTask + " channelId:" + channelId + " userId:" + userId);
+                "onConnected for task:" + testTask + " channelId:" + channelId + " userId:" + userId);
     }
 
     protected void onStreamMessageReceive(String userId, int streamId, byte[] data) {
