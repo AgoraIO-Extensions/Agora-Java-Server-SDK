@@ -14,6 +14,8 @@ AIQoS 是声网专为 AI 场景（如 AIGC、AI 降噪等）打造的特性集�
 
 因此，我们强烈推荐在所有 AI 相关的业务场景中，优先使用 `AUDIO_SCENARIO_AI_SERVER` 模式以获得最佳性能。
 
+> 注意：如果当前服务端不采用 AIQoS 模式，可将音频场景设置为 `Constants.AUDIO_SCENARIO_CHORUS`，以保持与非 AI 客户端的良好兼容性。
+
 ## 2. 服务端集成最佳实践
 
 为了确保 SDK 的稳定性和高性能，我们推荐遵循以下服务端集成模式：
@@ -141,6 +143,20 @@ AIQoS 是声网专为 AI 场景（如 AIGC、AI 降噪等）打造的特性集�
 
 1.  **替换 SDK**: 将您项目中的 `AgoraServerSDK.jar`（或相应的 Maven/Gradle 依赖）更新到最新版本。
 2.  **修改 Service 配置**: 在您的代码中找到初始化 `AgoraServiceConfig` 的地方，将 `setAudioScenario` 的参数从 `Constants.AUDIO_SCENARIO_CHORUS` 修改为 `Constants.AUDIO_SCENARIO_AI_SERVER`。
+
+   - 如果当前不使用 AIQoS，请将音频场景保持为合唱模式即可：
+
+     ```java
+     AgoraServiceConfig cfg = new AgoraServiceConfig();
+     cfg.setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
+     ```
+
+   - 同时，创建连接时也需要在 `RtcConnPublishConfig` 上设置为合唱模式：
+
+     ```java
+     RtcConnPublishConfig publishConfig = new RtcConnPublishConfig();
+     publishConfig.setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
+     ```
 3.  **重构 Connection 创建和媒体操作**:
     *   检查所有调用 `service.agoraRtcConnCreate()` 的地方，确保传递了 `RtcConnPublishConfig` 参数。
     *   移除所有手动创建和管理 `AgoraLocalAudioTrack`, `AgoraLocalVideoTrack` 等对象的代码。
@@ -182,6 +198,8 @@ pcmSender.sendAudioPcmData(audioFrame);
 // 1. 创建连接时声明发布 PCM 音频
 RtcConnPublishConfig publishConfig = new RtcConnPublishConfig();
 publishConfig.setAudioScenario(Constants.AUDIO_SCENARIO_AI_SERVER);
+// 如果不使用 AIQoS，请改为：
+// publishConfig.setAudioScenario(Constants.AUDIO_SCENARIO_CHORUS);
 publishConfig.setAudioProfile(Constants.AUDIO_PROFILE_DEFAULT);
 publishConfig.setAudioPublishType(Constants.AudioPublishType.PCM);
 publishConfig.setIsPublishAudio(true);

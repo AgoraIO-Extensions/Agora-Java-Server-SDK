@@ -657,6 +657,7 @@ Information about an encoded video frame.
 - **`trackId`**: `int` - The track ID for multi-track video.
 - **`captureTimeMs`**: `long` - The timestamp when the video was captured.
 - **`decodeTimeMs`**: `long` - The timestamp for rendering the video.
+- **`presentationMs`**: `long` - The presentation timestamp (PTS) of the video frame in ms.
 - **`uid`**: `int` - The user ID.
 - **`streamType`**: `int` - The stream type of the video frame.
 
@@ -669,6 +670,7 @@ Information about an encoded audio frame.
 - **`sampleRateHz`**: `int` - The sampling rate of the audio frame in Hz.
 - **`samplesPerChannel`**: `int` - The number of samples per audio channel.
 - **`numberOfChannels`**: `int` - The number of audio channels.
+- **`captureTimeMs`**: `long` - The capture timestamp in ms.
 
 ### EncodedAudioFrameReceiverInfo
 Information for the receiver of an encoded audio frame.
@@ -882,6 +884,7 @@ Represents an audio frame.
 - **`samplesPerChannel`**: `int` - The number of samples per channel in this frame.
 - **`bytesPerSample`**: `int` - The number of bytes per sample.
 - **`buffer`**: `ByteBuffer` - The data buffer of the audio frame.
+- **`presentationMs`**: `long` - The presentation timestamp (PTS) of the audio frame in ms.
 
 ---
 

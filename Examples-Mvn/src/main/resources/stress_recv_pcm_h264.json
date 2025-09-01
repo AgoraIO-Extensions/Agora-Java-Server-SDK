@@ -6,7 +6,7 @@
     "remoteUserId": "",
     "streamType": "",
     "audioFile": "",
-    "audioOutFile": "test_data_out/stress_h264_recv",
+    "audioOutFile": "test_data_out/stress_pcm_recv",
     "videoFile": "",
     "lowVideoFile": "",
     "videoOutFile": "test_data_out/stress_h264_recv",
@@ -34,6 +34,6 @@
     "timeForStressLeave": 5,
     "testTime": 86400,
     "sleepTime": 10,
-    "isSender": false,
+    "isBroadcaster": false,
     "isRecvAudioEncodedFrame": false
 }

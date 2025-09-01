@@ -34,6 +34,6 @@
     "timeForStressLeave": 5,
     "testTime": 86400,
     "sleepTime": 10,
-    "isSender": true,
+    "isBroadcaster": true,
     "isRecvAudioEncodedFrame": false
 }
