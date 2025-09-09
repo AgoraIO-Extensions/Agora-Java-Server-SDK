@@ -268,7 +268,7 @@ public class AgoraConnectionTask {
         SampleLogger.log("registerNetworkObserver ret:" + ret + " for channelId:"
                 + argsConfig.getChannelId() + " userId:" + argsConfig.getUserId());
 
-        if (argsConfig.getEncryptionMode() == 1
+        if (argsConfig.isEnableEncryptionMode()
                 && !Utils.isNullOrEmpty(argsConfig.getEncryptionKey())) {
             EncryptionConfig encryptionConfig = new EncryptionConfig();
             encryptionConfig.setEncryptionMode(argsConfig.getEncryptionMode());
@@ -1937,13 +1937,59 @@ public class AgoraConnectionTask {
                     firstFrameTime = currentTime;
                 }
 
-                int ylength = frame.getYBuffer().remaining();
-                int ulength = frame.getUBuffer().remaining();
-                int vlength = frame.getVBuffer().remaining();
+                // Calculate actual data size without padding
+                int width = frame.getWidth();
+                int height = frame.getHeight();
+                int yStride = frame.getYStride();
+                int uStride = frame.getUStride();
+                int vStride = frame.getVStride();
+
+                // YUV420P format: Y plane full size, U/V planes quarter size
+                int yDataSize = width * height;
+                int uvDataSize = (width / 2) * (height / 2);
+
+                // Check if stride and buffer are valid
+                if (yStride < width || uStride < (width / 2) || vStride < (width / 2)) {
+                    SampleLogger.log("Invalid stride: yStride=" + yStride +
+                            ", uStride=" + uStride + ", vStride=" + vStride +
+                            ", width=" + width + ", height=" + height);
+                    return;
+                }
+
+                if (frame.getYBuffer().remaining() < yStride * height ||
+                        frame.getUBuffer().remaining() < uStride * (height / 2) ||
+                        frame.getVBuffer().remaining() < vStride * (height / 2)) {
+                    SampleLogger.log("YUV buffer size insufficient for stride data");
+                    return;
+                }
+
+                byte[] data = new byte[yDataSize + uvDataSize + uvDataSize];
+                int dataOffset = 0;
+
+                // Copy Y plane line by line to remove padding
+                byte[] yBuffer = io.agora.rtc.utils.Utils.getBytes(frame.getYBuffer());
+                for (int row = 0; row < height; row++) {
+                    System.arraycopy(yBuffer, row * yStride, data, dataOffset, width);
+                    dataOffset += width;
+                }
+
+                // Copy U plane line by line to remove padding
+                byte[] uBuffer = io.agora.rtc.utils.Utils.getBytes(frame.getUBuffer());
+                int uvWidth = width / 2;
+                int uvHeight = height / 2;
+                for (int row = 0; row < uvHeight; row++) {
+                    System.arraycopy(uBuffer, row * uStride, data, dataOffset, uvWidth);
+                    dataOffset += uvWidth;
+                }
+
+                // Copy V plane line by line to remove padding
+                byte[] vBuffer = io.agora.rtc.utils.Utils.getBytes(frame.getVBuffer());
+                for (int row = 0; row < uvHeight; row++) {
+                    System.arraycopy(vBuffer, row * vStride, data, dataOffset, uvWidth);
+                    dataOffset += uvWidth;
+                }
+
                 if (argsConfig.isEnableSaveFile()) {
-                    byte[] data = new byte[ylength + ulength + vlength];
-                    ByteBuffer buffer = ByteBuffer.wrap(data);
-                    buffer.put(frame.getYBuffer()).put(frame.getUBuffer()).put(frame.getVBuffer());
                     singleExecutorService.execute(() -> {
                         writeVideoFrameToFile(data);
                     });
@@ -1957,8 +2003,8 @@ public class AgoraConnectionTask {
                         SampleLogger.log(String.format(
                                 "onFrame width:%d height:%d channelId:%s remoteUserId:%s "
                                         + "frame size:%d %d %d with current channelId:%s userId:%s",
-                                frame.getWidth(), frame.getHeight(), channelId, remoteUserId, ylength,
-                                ulength, vlength, argsConfig.getChannelId(), argsConfig.getUserId()));
+                                frame.getWidth(), frame.getHeight(), channelId, remoteUserId, yDataSize,
+                                uvDataSize, uvDataSize, argsConfig.getChannelId(), argsConfig.getUserId()));
 
                         if (metaDataBufferData != null) {
                             SampleLogger.log(

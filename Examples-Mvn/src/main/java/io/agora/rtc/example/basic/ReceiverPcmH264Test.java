@@ -18,6 +18,7 @@ import io.agora.rtc.VadProcessResult;
 import io.agora.rtc.VideoSubscriptionOptions;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.Utils;
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -35,7 +36,6 @@ public class ReceiverPcmH264Test {
     private AgoraVideoEncodedFrameObserver videoEncodedFrameObserver;
 
     private String channelId = "agaa";
-    private String userId = "0";
     private String audioOutFile = "test_data_out/receiver_audio_out";
     private String videoOutFile = "test_data_out/receiver_video_out";
     private int numOfChannels = 1;
@@ -44,6 +44,24 @@ public class ReceiverPcmH264Test {
     private long testTime = 60 * 1000;
 
     private final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
+
+    private UserIdHolder userIdHolder = new UserIdHolder("0");
+
+    class UserIdHolder {
+        private volatile String userId;
+
+        public UserIdHolder(String userId) {
+            this.userId = userId;
+        }
+
+        void set(String id) {
+            this.userId = id;
+        }
+
+        String get() {
+            return this.userId;
+        }
+    }
 
     public void start() {
         if (appId == null || token == null) {
@@ -71,7 +89,7 @@ public class ReceiverPcmH264Test {
             ret = service.initialize(config);
             if (ret != 0) {
                 SampleLogger.log(
-                    "createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
+                        "createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
                 return;
             }
         }
@@ -101,7 +119,7 @@ public class ReceiverPcmH264Test {
             @Override
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
                 SampleLogger.log("onConnected connInfo :" + connInfo + " reason:" + reason);
-                userId = connInfo.getLocalUserId();
+                userIdHolder.set(connInfo.getLocalUserId());
             }
 
             @Override
@@ -123,21 +141,21 @@ public class ReceiverPcmH264Test {
         }
 
         ret = conn.getLocalUser().setPlaybackAudioFrameBeforeMixingParameters(
-            numOfChannels, sampleRate);
+                numOfChannels, sampleRate);
         SampleLogger.log("setPlaybackAudioFrameBeforeMixingParameters numOfChannels:"
-            + numOfChannels + " sampleRate:" + sampleRate);
+                + numOfChannels + " sampleRate:" + sampleRate);
         if (ret > 0) {
             SampleLogger.log("setPlaybackAudioFrameBeforeMixingParameters fail ret=" + ret);
             releaseConn();
             releaseAgoraService();
             return;
         }
-
-        audioOutFile = audioOutFile + "_" + channelId + "_" + userId + ".pcm";
         audioFrameObserver = new IAudioFrameObserver() {
+            boolean isFirstAudioFrame = true;
+
             @Override
             public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser,
-                String channelId, String userId, AudioFrame frame, VadProcessResult vadResult) {
+                    String channelId, String userId, AudioFrame frame, VadProcessResult vadResult) {
                 if (null == frame) {
                     return 0;
                 }
@@ -151,11 +169,19 @@ public class ReceiverPcmH264Test {
                     return 0;
                 }
 
+                String finalAudioOutFile = audioOutFile + "_" + channelId + "_l" + userIdHolder.get() + "_r"
+                        + userId + "_s" + sampleRate + "_c"
+                        + numOfChannels + ".pcm";
+                if (isFirstAudioFrame) {
+                    isFirstAudioFrame = false;
+                    new File(finalAudioOutFile).delete();
+                }
+
                 singleExecutorService.execute(() -> {
                     SampleLogger.log("onPlaybackAudioFrameBeforeMixing frame:" + frame
-                        + " audioFrame size " + byteArray.length + " channelId:" + channelId
-                        + " userId:" + userId);
-                    Utils.writeBytesToFile(byteArray, audioOutFile);
+                            + " audioFrame size " + byteArray.length + " channelId:" + channelId
+                            + " userId:" + userId);
+                    Utils.writeBytesToFile(byteArray, finalAudioOutFile);
                 });
 
                 return 1;
@@ -172,40 +198,47 @@ public class ReceiverPcmH264Test {
         } else {
             conn.getLocalUser().subscribeAllVideo(subscriptionOptions);
         }
+        videoEncodedFrameObserver = new AgoraVideoEncodedFrameObserver(new IVideoEncodedFrameObserver() {
+            boolean isFirstVideoFrame = true;
 
-        videoOutFile = videoOutFile + "_" + channelId + "_" + userId + ".h264";
-        videoEncodedFrameObserver =
-            new AgoraVideoEncodedFrameObserver(new IVideoEncodedFrameObserver() {
-                @Override
-                public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int userId,
+            @Override
+            public int onEncodedVideoFrame(AgoraVideoEncodedFrameObserver observer, int userId,
                     ByteBuffer buffer, EncodedVideoFrameInfo info) {
-                    if (buffer == null || buffer.remaining() == 0) {
-                        return 0;
-                    }
-                    // Note: To improve data transmission efficiency, the buffer of the frame
-                    // object is a DirectByteBuffer.
-                    // Be sure to extract the byte array value in the callback synchronously
-                    // and then transfer it to the asynchronous thread for processing.
-                    // You can refer to {@link io.agora.rtc.utils.Utils#getBytes(ByteBuffer)}.
-                    byte[] byteArray = io.agora.rtc.utils.Utils.getBytes(buffer);
-                    if (byteArray == null) {
-                        return 0;
-                    }
+                if (buffer == null || buffer.remaining() == 0) {
+                    return 0;
+                }
+                // Note: To improve data transmission efficiency, the buffer of the frame
+                // object is a DirectByteBuffer.
+                // Be sure to extract the byte array value in the callback synchronously
+                // and then transfer it to the asynchronous thread for processing.
+                // You can refer to {@link io.agora.rtc.utils.Utils#getBytes(ByteBuffer)}.
+                byte[] byteArray = io.agora.rtc.utils.Utils.getBytes(buffer);
+                if (byteArray == null) {
+                    return 0;
+                }
 
-                    singleExecutorService.execute(() -> {
-                        SampleLogger.log("onEncodedVideoFrame userId:" + userId + " length "
+                String finalVideoOutFile = videoOutFile + "_" + channelId + "_l" + userIdHolder.get() + "_r"
+                        + userId + "_" + info.getCodecType()
+                        + ".h264";
+                if (isFirstVideoFrame) {
+                    isFirstVideoFrame = false;
+                    new File(finalVideoOutFile).delete();
+                }
+
+                singleExecutorService.execute(() -> {
+                    SampleLogger.log("onEncodedVideoFrame userId:" + userId + " length "
                             + byteArray.length + " with current channelId:" + channelId
                             + "  userId:" + userId + " info:" + info);
-                        Utils.writeBytesToFile(byteArray, videoOutFile);
-                    });
-                    return 1;
-                }
-            });
+                    Utils.writeBytesToFile(byteArray, finalVideoOutFile);
+                });
+                return 1;
+            }
+        });
         conn.registerVideoEncodedFrameObserver(videoEncodedFrameObserver);
 
-        ret = conn.connect(token, channelId, userId);
+        ret = conn.connect(token, channelId, userIdHolder.get());
         SampleLogger.log(
-            "Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
+                "Connecting to Agora channel " + channelId + " with userId " + userIdHolder.get() + " ret:" + ret);
         if (ret != 0) {
             SampleLogger.log("conn.connect fail ret=" + ret);
             releaseConn();
@@ -228,7 +261,7 @@ public class ReceiverPcmH264Test {
     }
 
     private void releaseConn() {
-        SampleLogger.log("releaseConn for channelId:" + channelId + " userId:" + userId);
+        SampleLogger.log("releaseConn for channelId:" + channelId + " userId:" + userIdHolder.get());
         if (conn == null) {
             return;
         }
