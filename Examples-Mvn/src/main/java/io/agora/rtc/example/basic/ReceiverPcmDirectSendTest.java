@@ -14,6 +14,7 @@ import io.agora.rtc.RtcConnPublishConfig;
 import io.agora.rtc.VadProcessResult;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.Utils;
+import java.io.File;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,7 +31,6 @@ public class ReceiverPcmDirectSendTest {
     private IAudioFrameObserver audioFrameObserver;
 
     private String channelId = "agaa";
-    private String userId = "0";
     private String audioOutFile = "test_data_out/receiver_audio_out";
     private int numOfChannels = 1;
     private int sampleRate = 16000;
@@ -41,6 +41,23 @@ public class ReceiverPcmDirectSendTest {
     private final ExecutorService senderExecutorService = Executors.newSingleThreadExecutor();
 
     private final AtomicBoolean connConnected = new AtomicBoolean(false);
+    private UserIdHolder userIdHolder = new UserIdHolder("0");
+
+    class UserIdHolder {
+        private volatile String userId;
+
+        public UserIdHolder(String userId) {
+            this.userId = userId;
+        }
+
+        void set(String id) {
+            this.userId = id;
+        }
+
+        String get() {
+            return this.userId;
+        }
+    }
 
     public void start() {
         if (appId == null || token == null) {
@@ -67,7 +84,7 @@ public class ReceiverPcmDirectSendTest {
             ret = service.initialize(config);
             if (ret != 0) {
                 SampleLogger.log(
-                    "createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
+                        "createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
                 return;
             }
         }
@@ -97,9 +114,9 @@ public class ReceiverPcmDirectSendTest {
             @Override
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
                 SampleLogger.log("onConnected channelId:" + connInfo.getChannelId()
-                    + " userId:" + connInfo.getLocalUserId() + " reason:" + reason);
+                        + " userId:" + connInfo.getLocalUserId() + " reason:" + reason);
                 connConnected.set(true);
-                userId = connInfo.getLocalUserId();
+                userIdHolder.set(connInfo.getLocalUserId());
             }
 
             @Override
@@ -121,21 +138,21 @@ public class ReceiverPcmDirectSendTest {
         }
 
         ret = conn.getLocalUser().setPlaybackAudioFrameBeforeMixingParameters(
-            numOfChannels, sampleRate);
+                numOfChannels, sampleRate);
         SampleLogger.log("setPlaybackAudioFrameBeforeMixingParameters numOfChannels:"
-            + numOfChannels + " sampleRate:" + sampleRate);
+                + numOfChannels + " sampleRate:" + sampleRate);
         if (ret != 0) {
             SampleLogger.log("setPlaybackAudioFrameBeforeMixingParameters fail ret=" + ret);
             releaseConn();
             releaseAgoraService();
             return;
         }
-
-        audioOutFile = audioOutFile + "_" + channelId + "_" + userId + ".pcm";
         audioFrameObserver = new IAudioFrameObserver() {
+            boolean isFirstAudioFrame = true;
+
             @Override
             public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser,
-                String channelId, String userId, AudioFrame frame, VadProcessResult vadResult) {
+                    String channelId, String userId, AudioFrame frame, VadProcessResult vadResult) {
                 if (null == frame) {
                     return 0;
                 }
@@ -149,16 +166,26 @@ public class ReceiverPcmDirectSendTest {
                     return 0;
                 }
 
+                String finalAudioOutFile = audioOutFile + "_" + channelId + "_l" + userIdHolder.get() + "_r"
+                        + userId + "_s" + sampleRate + "_c"
+                        + numOfChannels + ".pcm";
+                if (isFirstAudioFrame) {
+                    isFirstAudioFrame = false;
+                    new File(finalAudioOutFile).delete();
+                }
+
                 singleExecutorService.execute(() -> {
                     SampleLogger.log("onPlaybackAudioFrameBeforeMixing frame:" + frame
-                        + "audioFrame size " + byteArray.length + " channelId:" + channelId
-                        + " userId:" + userId);
-                    Utils.writeBytesToFile(byteArray, audioOutFile);
+                            + "audioFrame size " + byteArray.length + " channelId:" + channelId
+                            + " userId:" + userId);
+                    Utils.writeBytesToFile(byteArray, finalAudioOutFile);
                 });
 
                 if (connConnected.get() && null != conn) {
                     senderExecutorService.execute(
-                        () -> { conn.pushAudioPcmData(byteArray, sampleRate, numOfChannels); });
+                            () -> {
+                                conn.pushAudioPcmData(byteArray, sampleRate, numOfChannels);
+                            });
                 }
                 return 1;
             }
@@ -166,9 +193,9 @@ public class ReceiverPcmDirectSendTest {
 
         conn.registerAudioFrameObserver(audioFrameObserver, false, null);
 
-        ret = conn.connect(token, channelId, userId);
+        ret = conn.connect(token, channelId, userIdHolder.get());
         SampleLogger.log(
-            "Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
+                "Connecting to Agora channel " + channelId + " with userId " + userIdHolder.get() + " ret:" + ret);
         if (ret != 0) {
             SampleLogger.log("conn.connect fail ret=" + ret);
             releaseConn();
@@ -196,7 +223,7 @@ public class ReceiverPcmDirectSendTest {
     }
 
     private void releaseConn() {
-        SampleLogger.log("releaseConn for channelId:" + channelId + " userId:" + userId);
+        SampleLogger.log("releaseConn for channelId:" + channelId + " userId:" + userIdHolder.get());
         if (conn == null) {
             return;
         }

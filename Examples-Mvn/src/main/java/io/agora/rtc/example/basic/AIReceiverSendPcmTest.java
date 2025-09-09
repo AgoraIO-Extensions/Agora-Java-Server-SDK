@@ -34,7 +34,7 @@ public class AIReceiverSendPcmTest {
     private static AgoraService service;
 
     private String audioFilePath = "test_data/send_audio_16k_1ch.pcm";
-    private String audioOutFile = "test_data_out/receiver_audio_out_ai.pcm";
+    private String audioOutFile = "test_data_out/receiver_audio_out_ai";
     private int numOfChannels = 1;
     private int sampleRate = 16000;
     private long testTime = 5 * 60 * 1000;
@@ -44,6 +44,18 @@ public class AIReceiverSendPcmTest {
     private final ExecutorService fileWriteTaskExecutorService = Executors.newSingleThreadExecutor();
 
     private final AtomicInteger testTaskCount = new AtomicInteger(0);
+
+    class UserIdHolder {
+        private volatile String userId;
+
+        void set(String id) {
+            this.userId = id;
+        }
+
+        String get() {
+            return this.userId;
+        }
+    }
 
     public void start() {
         if (appId == null || token == null) {
@@ -101,7 +113,8 @@ public class AIReceiverSendPcmTest {
 
     private void startSendPcmData() {
         AtomicBoolean connConnected = new AtomicBoolean(false);
-        String userId = "0";
+        UserIdHolder userIdHolder = new UserIdHolder();
+        userIdHolder.set("0");
         CountDownLatch userJoinLatch = new CountDownLatch(1);
         AudioFrameManager audioFrameManager = new AudioFrameManager(new AudioFrameManager.ICallback() {
             @Override
@@ -137,6 +150,7 @@ public class AIReceiverSendPcmTest {
                 SampleLogger.log("onConnected chennalId:" + connInfo.getChannelId()
                         + " userId:" + connInfo.getLocalUserId());
                 connConnected.set(true);
+                userIdHolder.set(connInfo.getLocalUserId());
             }
 
             @Override
@@ -160,13 +174,13 @@ public class AIReceiverSendPcmTest {
         });
         SampleLogger.log("registerObserver ret:" + ret);
 
-        ret = conn.connect(token, channelId, userId);
+        ret = conn.connect(token, channelId, userIdHolder.get());
         SampleLogger.log(
-                "Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
+                "Connecting to Agora channel " + channelId + " with userId " + userIdHolder.get() + " ret:" + ret);
 
         if (ret != 0) {
             SampleLogger.log("conn.connect fail ret=" + ret);
-            releaseConn(conn, channelId, userId);
+            releaseConn(conn, channelId, userIdHolder.get());
             releaseAgoraService();
             return;
         }
@@ -219,13 +233,14 @@ public class AIReceiverSendPcmTest {
             count++;
         }
 
-        releaseConn(conn, channelId, userId);
+        releaseConn(conn, channelId, userIdHolder.get());
         audioFrameManager.release();
         testTaskCount.decrementAndGet();
     }
 
     private void startReceivePcmData() {
-        String userId = "0";
+        UserIdHolder localUserIdHolder = new UserIdHolder();
+        localUserIdHolder.set("0");
         AudioFrameManager audioFrameManager = new AudioFrameManager(new AudioFrameManager.ICallback() {
             @Override
             public void onSessionEnd(int sessionId, AudioFrameManager.SessionEndReason reason) {
@@ -262,6 +277,7 @@ public class AIReceiverSendPcmTest {
                 SampleLogger.log("onConnected chennalId:" + connInfo.getChannelId()
                         + " userId:" + connInfo.getLocalUserId());
                 connConnected.set(true);
+                localUserIdHolder.set(connInfo.getLocalUserId());
             }
 
             @Override
@@ -296,17 +312,14 @@ public class AIReceiverSendPcmTest {
                 + numOfChannels + " sampleRate:" + sampleRate);
         if (ret != 0) {
             SampleLogger.log("setPlaybackAudioFrameBeforeMixingParameters fail ret=" + ret);
-            releaseConn(conn, channelId, userId);
+            releaseConn(conn, channelId, localUserIdHolder.get());
             releaseAgoraService();
             return;
         }
 
-        File file = new File(audioOutFile);
-        if (file.exists()) {
-            file.delete();
-        }
-
         IAudioFrameObserver audioFrameObserver = new IAudioFrameObserver() {
+            boolean isFirstAudioFrame = true;
+
             @Override
             public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser,
                     String channelId, String userId, AudioFrame frame, VadProcessResult vadResult) {
@@ -323,6 +336,14 @@ public class AIReceiverSendPcmTest {
                     return 0;
                 }
 
+                String finalAudioOutFile = audioOutFile + "_" + channelId + "_l" + localUserIdHolder.get() + "_r"
+                        + userId + "_s" + sampleRate + "_c"
+                        + numOfChannels + ".pcm";
+                if (isFirstAudioFrame) {
+                    isFirstAudioFrame = false;
+                    new File(finalAudioOutFile).delete();
+                }
+
                 audioFrameManager.processUplinkAudioFrame(byteArray, sampleRate, numOfChannels,
                         frame.getPresentationMs());
 
@@ -332,7 +353,7 @@ public class AIReceiverSendPcmTest {
 
                 fileWriteTaskExecutorService.execute(
                         () -> {
-                            Utils.writeBytesToFile(byteArray, audioOutFile);
+                            Utils.writeBytesToFile(byteArray, finalAudioOutFile);
                         });
                 return 1;
             }
@@ -340,12 +361,12 @@ public class AIReceiverSendPcmTest {
 
         conn.registerAudioFrameObserver(audioFrameObserver, false, null);
 
-        ret = conn.connect(token, channelId, userId);
+        ret = conn.connect(token, channelId, localUserIdHolder.get());
         SampleLogger.log(
-                "Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
+                "Connecting to Agora channel " + channelId + " with userId " + localUserIdHolder.get() + " ret:" + ret);
         if (ret != 0) {
             SampleLogger.log("conn.connect fail ret=" + ret);
-            releaseConn(conn, channelId, userId);
+            releaseConn(conn, channelId, localUserIdHolder.get());
             releaseAgoraService();
             return;
         }
@@ -367,7 +388,7 @@ public class AIReceiverSendPcmTest {
             }
         }
 
-        releaseConn(conn, channelId, userId);
+        releaseConn(conn, channelId, localUserIdHolder.get());
         audioFrameManager.release();
         testTaskCount.decrementAndGet();
     }

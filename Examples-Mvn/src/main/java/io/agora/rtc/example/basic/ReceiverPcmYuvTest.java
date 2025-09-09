@@ -18,7 +18,7 @@ import io.agora.rtc.VideoFrame;
 import io.agora.rtc.VideoSubscriptionOptions;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.Utils;
-import java.nio.ByteBuffer;
+import java.io.File;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -35,7 +35,6 @@ public class ReceiverPcmYuvTest {
     private AgoraVideoFrameObserver2 videoFrameObserver;
 
     private String channelId = "agaa";
-    private String userId = "0";
     private String audioOutFile = "test_data_out/receiver_audio_out";
     private String videoOutFile = "test_data_out/receiver_video_out";
     private int numOfChannels = 1;
@@ -45,6 +44,24 @@ public class ReceiverPcmYuvTest {
     private long testTime = 60 * 1000;
 
     private final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
+
+    private UserIdHolder userIdHolder = new UserIdHolder("0");
+
+    class UserIdHolder {
+        private volatile String userId;
+
+        public UserIdHolder(String userId) {
+            this.userId = userId;
+        }
+
+        void set(String id) {
+            this.userId = id;
+        }
+
+        String get() {
+            return this.userId;
+        }
+    }
 
     public void start() {
         if (appId == null || token == null) {
@@ -72,7 +89,7 @@ public class ReceiverPcmYuvTest {
             ret = service.initialize(config);
             if (ret != 0) {
                 SampleLogger.log(
-                    "createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
+                        "createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
                 return;
             }
         }
@@ -102,8 +119,8 @@ public class ReceiverPcmYuvTest {
             @Override
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
                 SampleLogger.log(
-                    "onConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
-                userId = connInfo.getLocalUserId();
+                        "onConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
+                userIdHolder.set(connInfo.getLocalUserId());
             }
 
             @Override
@@ -126,21 +143,21 @@ public class ReceiverPcmYuvTest {
         }
 
         ret = conn.getLocalUser().setPlaybackAudioFrameBeforeMixingParameters(
-            numOfChannels, sampleRate);
+                numOfChannels, sampleRate);
         SampleLogger.log("setPlaybackAudioFrameBeforeMixingParameters numOfChannels:"
-            + numOfChannels + " sampleRate:" + sampleRate);
+                + numOfChannels + " sampleRate:" + sampleRate);
         if (ret != 0) {
             SampleLogger.log("setPlaybackAudioFrameBeforeMixingParameters fail ret=" + ret);
             releaseConn();
             releaseAgoraService();
             return;
         }
-
-        audioOutFile = audioOutFile + "_" + channelId + "_" + userId + ".pcm";
         audioFrameObserver = new IAudioFrameObserver() {
+            boolean isFirstAudioFrame = true;
+
             @Override
             public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser,
-                String channelId, String userId, AudioFrame frame, VadProcessResult vadResult) {
+                    String channelId, String userId, AudioFrame frame, VadProcessResult vadResult) {
                 if (null == frame) {
                     return 0;
                 }
@@ -154,11 +171,19 @@ public class ReceiverPcmYuvTest {
                     return 0;
                 }
 
+                String finalAudioOutFile = audioOutFile + "_" + channelId + "_l" + userIdHolder.get() + "_r"
+                        + userId + "_s" + sampleRate + "_c"
+                        + numOfChannels + ".pcm";
+                if (isFirstAudioFrame) {
+                    isFirstAudioFrame = false;
+                    new File(finalAudioOutFile).delete();
+                }
+
                 singleExecutorService.execute(() -> {
                     SampleLogger.log("onPlaybackAudioFrameBeforeMixing frame:" + frame
-                        + " audioFrame size " + byteArray.length + " channelId:" + channelId
-                        + " userId:" + userId);
-                    Utils.writeBytesToFile(byteArray, audioOutFile);
+                            + " audioFrame size " + byteArray.length + " channelId:" + channelId
+                            + " userId:" + userId);
+                    Utils.writeBytesToFile(byteArray, finalAudioOutFile);
                 });
 
                 return 1;
@@ -184,55 +209,106 @@ public class ReceiverPcmYuvTest {
         } else {
             conn.getLocalUser().subscribeAllVideo(subscriptionOptions);
         }
-
-        videoOutFile = videoOutFile + "_" + channelId + "_" + userId + ".yuv";
         videoFrameObserver = new AgoraVideoFrameObserver2(new IVideoFrameObserver2() {
+            boolean isFirstVideoFrame = true;
+
             @Override
             public void onFrame(AgoraVideoFrameObserver2 agoraVideoFrameObserver2, String channelId,
-                String remoteUserId, VideoFrame frame) {
+                    String remoteUserId, VideoFrame frame) {
                 if (frame == null) {
                     return;
                 }
 
-                int ylength = frame.getYBuffer().remaining();
-                int ulength = frame.getUBuffer().remaining();
-                int vlength = frame.getVBuffer().remaining();
+                // Calculate actual data size without padding
+                int width = frame.getWidth();
+                int height = frame.getHeight();
+                int yStride = frame.getYStride();
+                int uStride = frame.getUStride();
+                int vStride = frame.getVStride();
 
-                byte[] data = new byte[ylength + ulength + vlength];
-                ByteBuffer buffer = ByteBuffer.wrap(data);
-                buffer.put(frame.getYBuffer()).put(frame.getUBuffer()).put(frame.getVBuffer());
+                String finalVideoOutFile = videoOutFile + "_" + channelId + "_l" + userIdHolder.get() + "_r"
+                        + remoteUserId + "_w" + width + "_h"
+                        + height + ".yuv";
 
-                final byte[] metaDataBufferData =
-                    io.agora.rtc.utils.Utils.getBytes(frame.getMetadataBuffer());
-                final byte[] alphaBufferData =
-                    io.agora.rtc.utils.Utils.getBytes(frame.getAlphaBuffer());
+                if (isFirstVideoFrame) {
+                    isFirstVideoFrame = false;
+                    new File(finalVideoOutFile).delete();
+                }
+
+                // YUV420P format: Y plane full size, U/V planes quarter size
+                int yDataSize = width * height;
+                int uvDataSize = (width / 2) * (height / 2);
+
+                // Check if stride and buffer are valid
+                if (yStride < width || uStride < (width / 2) || vStride < (width / 2)) {
+                    SampleLogger.log("Invalid stride: yStride=" + yStride +
+                            ", uStride=" + uStride + ", vStride=" + vStride +
+                            ", width=" + width + ", height=" + height);
+                    return;
+                }
+
+                if (frame.getYBuffer().remaining() < yStride * height ||
+                        frame.getUBuffer().remaining() < uStride * (height / 2) ||
+                        frame.getVBuffer().remaining() < vStride * (height / 2)) {
+                    SampleLogger.log("YUV buffer size insufficient for stride data");
+                    return;
+                }
+
+                byte[] data = new byte[yDataSize + uvDataSize + uvDataSize];
+                int dataOffset = 0;
+
+                // Copy Y plane line by line to remove padding
+                byte[] yBuffer = io.agora.rtc.utils.Utils.getBytes(frame.getYBuffer());
+                for (int row = 0; row < height; row++) {
+                    System.arraycopy(yBuffer, row * yStride, data, dataOffset, width);
+                    dataOffset += width;
+                }
+
+                // Copy U plane line by line to remove padding
+                byte[] uBuffer = io.agora.rtc.utils.Utils.getBytes(frame.getUBuffer());
+                int uvWidth = width / 2;
+                int uvHeight = height / 2;
+                for (int row = 0; row < uvHeight; row++) {
+                    System.arraycopy(uBuffer, row * uStride, data, dataOffset, uvWidth);
+                    dataOffset += uvWidth;
+                }
+
+                // Copy V plane line by line to remove padding
+                byte[] vBuffer = io.agora.rtc.utils.Utils.getBytes(frame.getVBuffer());
+                for (int row = 0; row < uvHeight; row++) {
+                    System.arraycopy(vBuffer, row * vStride, data, dataOffset, uvWidth);
+                    dataOffset += uvWidth;
+                }
+
+                final byte[] metaDataBufferData = io.agora.rtc.utils.Utils.getBytes(frame.getMetadataBuffer());
+                final byte[] alphaBufferData = io.agora.rtc.utils.Utils.getBytes(frame.getAlphaBuffer());
 
                 singleExecutorService.execute(() -> {
                     SampleLogger.log(
-                        String.format("onFrame width:%d height:%d channelId:%s remoteUserId:%s "
-                                + "frame size:%d %d %d with  channelId:%s userId:%s",
-                            frame.getWidth(), frame.getHeight(), channelId, remoteUserId, ylength,
-                            ulength, vlength, channelId, userId));
+                            String.format("onFrame width:%d height:%d channelId:%s remoteUserId:%s "
+                                    + "frame size:%d %d %d with  channelId:%s userId:%s",
+                                    frame.getWidth(), frame.getHeight(), channelId, remoteUserId, yDataSize,
+                                    uvDataSize, uvDataSize, channelId, userIdHolder.get()));
 
                     if (metaDataBufferData != null) {
                         SampleLogger.log(
-                            "onFrame metaDataBuffer :" + new String(metaDataBufferData));
+                                "onFrame metaDataBuffer :" + new String(metaDataBufferData));
                     }
 
                     if (alphaBufferData != null) {
                         SampleLogger.log("onFrame getAlphaBuffer size:" + alphaBufferData.length
-                            + " mode:" + frame.getAlphaMode());
+                                + " mode:" + frame.getAlphaMode());
                     }
 
-                    Utils.writeBytesToFile(data, videoOutFile);
+                    Utils.writeBytesToFile(data, finalVideoOutFile);
                 });
             }
         });
         conn.registerVideoFrameObserver(videoFrameObserver);
 
-        ret = conn.connect(token, channelId, userId);
+        ret = conn.connect(token, channelId, userIdHolder.get());
         SampleLogger.log(
-            "Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
+                "Connecting to Agora channel " + channelId + " with userId " + userIdHolder.get() + " ret:" + ret);
         if (ret != 0) {
             SampleLogger.log("conn.connect fail ret=" + ret);
             releaseConn();
@@ -255,7 +331,7 @@ public class ReceiverPcmYuvTest {
     }
 
     private void releaseConn() {
-        SampleLogger.log("releaseConn for channelId:" + channelId + " userId:" + userId);
+        SampleLogger.log("releaseConn for channelId:" + channelId + " userId:" + userIdHolder.get());
         if (conn == null) {
             return;
         }
