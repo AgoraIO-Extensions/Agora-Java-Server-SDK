@@ -165,6 +165,8 @@ public class AgoraTaskControl {
                     publishConfig.setIsPublishVideo(true);
                     publishConfig.setAudioPublishType(Constants.AudioPublishType.PCM);
                     publishConfig.setVideoPublishType(Constants.VideoPublishType.ENCODED_IMAGE);
+                    option.setCcMode(Constants.TCC_ENABLED);
+                    publishConfig.setSenderOptions(option);
                     break;
                 case SEND_AAC:
                     publishConfig.setIsPublishAudio(true);
@@ -190,6 +192,8 @@ public class AgoraTaskControl {
                     publishConfig.setIsPublishVideo(true);
                     publishConfig.setAudioPublishType(Constants.AudioPublishType.NO_PUBLISH);
                     publishConfig.setVideoPublishType(Constants.VideoPublishType.ENCODED_IMAGE);
+                    option.setCcMode(Constants.TCC_ENABLED);
+                    publishConfig.setSenderOptions(option);
                     break;
                 case SEND_H264_DUAL_STREAM:
                     publishConfig.setIsPublishAudio(false);
