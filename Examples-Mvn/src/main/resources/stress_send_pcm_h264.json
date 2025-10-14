@@ -14,7 +14,7 @@
     "numOfChannels": 1,
     "height": 360,
     "width": 640,
-    "fps": 15,
+    "fps": 25,
     "connectionCount": 16,
     "fileType": "",
     "encryptionMode": 0,

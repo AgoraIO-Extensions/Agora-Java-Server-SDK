@@ -6,6 +6,7 @@ import io.agora.rtc.example.basic.ReceiverPcmDirectSendTest;
 import io.agora.rtc.example.basic.ReceiverPcmH264Test;
 import io.agora.rtc.example.basic.ReceiverPcmVadTest;
 import io.agora.rtc.example.basic.ReceiverPcmYuvTest;
+import io.agora.rtc.example.basic.SendAv1Test;
 import io.agora.rtc.example.basic.SendH264Test;
 import io.agora.rtc.example.basic.SendMp4Test;
 import io.agora.rtc.example.basic.SendOpusTest;
@@ -164,6 +165,9 @@ public class ServerController implements DisposableBean, ApplicationContextAware
                 } else if (taskName.equals("SendH264Test")) {
                     SendH264Test sendH264Test = new SendH264Test();
                     sendH264Test.start();
+                } else if (taskName.equals("SendAv1Test")) {
+                    SendAv1Test sendAv1Test = new SendAv1Test();
+                    sendAv1Test.start();
                 } else if (taskName.equals("SendMp4Test")) {
                     SendMp4Test sendMp4Test = new SendMp4Test();
                     sendMp4Test.start();

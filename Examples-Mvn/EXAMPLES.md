@@ -129,6 +129,7 @@ http://10.200.0.85:18080/api/server/basic?taskName=ReceiverPcmH264Test
 http://10.200.0.85:18080/api/server/basic?taskName=ReceiverPcmVadTest
 http://10.200.0.85:18080/api/server/basic?taskName=ReceiverPcmYuvTest
 http://10.200.0.85:18080/api/server/basic?taskName=SendH264Test
+http://10.200.0.85:18080/api/server/basic?taskName=SendAv1Test
 http://10.200.0.85:18080/api/server/basic?taskName=SendMp4Test
 http://10.200.0.85:18080/api/server/basic?taskName=SendOpusTest
 http://10.200.0.85:18080/api/server/basic?taskName=SendPcmFileTest
