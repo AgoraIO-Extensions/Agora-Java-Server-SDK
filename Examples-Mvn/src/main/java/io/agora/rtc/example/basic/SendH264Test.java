@@ -92,6 +92,7 @@ public class SendH264Test {
         publishConfig.setIsPublishVideo(true);
         publishConfig.setAudioPublishType(Constants.AudioPublishType.NO_PUBLISH);
         publishConfig.setVideoPublishType(Constants.VideoPublishType.ENCODED_IMAGE);
+        publishConfig.getSenderOptions().setCcMode(Constants.TCC_ENABLED);
         conn = service.agoraRtcConnCreate(ccfg, publishConfig);
         if (conn == null) {
             SampleLogger.log("AgoraService.agoraRtcConnCreate fail\n");
