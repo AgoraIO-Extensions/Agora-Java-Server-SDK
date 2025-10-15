@@ -143,7 +143,6 @@ public class AgoraTaskControl {
             RtcConnPublishConfig publishConfig = new RtcConnPublishConfig();
             publishConfig.setAudioScenario(Constants.AUDIO_SCENARIO_AI_SERVER);
             publishConfig.setAudioProfile(Constants.AUDIO_PROFILE_DEFAULT);
-            SenderOptions option = new SenderOptions();
             if (argsConfig.getAudioScenario() != -1) {
                 publishConfig.setAudioScenario(argsConfig.getAudioScenario());
             }
@@ -165,8 +164,7 @@ public class AgoraTaskControl {
                     publishConfig.setIsPublishVideo(true);
                     publishConfig.setAudioPublishType(Constants.AudioPublishType.PCM);
                     publishConfig.setVideoPublishType(Constants.VideoPublishType.ENCODED_IMAGE);
-                    option.setCcMode(Constants.TCC_ENABLED);
-                    publishConfig.setSenderOptions(option);
+                    publishConfig.getSenderOptions().setCcMode(Constants.TCC_ENABLED);
                     break;
                 case SEND_AAC:
                     publishConfig.setIsPublishAudio(true);
@@ -192,16 +190,14 @@ public class AgoraTaskControl {
                     publishConfig.setIsPublishVideo(true);
                     publishConfig.setAudioPublishType(Constants.AudioPublishType.NO_PUBLISH);
                     publishConfig.setVideoPublishType(Constants.VideoPublishType.ENCODED_IMAGE);
-                    option.setCcMode(Constants.TCC_ENABLED);
-                    publishConfig.setSenderOptions(option);
+                    publishConfig.getSenderOptions().setCcMode(Constants.TCC_ENABLED);
                     break;
                 case SEND_H264_DUAL_STREAM:
                     publishConfig.setIsPublishAudio(false);
                     publishConfig.setIsPublishVideo(true);
                     publishConfig.setAudioPublishType(Constants.AudioPublishType.NO_PUBLISH);
                     publishConfig.setVideoPublishType(Constants.VideoPublishType.ENCODED_IMAGE);
-                    option.setCcMode(Constants.TCC_ENABLED);
-                    publishConfig.setSenderOptions(option);
+                    publishConfig.getSenderOptions().setCcMode(Constants.TCC_ENABLED);
                     break;
                 case SEND_RGBA:
                     publishConfig.setIsPublishAudio(false);
@@ -220,16 +216,14 @@ public class AgoraTaskControl {
                     publishConfig.setIsPublishVideo(true);
                     publishConfig.setAudioPublishType(Constants.AudioPublishType.NO_PUBLISH);
                     publishConfig.setVideoPublishType(Constants.VideoPublishType.ENCODED_IMAGE);
-                    option.setCcMode(Constants.TCC_ENABLED);
-                    publishConfig.setSenderOptions(option);
+                    publishConfig.getSenderOptions().setCcMode(Constants.TCC_ENABLED);
                     break;
                 case SEND_VP8_PCM:
                     publishConfig.setIsPublishAudio(true);
                     publishConfig.setIsPublishVideo(true);
                     publishConfig.setAudioPublishType(Constants.AudioPublishType.PCM);
                     publishConfig.setVideoPublishType(Constants.VideoPublishType.ENCODED_IMAGE);
-                    option.setCcMode(Constants.TCC_ENABLED);
-                    publishConfig.setSenderOptions(option);
+                    publishConfig.getSenderOptions().setCcMode(Constants.TCC_ENABLED);
                     break;
                 case SEND_MP4:
                     publishConfig.setIsPublishAudio(true);
