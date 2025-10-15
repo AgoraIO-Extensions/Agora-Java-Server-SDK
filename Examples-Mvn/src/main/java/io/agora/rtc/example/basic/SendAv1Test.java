@@ -126,7 +126,8 @@ public class SendAv1Test {
         }
 
         VideoEncoderConfig VideoEncoderConfig = new VideoEncoderConfig();
-        VideoEncoderConfig.setCodecType(Constants.VIDEO_CODEC_AV1);
+        //Constants.VIDEO_CODEC_AV1
+        VideoEncoderConfig.setCodecType(12);
         VideoEncoderConfig.setDimensions(new VideoDimensions(width, height));
         VideoEncoderConfig.setFrameRate(fps);
         VideoEncoderConfig.setEncodeAlpha(enableAlpha ? 1 : 0);
