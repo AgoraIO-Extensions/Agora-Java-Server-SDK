@@ -1,13 +1,19 @@
-#include "helper_aac_parser.h"
-#include "helper_h264_parser.h"
-#include "helper_opus_parser.h"
-#include "helper_vp8_parser.h"
 #include <jni.h>
+
 #include <mutex>
 #include <string>
 
+#include "helper_aac_parser.h"
+#include "helper_h264_parser.h"
+#include "helper_h265_parser.h"
+#include "helper_opus_parser.h"
+#include "helper_vp8_parser.h"
+
 static jclass clsH264Frame;
 static jmethodID constructorH264Frame;
+
+static jclass clsH265Frame;
+static jmethodID constructorH265Frame;
 
 static jclass clsAacFrame;
 static jmethodID constructorAacFrame;
@@ -28,6 +34,12 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
         env->DeleteGlobalRef(clsH264Frame);
         clsH264Frame = nullptr;
         constructorH264Frame = nullptr;
+    }
+
+    if (clsH265Frame != nullptr) {
+        env->DeleteGlobalRef(clsH265Frame);
+        clsH265Frame = nullptr;
+        constructorH265Frame = nullptr;
     }
 
     if (clsAacFrame) {
@@ -140,6 +152,91 @@ Java_io_agora_rtc_example_mediautils_H264Reader_nativeReset(JNIEnv *env, jobject
     HelperH264FileParser *helperH264FileParser = reinterpret_cast<HelperH264FileParser *>(cptr);
     if (helperH264FileParser != nullptr) {
         helperH264FileParser->setFileParseRestart();
+    }
+    return;
+}
+
+// H265 Reader JNI functions
+extern "C" JNIEXPORT jlong JNICALL
+Java_io_agora_rtc_example_mediautils_H265Reader_init(JNIEnv *env, jobject thiz, jstring path) {
+    std::lock_guard<std::mutex> lock(init_mutex);
+    const char *filePath = env->GetStringUTFChars(path, NULL);
+    HelperH265FileParser *helperH265FileParser = new HelperH265FileParser(filePath);
+    helperH265FileParser->initialize();
+    if (clsH265Frame == nullptr) {
+        jclass cls = env->FindClass("io/agora/rtc/example/mediautils/H265Reader$H265Frame");
+        if (cls != nullptr) {
+            clsH265Frame = (jclass)env->NewGlobalRef(cls);
+            constructorH265Frame = env->GetMethodID(cls, "<init>", "([BI)V");
+        } else {
+            abort();
+        }
+        env->DeleteLocalRef(cls);
+    }
+    if (constructorH265Frame == nullptr) {
+        abort();
+    }
+
+    env->ReleaseStringUTFChars(path, filePath);
+    return reinterpret_cast<long>(helperH265FileParser);
+}
+
+extern "C" JNIEXPORT jobject JNICALL Java_io_agora_rtc_example_mediautils_H265Reader_getNextFrame(
+    JNIEnv *env, jobject thiz, jlong cptr) {
+    if (cptr == 0L) {
+        return nullptr;
+    }
+
+    try {
+        HelperH265FileParser *helperH265FileParser = reinterpret_cast<HelperH265FileParser *>(cptr);
+        if (helperH265FileParser == nullptr) {
+            return nullptr;
+        }
+
+        std::unique_ptr<HelperH265Frame> frame = helperH265FileParser->getH265Frame();
+        if (frame != nullptr && frame->buffer.get() != nullptr && frame->bufferLen > 0 &&
+            nullptr != clsH265Frame) {
+            jbyteArray arrys = env->NewByteArray(frame->bufferLen);
+            if (arrys == nullptr) {
+                return nullptr;
+            }
+
+            env->SetByteArrayRegion(arrys, 0, frame->bufferLen, (const jbyte *)frame->buffer.get());
+
+            jobject data = env->NewObject(clsH265Frame, constructorH265Frame, arrys,
+                                          frame->isKeyFrame ? 3 : 4);
+            return data;
+        }
+    } catch (const std::exception &e) {
+        const char *msg = e.what();
+        if (msg != nullptr) {
+        }
+    } catch (...) {
+    }
+
+    return nullptr;
+}
+
+extern "C" JNIEXPORT void JNICALL Java_io_agora_rtc_example_mediautils_H265Reader_nativeRelease(
+    JNIEnv *env, jobject thiz, jlong cptr) {
+    if (cptr == 0L)
+        return;
+    try {
+        HelperH265FileParser *helperH265FileParser = reinterpret_cast<HelperH265FileParser *>(cptr);
+        if (helperH265FileParser != nullptr) {
+            delete helperH265FileParser;
+        }
+    } catch (...) {
+        // Capture all exceptions to prevent JVM crashes
+    }
+    return;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_io_agora_rtc_example_mediautils_H265Reader_nativeReset(JNIEnv *env, jobject thiz, jlong cptr) {
+    HelperH265FileParser *helperH265FileParser = reinterpret_cast<HelperH265FileParser *>(cptr);
+    if (helperH265FileParser != nullptr) {
+        helperH265FileParser->setFileParseRestart();
     }
     return;
 }

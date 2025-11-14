@@ -1,0 +1,58 @@
+# .dockerignore - 告诉Docker构建时忽略这些文件/目录
+# 减小构建上下文大小，加快构建速度
+
+# Git相关
+.git
+.gitignore
+.gitattributes
+
+# IDE相关
+.idea
+.vscode
+*.iml
+.project
+.classpath
+.settings/
+
+# 构建产物（已在Dockerfile中单独COPY）
+target/classes/
+target/generated-sources/
+target/generated-test-sources/
+target/maven-status/
+target/maven-archiver/
+target/*.jar.original
+
+# 日志文件
+*.log
+logs/
+agora_logs/
+*.dat
+*.db
+crash_context_v1
+
+# 临时文件
+*.tmp
+*.bak
+*.swp
+*~
+
+# 测试输出
+test_data_out/
+
+# 文档
+*.md
+README
+LICENSE
+
+# 敏感信息（应该通过volume或secret挂载）
+.keys
+
+# Maven相关
+.mvn/
+mvnw
+mvnw.cmd
+
+# 其他
+.DS_Store
+Thumbs.db
+

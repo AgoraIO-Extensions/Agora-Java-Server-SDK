@@ -20,11 +20,11 @@ public class Audio3aTest {
     private int sampleRate = 48000;
     private int numOfChannels = 1;
     private String nearAudioFile = "test_data/nearin_power.pcm";
-    private String farAudioFile = "test_data/farin_power.pcm";
+    private String farAudioFile = "";
     private String audioOutFile = "test_data_out/recv_near_out_3a";
     // 10ms one frame
     private final int INTERVAL = 10; // ms
-    private final int MAX_TASK_COUNT = 10;
+    private final int MAX_TASK_COUNT = 2;
 
     private final ExecutorService taskExecutor = Executors.newCachedThreadPool();
     private final ExecutorService audioWriteExecutor = Executors.newSingleThreadExecutor();
@@ -78,24 +78,40 @@ public class Audio3aTest {
                 nearAudioFrame.setBytesPerSample(
                         Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue());
 
-                AgoraAudioFrame farAudioFrame = new AgoraAudioFrame();
-                farAudioFrame.setType(Constants.AudioFrameType.PCM16.getValue());
-                farAudioFrame.setSampleRate(sampleRate);
-                farAudioFrame.setChannels(numOfChannels);
-                farAudioFrame.setSamplesPerChannel(sampleRate / 1000 * INTERVAL);
-                farAudioFrame.setBytesPerSample(
-                        Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue());
+                // Check if farAudioFile is provided
+                boolean hasFarAudio = farAudioFile != null && !farAudioFile.trim().isEmpty();
+
+                AgoraAudioFrame farAudioFrame = null;
+                ByteBuffer farAudioBuffer = null;
+                FileInputStream farFis = null;
+
+                if (hasFarAudio) {
+                    farAudioFrame = new AgoraAudioFrame();
+                    farAudioFrame.setType(Constants.AudioFrameType.PCM16.getValue());
+                    farAudioFrame.setSampleRate(sampleRate);
+                    farAudioFrame.setChannels(numOfChannels);
+                    farAudioFrame.setSamplesPerChannel(sampleRate / 1000 * INTERVAL);
+                    farAudioFrame.setBytesPerSample(
+                            Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue());
+                    farAudioBuffer = ByteBuffer.allocateDirect(bufferSize);
+                }
 
                 ByteBuffer nearAudioBuffer = ByteBuffer.allocateDirect(bufferSize);
-                ByteBuffer farAudioBuffer = ByteBuffer.allocateDirect(bufferSize);
 
                 File nearFile = new File(nearAudioFile);
-                File farFile = new File(farAudioFile);
-                if (!nearFile.exists() || !farFile.exists()) {
-                    SampleLogger.log(
-                            "Audio file does not exist: " + nearAudioFile + " or " + farAudioFile);
+                if (!nearFile.exists()) {
+                    SampleLogger.log("Near audio file does not exist: " + nearAudioFile);
                     taskFinishLatch.countDown();
                     return;
+                }
+
+                if (hasFarAudio) {
+                    File farFile = new File(farAudioFile);
+                    if (!farFile.exists()) {
+                        SampleLogger.log("Far audio file does not exist: " + farAudioFile);
+                        taskFinishLatch.countDown();
+                        return;
+                    }
                 }
                 File outFile = new File(audio3aOutFile);
                 if (outFile.exists()) {
@@ -105,18 +121,22 @@ public class Audio3aTest {
                     outFile.getParentFile().mkdirs();
                 }
                 FileOutputStream fos = null;
-                try (FileInputStream nearFis = new FileInputStream(nearFile);
-                        FileInputStream farFis = new FileInputStream(farFile)) {
+                try (FileInputStream nearFis = new FileInputStream(nearFile)) {
+                    if (hasFarAudio) {
+                        farFis = new FileInputStream(new File(farAudioFile));
+                    }
                     fos = new FileOutputStream(audio3aOutFile, true);
                     byte[] nearBuffer = new byte[bufferSize];
-                    byte[] farBuffer = new byte[bufferSize];
+                    byte[] farBuffer = hasFarAudio ? new byte[bufferSize] : null;
                     int readLen;
 
                     CountDownLatch writeFinishLatch = new CountDownLatch(1);
                     AtomicInteger writeTaskCount = new AtomicInteger(0);
 
                     while ((readLen = nearFis.read(nearBuffer)) != -1) {
-                        farFis.read(farBuffer);
+                        if (hasFarAudio && farFis != null) {
+                            farFis.read(farBuffer);
+                        }
                         byte[] dataToPut;
                         if (readLen < bufferSize) {
                             dataToPut = new byte[bufferSize];
@@ -130,13 +150,17 @@ public class Audio3aTest {
                         nearAudioBuffer.flip();
                         nearAudioFrame.setBuffer(nearAudioBuffer);
 
-                        farAudioBuffer.clear();
-                        farAudioBuffer.put(farBuffer);
-                        farAudioBuffer.flip();
-                        farAudioFrame.setBuffer(farAudioBuffer);
+                        if (hasFarAudio && farAudioBuffer != null) {
+                            farAudioBuffer.clear();
+                            farAudioBuffer.put(farBuffer);
+                            farAudioBuffer.flip();
+                            farAudioFrame.setBuffer(farAudioBuffer);
+                        }
 
                         long startTime = System.nanoTime();
-                        AgoraAudioFrame outFrame = audioProcessor.process(nearAudioFrame, farAudioFrame);
+                        // Pass null for farAudioFrame if farAudioFile is not provided
+                        AgoraAudioFrame outFrame = audioProcessor.process(nearAudioFrame,
+                                hasFarAudio ? farAudioFrame : null);
                         long estimatedTime = (System.nanoTime() - startTime) / 1000;
                         totalProcessTime += estimatedTime;
                         processCount++;
@@ -186,6 +210,13 @@ public class Audio3aTest {
                             e.printStackTrace();
                         }
                     }
+                    if (farFis != null) {
+                        try {
+                            farFis.close();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
                     taskFinishLatch.countDown();
                 }
 
@@ -197,7 +228,9 @@ public class Audio3aTest {
                 }
 
                 nearAudioBuffer.clear();
-                farAudioBuffer.clear();
+                if (farAudioBuffer != null) {
+                    farAudioBuffer.clear();
+                }
 
                 try {
                     audioProcessor.release();

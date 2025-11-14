@@ -116,6 +116,14 @@ if $build_mediaUtils; then
         -I"$OPUS_INCLUDE_DIR" \
         -I"$JAVA_HOME/include" \
         -I"$INCLUDE_ARCH" \
+        "$MEDIA_UTILS_DIR/helper_h265_parser.cpp" \
+        -o "$BUILD_DIR/helper_h265_parser.o"
+
+    g++ -c -std=c++11 -fPIC -g \
+        -I"$MEDIA_UTILS_DIR" \
+        -I"$OPUS_INCLUDE_DIR" \
+        -I"$JAVA_HOME/include" \
+        -I"$INCLUDE_ARCH" \
         "$MEDIA_UTILS_DIR/helper_vp8_parser.cpp" \
         -o "$BUILD_DIR/helper_vp8_parser.o"
 
@@ -132,6 +140,7 @@ if $build_mediaUtils; then
         "$BUILD_DIR/helper_vp8_parser.o" \
         "$BUILD_DIR/helper_aac_parser.o" \
         "$BUILD_DIR/helper_h264_parser.o" \
+        "$BUILD_DIR/helper_h265_parser.o" \
         "$BUILD_DIR/native-lib.o" \
         "$BUILD_DIR/helper_opus_parser.o" \
         -L"$OPUS_LIB_DIR" \

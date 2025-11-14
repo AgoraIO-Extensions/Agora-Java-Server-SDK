@@ -35,8 +35,8 @@ public class SendH264Test {
 
     private String channelId = "agaa";
     private String userId = "0";
-    private int width = 360;
-    private int height = 640;
+    private int width = 352;
+    private int height = 288;
     private int fps = 25;
     private String streamType = "high";
     private boolean enableSimulcastStream = false;
@@ -72,7 +72,7 @@ public class SendH264Test {
             ret = service.initialize(config);
             if (ret != 0) {
                 SampleLogger.log(
-                    "createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
+                        "createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
                 releaseAgoraService();
                 return;
             }
@@ -104,7 +104,7 @@ public class SendH264Test {
             @Override
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
                 SampleLogger.log(
-                    "onConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
+                        "onConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
                 userId = connInfo.getLocalUserId();
             }
 
@@ -123,7 +123,7 @@ public class SendH264Test {
 
         ret = conn.connect(token, channelId, userId);
         SampleLogger.log(
-            "Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
+                "Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
         if (ret != 0) {
             SampleLogger.log("conn.connect fail ret=" + ret);
             releaseConn();
@@ -164,6 +164,7 @@ public class SendH264Test {
             FileSender h264SendThread = new FileSender(videoFile, 1000 / fps) {
                 int lastFrameType = 0;
                 int frameIndex = 0;
+                private EncodedVideoFrameInfo info = new EncodedVideoFrameInfo();
 
                 @Override
                 public void sendOneFrame(byte[] data, long timestamp) {
@@ -174,10 +175,9 @@ public class SendH264Test {
                         release();
                         return;
                     }
-                    EncodedVideoFrameInfo info = new EncodedVideoFrameInfo();
                     info.setFrameType(lastFrameType);
                     info.setStreamType(streamType.equals("high") ? Constants.VIDEO_STREAM_HIGH
-                                                                 : Constants.VIDEO_STREAM_LOW);
+                            : Constants.VIDEO_STREAM_LOW);
                     info.setWidth(width);
                     info.setHeight(height);
                     info.setCodecType(Constants.VIDEO_CODEC_H264);
@@ -188,9 +188,9 @@ public class SendH264Test {
                     frameIndex++;
 
                     singleExecutorService.execute(() -> {
-                        SampleLogger.log("send h264 frame data size:" + data.length
-                            + " timestamp:" + timestamp + " frameIndex:" + frameIndex
-                            + " from channelId:" + channelId + " userId:" + userId);
+                        SampleLogger.log("send h264 frame data size:" + data.length + " frameType:" + lastFrameType
+                                + " width:" + width + " height:" + height + " frameIndex:" + frameIndex
+                                + " from channelId:" + channelId + " userId:" + userId);
                     });
                 }
 

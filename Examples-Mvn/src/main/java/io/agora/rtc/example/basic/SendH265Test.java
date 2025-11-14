@@ -4,24 +4,24 @@ import io.agora.rtc.AgoraRtcConn;
 import io.agora.rtc.AgoraService;
 import io.agora.rtc.AgoraServiceConfig;
 import io.agora.rtc.Constants;
-import io.agora.rtc.ExternalVideoFrame;
+import io.agora.rtc.EncodedVideoFrameInfo;
 import io.agora.rtc.IRtcConnObserver;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
 import io.agora.rtc.RtcConnPublishConfig;
-import io.agora.rtc.SimulcastStreamConfig;
-import io.agora.rtc.VideoDimensions;
-import io.agora.rtc.VideoEncoderConfig;
 import io.agora.rtc.example.common.FileSender;
 import io.agora.rtc.example.common.SampleLogger;
-import io.agora.rtc.example.utils.DirectBufferCleaner;
+import io.agora.rtc.example.mediautils.H265Reader;
 import io.agora.rtc.example.utils.Utils;
 import java.io.FileInputStream;
-import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class SendAv1Test {
+public class SendH265Test {
+    static {
+        System.loadLibrary("media_utils");
+    }
+
     private String appId;
     private String token;
     private final String DEFAULT_LOG_PATH = "logs/agora_logs/agorasdk.log";
@@ -35,12 +35,12 @@ public class SendAv1Test {
     private String userId = "0";
     private int width = 640;
     private int height = 360;
-    private int fps = 15;
-    private boolean enableAlpha = false;
-    private boolean enableSimulcastStream = false;
-    private String videoFile = "test_data/360p_I420.yuv";
+    private int fps = 25;
+    private String streamType = "high";
+    private String videoFile = "test_data/send_video.h265";
     private long testTime = 60 * 1000;
 
+    private final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
     private final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
 
     public void start() {
@@ -88,7 +88,9 @@ public class SendAv1Test {
         publishConfig.setIsPublishAudio(false);
         publishConfig.setIsPublishVideo(true);
         publishConfig.setAudioPublishType(Constants.AudioPublishType.NO_PUBLISH);
-        publishConfig.setVideoPublishType(Constants.VideoPublishType.YUV);
+        publishConfig.setVideoPublishType(Constants.VideoPublishType.ENCODED_IMAGE);
+        publishConfig.getSenderOptions().setCcMode(Constants.TCC_ENABLED);
+        publishConfig.getSenderOptions().setCodecType(Constants.VIDEO_CODEC_H265);
         conn = service.agoraRtcConnCreate(ccfg, publishConfig);
         if (conn == null) {
             SampleLogger.log("AgoraService.agoraRtcConnCreate fail\n");
@@ -99,13 +101,15 @@ public class SendAv1Test {
         ret = conn.registerObserver(new IRtcConnObserver() {
             @Override
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
+                SampleLogger.log(
+                        "onConnected channelId :" + connInfo.getChannelId() + " reason:" + reason);
                 userId = connInfo.getLocalUserId();
             }
 
             @Override
             public void onUserJoined(AgoraRtcConn agoraRtcConn, String userId) {
                 SampleLogger.log("onUserJoined userId:" + userId);
-                pushAv1Data();
+                pushH265Data();
             }
 
             @Override
@@ -125,24 +129,9 @@ public class SendAv1Test {
             return;
         }
 
-        VideoEncoderConfig VideoEncoderConfig = new VideoEncoderConfig();
-        VideoEncoderConfig.setCodecType(Constants.VIDEO_CODEC_AV1);
-        VideoEncoderConfig.setDimensions(new VideoDimensions(width, height));
-        VideoEncoderConfig.setFrameRate(fps);
-        VideoEncoderConfig.setEncodeAlpha(enableAlpha ? 1 : 0);
-        conn.setVideoEncoderConfig(VideoEncoderConfig);
-
-        if (enableSimulcastStream) {
-            VideoDimensions lowDimensions = new VideoDimensions(width / 2, height / 2);
-            SimulcastStreamConfig lowStreamConfig = new SimulcastStreamConfig();
-            lowStreamConfig.setDimensions(lowDimensions);
-            // lowStreamConfig.setBitrate(targetBitrate/2);
-            ret = conn.enableSimulcastStream(1, lowStreamConfig);
-            SampleLogger.log("sendAv1Task enableSimulcastStream ret:" + ret);
-        }
-
         // Publish video track
-        conn.publishVideo();
+        ret = conn.publishVideo();
+        SampleLogger.log("sendH265Task publishVideo ret:" + ret);
 
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < testTime) {
@@ -158,16 +147,13 @@ public class SendAv1Test {
         System.exit(0);
     }
 
-    private void pushAv1Data() {
+    private void pushH265Data() {
         testTaskExecutorService.execute(() -> {
-            int bufferLen = (int) (height * width * 1.5);
-            byte[] buffer = new byte[bufferLen];
-
-            FileSender av1Sender = new FileSender(videoFile, 1000 / fps) {
-                private int frameIndex = 0;
-                private ByteBuffer byteBuffer;
-                private ByteBuffer matedataByteBuffer;
-                private ByteBuffer alphaByteBuffer;
+            H265Reader h265Reader = new H265Reader(videoFile);
+            FileSender h265SendThread = new FileSender(videoFile, 1000 / fps) {
+                int lastFrameType = 0;
+                int frameIndex = 0;
+                private EncodedVideoFrameInfo info = new EncodedVideoFrameInfo();
 
                 @Override
                 public void sendOneFrame(byte[] data, long timestamp) {
@@ -178,85 +164,48 @@ public class SendAv1Test {
                         release();
                         return;
                     }
+                    info.setFrameType(lastFrameType);
+                    info.setStreamType(streamType.equals("high") ? Constants.VIDEO_STREAM_HIGH
+                            : Constants.VIDEO_STREAM_LOW);
+                    info.setWidth(width);
+                    info.setHeight(height);
+                    info.setCodecType(Constants.VIDEO_CODEC_H265);
+                    info.setFramesPerSecond(fps);
+                    info.setRotation(0);
 
-                    ExternalVideoFrame externalVideoFrame = new ExternalVideoFrame();
-                    externalVideoFrame.setHeight(height);
-                    if (null == byteBuffer) {
-                        byteBuffer = ByteBuffer.allocateDirect(data.length);
-                    }
-                    if (byteBuffer == null || byteBuffer.limit() < data.length) {
-                        return;
-                    }
-                    byteBuffer.put(data);
-                    byteBuffer.flip();
-
-                    externalVideoFrame.setBuffer(byteBuffer);
-                    externalVideoFrame.setRotation(0);
-                    externalVideoFrame.setFormat(Constants.EXTERNAL_VIDEO_FRAME_PIXEL_FORMAT_I420);
-                    externalVideoFrame.setStride(width);
-                    externalVideoFrame.setType(Constants.EXTERNAL_VIDEO_FRAME_BUFFER_TYPE_RAW_DATA);
-
-                    String testMetaData = "testMetaData";
-                    if (null == matedataByteBuffer) {
-                        matedataByteBuffer = ByteBuffer.allocateDirect(testMetaData.getBytes().length);
-                    }
-                    if (matedataByteBuffer == null
-                            || matedataByteBuffer.limit() < testMetaData.getBytes().length) {
-                        return;
-                    }
-                    matedataByteBuffer.put(testMetaData.getBytes());
-                    matedataByteBuffer.flip();
-                    externalVideoFrame.setMetadataBuffer(matedataByteBuffer);
-
-                    if (enableAlpha) {
-                        if (null == alphaByteBuffer) {
-                            alphaByteBuffer = ByteBuffer.allocateDirect(data.length);
-                        }
-                        if (alphaByteBuffer == null || alphaByteBuffer.limit() < data.length) {
-                            return;
-                        }
-                        alphaByteBuffer.put(data);
-                        alphaByteBuffer.flip();
-                        externalVideoFrame.setAlphaBuffer(alphaByteBuffer);
-                        externalVideoFrame.setFillAlphaBuffer(1);
-                    }
-
-                    int ret = conn.pushVideoFrame(externalVideoFrame);
+                    conn.pushVideoEncodedData(data, info);
                     frameIndex++;
 
-                    SampleLogger.log("send av1 frame data size:" + data.length + " ret:" + ret
-                            + " timestamp:" + timestamp + " frameIndex:" + frameIndex
-                            + " from channelId:" + channelId + " userId:" + userId);
+                    singleExecutorService.execute(() -> {
+                        SampleLogger.log("send h265 frame data size:" + data.length + " frameType:" + lastFrameType
+                                + " width:" + width + " height:" + height + " frameIndex:" + frameIndex
+                                + " from channelId:" + channelId + " userId:" + userId);
+                    });
                 }
 
                 @Override
                 public byte[] readOneFrame(FileInputStream fos) {
-                    if (fos == null) {
+                    H265Reader.H265Frame frame = h265Reader.readNextFrame();
+                    if (frame == null) {
+                        h265Reader.reset();
+                        reset();
                         return null;
                     }
-                    try {
-                        int size = fos.read(buffer, 0, bufferLen);
-                        if (size < 0) {
-                            reset();
-                            frameIndex = 0;
-                            return null;
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    return buffer;
+
+                    lastFrameType = frame.frameType;
+                    return frame.data;
                 }
 
                 @Override
                 public void release() {
                     super.release();
-                    DirectBufferCleaner.release(byteBuffer);
-                    DirectBufferCleaner.release(matedataByteBuffer);
-                    DirectBufferCleaner.release(alphaByteBuffer);
+                    if (null != h265Reader) {
+                        h265Reader.close();
+                    }
                 }
             };
 
-            testTaskExecutorService.execute(av1Sender);
+            testTaskExecutorService.execute(h265SendThread);
         });
     }
 
@@ -265,8 +214,6 @@ public class SendAv1Test {
         if (conn == null) {
             return;
         }
-
-        testTaskExecutorService.shutdown();
 
         int ret = conn.disconnect();
         if (ret != 0) {
@@ -284,6 +231,8 @@ public class SendAv1Test {
             service.destroy();
             service = null;
         }
+        singleExecutorService.shutdown();
+        testTaskExecutorService.shutdown();
         SampleLogger.log("releaseAgoraService");
     }
 }

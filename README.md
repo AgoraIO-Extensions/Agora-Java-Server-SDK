@@ -49,7 +49,7 @@
         - [Classes and Methods](#classes-and-methods-1)
           - [AgoraAudioVadV2 Class](#agoraaudiovadv2-class)
           - [AgoraAudioVadConfigV2 Properties](#agoraaudiovadconfigv2-properties)
-          - [Notes](#notes)
+          - [Parameter Description](#parameter-description)
           - [Methods](#methods)
         - [VadProcessResult](#vadprocessresult)
           - [Constructor](#constructor)
@@ -70,55 +70,24 @@
           - [Main Methods (Setters/Getters)](#main-methods-settersgetters)
       - [Usage Example](#usage-example-2)
   - [Changelog](#changelog)
+    - [v4.4.32.200 (2025-11-14)](#v4432200-2025-11-14)
     - [v4.4.32.101 (2025-09-01)](#v4432101-2025-09-01)
     - [v4.4.32.100（2025-07-22）](#v44321002025-07-22)
     - [v4.4.32.1 (2025-06-12)](#v44321-2025-06-12)
-      - [**API Changes**](#api-changes)
-      - [**Improvements \& Optimizations**](#improvements--optimizations)
     - [v4.4.32 (2025-05-27)](#v4432-2025-05-27)
-      - [**API Changes**](#api-changes-1)
-      - [**Improvements \& Optimizations**](#improvements--optimizations-1)
     - [v4.4.31.4 (2025-03-21)](#v44314-2025-03-21)
-      - [**Improvements \& Optimizations**](#improvements--optimizations-2)
     - [v4.4.31.3 (2025-02-26)](#v44313-2025-02-26)
-      - [**Improvements \& Optimizations**](#improvements--optimizations-3)
     - [v4.4.31.2 (2025-02-19)](#v44312-2025-02-19)
-      - [**API Changes**](#api-changes-2)
-      - [**Improvements \& Optimizations**](#improvements--optimizations-4)
     - [v4.4.31.1 (2025-01-06)](#v44311-2025-01-06)
-      - [**Improvements \& Optimizations**](#improvements--optimizations-5)
     - [v4.4.31 (2024-12-23)](#v4431-2024-12-23)
-      - [**API Changes**](#api-changes-3)
-      - [**Improvements \& Optimizations**](#improvements--optimizations-6)
     - [v4.4.30.2 (2024-11-20)](#v44302-2024-11-20)
-      - [**API Changes**](#api-changes-4)
-      - [**Improvements \& Optimizations**](#improvements--optimizations-7)
     - [v4.4.30.1 (2024-11-12)](#v44301-2024-11-12)
-      - [**API Changes**](#api-changes-5)
-      - [**Improvements \& Optimizations**](#improvements--optimizations-8)
     - [v4.4.30 (2024-10-24)](#v4430-2024-10-24)
   - [Other References](#other-references)
-      - [**Improvements \& Optimizations**](#improvements--optimizations-9)
-    - [v4.4.31.2 (2025-02-19)](#v44312-2025-02-19-1)
-      - [**API Changes**](#api-changes-6)
-      - [**Improvements \& Optimizations**](#improvements--optimizations-10)
-    - [v4.4.31.1 (2025-01-06)](#v44311-2025-01-06-1)
-      - [**Improvements \& Optimizations**](#improvements--optimizations-11)
-    - [v4.4.31 (2024-12-23)](#v4431-2024-12-23-1)
-      - [**API Changes**](#api-changes-7)
-      - [**Improvements \& Optimizations**](#improvements--optimizations-12)
-    - [v4.4.30.2 (2024-11-20)](#v44302-2024-11-20-1)
-      - [**API Changes**](#api-changes-8)
-      - [**Improvements \& Optimizations**](#improvements--optimizations-13)
-    - [v4.4.30.1 (2024-11-12)](#v44301-2024-11-12-1)
-      - [**API Changes**](#api-changes-9)
-      - [**Improvements \& Optimizations**](#improvements--optimizations-14)
-    - [v4.4.30 (2024-10-24)](#v4430-2024-10-24-1)
-  - [Other References](#other-references-1)
 
 ## Introduction
 
-The Agora Linux Server Java SDK (v4.4.32.101) provides powerful real-time audio and video communication capabilities that can be seamlessly integrated into Linux server-side Java applications. With this SDK, your server can join Agora channels as a data source or processing node, accessing and processing audio and video streams in real-time to implement various business-related advanced features.
+The Agora Linux Server Java SDK (v4.4.32.200) provides powerful real-time audio and video communication capabilities that can be seamlessly integrated into Linux server-side Java applications. With this SDK, your server can join Agora channels as a data source or processing node, accessing and processing audio and video streams in real-time to implement various business-related advanced features.
 
 The Agora Linux Gateway SDK has not been released yet, and related features are currently not supported.
 
@@ -150,13 +119,13 @@ The Agora Linux Gateway SDK has not been released yet, and related features are 
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.101</version>
+    <version>4.4.32.200</version>
 </dependency>
 ```
 
 ### CDN Download
 
-[Agora-Linux-Java-SDK-v4.4.32.101-x86_64-860822-199c582312-20250901_154513](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.101-x86_64-860822-199c582312-20250901_154513.zip)
+[Agora-Linux-Java-SDK-v4.4.32.200-x86_64-964478-6b09067690-20251114_115603](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.200-x86_64-964478-6b09067690-20251114_115603.zip)
 
 ## Integrate the SDK
 
@@ -175,7 +144,7 @@ Add the following dependency to your project's `pom.xml` file:
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.101</version>
+    <version>4.4.32.200</version>
 </dependency>
 ```
 
@@ -210,7 +179,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32.101 \
+  -Dversion=4.4.32.200 \
   -Dpackaging=jar \
   -DgeneratePom=true
 ```
@@ -222,7 +191,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32.101 \
+  -Dversion=4.4.32.200 \
   -Dpackaging=jar \
   -DgeneratePom=true \
   -Djavadoc=sdk/agora-sdk-javadoc.jar
@@ -234,7 +203,7 @@ After installation, add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.101</version>
+    <version>4.4.32.200</version>
 </dependency>
 ```
 
@@ -283,7 +252,7 @@ The `.so` files are contained within the `agora-sdk.jar` or `linux-java-sdk-x.x.
     jar xvf agora-sdk.jar
 
     # If using Maven integration, the JAR file is in the Maven cache, e.g.:
-    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.101/linux-java-sdk-4.4.32.101.jar
+    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.200/linux-java-sdk-4.4.32.200.jar
     ```
 
 3.  After extraction, a `native/linux/x86_64` subdirectory will be generated within the `libs` directory, containing the required `.so` files:
@@ -489,7 +458,7 @@ This project has integrated C++ code compilation functionality, which can automa
     <dependency>
         <groupId>io.agora.rtc</groupId>
         <artifactId>linux-java-sdk</artifactId>
-        <version>4.4.32.101</version>  <!-- Ensure the version number is consistent with the one you need to use -->
+        <version>4.4.32.200</version>  <!-- Ensure the version number is consistent with the one you need to use -->
     </dependency>
     ```
 
@@ -732,14 +701,14 @@ public synchronized void destroy()
 | fftSz                  | int   | FFT size, supports only 128, 256, 512, 1024           | 1024    | [128, 256, 512, 1024]  |
 | hopSz                  | int   | FFT hop size, used for checking                       | 160     | [1, Integer.MAX_VALUE] |
 | anaWindowSz            | int   | FFT window size, used for calculating RMS             | 768     | [1, Integer.MAX_VALUE] |
-| voiceProbThr           | float | Voice probability threshold                           | 0.8     | [0.0, 1.0]             |
+| voiceProbThr           | float | Voice probability threshold                           | 0.7     | [0.0, 1.0]             |
 | rmsThr                 | float | RMS threshold (dB)                                    | -40.0   | [-100.0, 0.0]          |
 | jointThr               | float | Joint threshold (dB)                                  | 0.0     | [-100.0, 100.0]        |
-| aggressive             | float | Aggressive factor, higher value means more aggressive | 5.0     | [0.0, 10.0]            |
-| startRecognizeCount    | int   | Start recognition count                               | 10      | [1, Integer.MAX_VALUE] |
-| stopRecognizeCount     | int   | Stop recognition count                                | 6       | [1, Integer.MAX_VALUE] |
-| preStartRecognizeCount | int   | Pre-start recognition count                           | 10      | [0, Integer.MAX_VALUE] |
-| activePercent          | float | Active percentage                                     | 0.6     | [0.0, 1.0]             |
+| aggressive             | float | Aggressive factor, higher value means more aggressive | 2.0     | [0.0, 10.0]            |
+| startRecognizeCount    | int   | Start recognition count                               | 30      | [1, Integer.MAX_VALUE] |
+| stopRecognizeCount     | int   | Stop recognition count                                | 48      | [1, Integer.MAX_VALUE] |
+| preStartRecognizeCount | int   | Pre-start recognition count                           | 16      | [0, Integer.MAX_VALUE] |
+| activePercent          | float | Active percentage                                     | 0.8     | [0.0, 1.0]             |
 | inactivePercent        | float | Inactive percentage                                   | 0.2     | [0.0, 1.0]             |
 
 ##### Usage Example
@@ -811,27 +780,45 @@ public AgoraAudioVadV2(AgoraAudioVadConfigV2 config)
 
 ###### AgoraAudioVadConfigV2 Properties
 
-| Property Name          | Type  | Description                                                         | Default | Range                  |
-| ---------------------- | ----- | ------------------------------------------------------------------- | ------- | ---------------------- |
-| preStartRecognizeCount | int   | Number of audio frames saved before entering speaking state         | 16      | [0, Integer.MAX_VALUE] |
-| startRecognizeCount    | int   | Number of audio frames to confirm speaking state                    | 30      | [1, Integer.MAX_VALUE] |
-| stopRecognizeCount     | int   | Number of audio frames to confirm stop speaking state               | 20      | [1, Integer.MAX_VALUE] |
-| activePercent          | float | Percentage of active frames required in startRecognizeCount frames  | 0.7     | [0.0, 1.0]             |
-| inactivePercent        | float | Percentage of inactive frames required in stopRecognizeCount frames | 0.5     | [0.0, 1.0]             |
-| startVoiceProb         | int   | Probability threshold to start voice detection                      | 70      | [0, 100]               |
-| stopVoiceProb          | int   | Probability threshold to stop voice detection                       | 70      | [0, 100]               |
-| startRmsThreshold      | int   | RMS threshold (dBFS) to start voice detection                       | -50     | [-100, 0]              |
-| stopRmsThreshold       | int   | RMS threshold (dBFS) to stop voice detection                        | -50     | [-100, 0]              |
+| Property Name                | Type    | Description                                                         | Default | Range                  |
+| ---------------------------- | ------- | ------------------------------------------------------------------- | ------- | ---------------------- |
+| preStartRecognizeCount       | int     | Number of audio frames saved before entering speaking state         | 16      | [0, Integer.MAX_VALUE] |
+| startRecognizeCount          | int     | Number of audio frames to confirm speaking state                    | 30      | [1, Integer.MAX_VALUE] |
+| stopRecognizeCount           | int     | Number of audio frames to confirm stop speaking state               | 65      | [1, Integer.MAX_VALUE] |
+| activePercent                | float   | Percentage of active frames required in startRecognizeCount frames  | 0.7     | [0.0, 1.0]             |
+| inactivePercent              | float   | Percentage of inactive frames required in stopRecognizeCount frames | 0.5     | [0.0, 1.0]             |
+| startVoiceProb               | int     | Probability threshold to start voice detection                      | 70      | [0, 100]               |
+| stopVoiceProb                | int     | Probability threshold to stop voice detection                       | 70      | [0, 100]               |
+| startRmsThreshold            | int     | RMS threshold (dB) to start voice detection                         | -70     | [-100, 0]              |
+| stopRmsThreshold             | int     | RMS threshold (dB) to stop voice detection                          | -70     | [-100, 0]              |
+| enableAdaptiveRmsThreshold   | boolean | Enable adaptive RMS threshold                                       | true    | true/false             |
+| adaptiveRmsThresholdFactor   | float   | Adaptive RMS threshold factor                                       | 0.67    | [0.0, 1.0]             |
 
-###### Notes
+###### Parameter Description
 
-- `startVoiceProb`: Lower value means higher probability of a frame being judged active, starting the phase earlier. Lower it for more sensitive detection.
-- `stopVoiceProb`: Higher value means higher probability of a frame being judged inactive, ending the phase earlier. Raise it for quicker end detection.
-- `startRmsThreshold` & `stopRmsThreshold`:
-  - Higher value means more sensitive to voice activity.
-  - Default -50 is recommended for quiet environments.
-  - In noisy environments, adjust between -40 and -30 to reduce false positives.
-  - Fine-tune based on the actual usage scenario and audio characteristics for optimal results.
+**Window Size Parameters**:
+- `preStartRecognizeCount`: Pre-start buffer frames to preserve voice beginning (16 frames = 160ms)
+- `startRecognizeCount`: Start detection window size to determine speech start (30 frames = 300ms)
+- `stopRecognizeCount`: Stop detection window size to determine speech end (65 frames = 650ms)
+
+**Percentage Thresholds**:
+- `activePercent`: Start active frame ratio threshold (default 0.7 = 70%), higher value for stricter start
+- `inactivePercent`: Stop inactive frame ratio threshold (default 0.5 = 50%), higher value for quicker stop
+
+**Voice Probability Thresholds**:
+- `startVoiceProb`: Start voice probability threshold (0-100), lower value for more sensitivity and earlier detection
+- `stopVoiceProb`: Stop voice probability threshold (0-100), higher value for earlier stop detection
+
+**RMS Energy Thresholds**:
+- `startRmsThreshold`: Start RMS threshold (dB), higher value for more sensitivity to voice
+  - Quiet environment: -70 dB (default)
+  - Noisy environment: -50 to -40 dB
+  - High noise environment: -40 to -30 dB
+- `stopRmsThreshold`: Stop RMS threshold (dB), typically same as startRmsThreshold
+
+**Adaptive Thresholds**:
+- `enableAdaptiveRmsThreshold`: When enabled, automatically adjusts RMS threshold based on voice statistics for better environment adaptation
+- `adaptiveRmsThresholdFactor`: Adaptive factor (default 0.67 = 2/3), lower value for lower threshold and more sensitivity
 
 ###### Methods
 
@@ -879,29 +866,44 @@ public class VadV2Example {
     public static void main(String[] args) {
         // Create VAD configuration
         AgoraAudioVadConfigV2 config = new AgoraAudioVadConfigV2();
+        // The following are default values, adjust as needed
         config.setPreStartRecognizeCount(16);
         config.setStartRecognizeCount(30);
-        config.setStopRecognizeCount(20);
+        config.setStopRecognizeCount(65);
         config.setActivePercent(0.7f);
         config.setInactivePercent(0.5f);
         config.setStartVoiceProb(70);
         config.setStopVoiceProb(70);
-        config.setStartRmsThreshold(-50);
-        config.setStopRmsThreshold(-50);
+        config.setStartRmsThreshold(-70);
+        config.setStopRmsThreshold(-70);
+        config.setEnableAdaptiveRmsThreshold(true);
+        config.setAdaptiveRmsThresholdFactor(0.67f);
 
         // Create VAD instance
         AgoraAudioVadV2 vad = new AgoraAudioVadV2(config);
 
         // Simulate audio frame processing
         AudioFrame frame = new AudioFrame();
-        // Set frame properties...
+        // Set frame properties
+        frame.setType(Constants.AudioFrameType.PCM16.getValue());
+        frame.setSamplesPerSec(16000); // 16kHz
+        frame.setChannels(1); // Mono
+        frame.setSamplesPerChannel(160); // 10ms frame, 16000/100 = 160
+        frame.setBytesPerSample(Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue()); // PCM16
+        // Set audio data buffer
+        byte[] pcmData = new byte[320]; // 160 samples * 1 channel * 2 bytes
+        // ... Fill PCM data ...
+        java.nio.ByteBuffer buffer = java.nio.ByteBuffer.allocateDirect(320);
+        buffer.put(pcmData);
+        buffer.flip();
+        frame.setBuffer(buffer);
 
         VadProcessResult result = vad.processFrame(frame);
         if (result != null) {
             System.out.println("VAD State: " + result.getState());
-            // Assuming getResult() exists on VadProcessResult (based on constructor)
-            // System.out.println("Processed Data Length: " + result.getResult().length);
-            System.out.println("Processed Data Length: " + result.getOutFrame().length); // Using getOutFrame based on API Ref
+            if (result.getOutFrame() != null) {
+                System.out.println("Processed Data Length: " + result.getOutFrame().length);
+            }
         }
 
         // Destroy VAD instance
@@ -1253,6 +1255,15 @@ public class Audio3AProcessingExample {
 
 ## Changelog
 
+### v4.4.32.200 (2025-11-14)
+
+- **API Changes**
+  - **AgoraServiceConfig**: Added `enableApm` and `apmConfig` properties to support configuring the APM (Audio Processing Module) module.
+
+- **Improvements & Optimizations**
+  - Optimized the default configuration parameters for VAD V2, improving the accuracy of voice activity detection.
+  - Fixed the accuracy issue of PTS values in Audio and Video callback parameters.
+
 ### v4.4.32.101 (2025-09-01)
 
 - **API Changes**
@@ -1266,185 +1277,97 @@ public class Audio3AProcessingExample {
 
 ### v4.4.32.100（2025-07-22）
 
-- This version supports AIQoS, and the API has changed, please refer to [AIQoS Upgrade Guide](AIQoS_Upgrade_Guide.md)
+- **API Changes**
+  - This version supports AIQoS, and the API has changed, please refer to [AIQoS Upgrade Guide](AIQoS_Upgrade_Guide.md)
 
 ### v4.4.32.1 (2025-06-12)
 
-#### **API Changes**
+- **API Changes**
+  - Optimized the `onStreamMessage` callback parameters in the `ILocalUserObserver` interface. The original method `onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data, long length)` has been changed to `onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, byte[] data)` to improve flexibility and efficiency in message handling.
 
-- Optimized the `onStreamMessage` callback parameters in the `ILocalUserObserver` interface. The original method `onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data, long length)` has been changed to `onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, byte[] data)` to improve flexibility and efficiency in message handling.
-
-#### **Improvements & Optimizations**
-
-- Fixed an issue in the `setLogFileSize` method of `AgoraServiceConfig` where the unit was incorrectly applied as bytes when set in KB. The log file size is now correctly set in KB.
+- **Improvements & Optimizations**
+  - Fixed an issue in the `setLogFileSize` method of `AgoraServiceConfig` where the unit was incorrectly applied as bytes when set in KB. The log file size is now correctly set in KB.
 
 ### v4.4.32 (2025-05-27)
 
-#### **API Changes**
+- **API Changes**
+  - `AgoraService`: Added `getSdkVersion` method to obtain the SDK version.
+  - `AgoraAudioEncodedFrameSender`: Removed `send(byte[] payloadData, int payloadSize, EncodedAudioFrameInfo info)` method, replaced with `sendEncodedAudioFrame(byte[] payloadData, EncodedAudioFrameInfo info)`.
+  - `AgoraAudioPcmDataSender`: The method `send(byte[] audioData, int captureTimestamp, int samplesPerChannel, int bytesPerSample, int numberOfChannels, int sampleRate)` is now deprecated, replaced with `sendAudioPcmData(AudioFrame audioFrame)`.
+  - `AgoraVideoEncodedImageSender`: Removed `send(byte[] imageBuffer, int length, EncodedVideoFrameInfo info)` method, replaced with `sendEncodedVideoImage(byte[] imageBuffer, EncodedVideoFrameInfo info)`.
+  - `AgoraVideoFrameSender`: Removed `send(ExternalVideoFrame frame)` method, replaced with `sendVideoFrame(ExternalVideoFrame frame)`.
 
-- `AgoraService`: Added `getSdkVersion` method to obtain the SDK version.
-- `AgoraAudioEncodedFrameSender`: Removed `send(byte[] payloadData, int payloadSize, EncodedAudioFrameInfo info)` method, replaced with `sendEncodedAudioFrame(byte[] payloadData, EncodedAudioFrameInfo info)`.
-- `AgoraAudioPcmDataSender`: The method `send(byte[] audioData, int captureTimestamp, int samplesPerChannel, int bytesPerSample, int numberOfChannels, int sampleRate)` is now deprecated, replaced with `sendAudioPcmData(AudioFrame audioFrame)`.
-- `AgoraVideoEncodedImageSender`: Removed `send(byte[] imageBuffer, int length, EncodedVideoFrameInfo info)` method, replaced with `sendEncodedVideoImage(byte[] imageBuffer, EncodedVideoFrameInfo info)`.
-- `AgoraVideoFrameSender`: Removed `send(ExternalVideoFrame frame)` method, replaced with `sendVideoFrame(ExternalVideoFrame frame)`.
-
-#### **Improvements & Optimizations**
-
-- Fixed a potential crash issue caused by the `destroy` method.
+- **Improvements & Optimizations**
+  - Fixed a potential crash issue caused by the `destroy` method.
 
 ### v4.4.31.4 (2025-03-21)
 
-#### **Improvements & Optimizations**
-
-- Fixed potential crashes caused by exceptions in multi-threaded environments.
-- Improved error handling processes, enhancing recovery capabilities in exceptional circumstances.
+- **Improvements & Optimizations**
+  - Fixed potential crashes caused by exceptions in multi-threaded environments.
+  - Improved error handling processes, enhancing recovery capabilities in exceptional circumstances.
 
 ### v4.4.31.3 (2025-02-26)
 
-#### **Improvements & Optimizations**
-
-- Fixed exception handling issues potentially caused by memory reuse.
-
-### v4.4.31.2 (2025-02-19)
-
-#### **API Changes**
-
-- Added `sendStreamMessage(int streamId, byte[] messageData)` method, deprecated `sendStreamMessage(int streamId, String message, int length)` method.
-
-#### **Improvements & Optimizations**
-
-- Optimized code handling, improving system robustness.
-
-### v4.4.31.1 (2025-01-06)
-
-#### **Improvements & Optimizations**
-
-- Optimized VAD function configuration; VAD is now enabled by default, manual configuration is not required.
-
-### v4.4.31 (2024-12-23)
-
-#### **API Changes**
-
-- Added `DomainLimit` configuration option in `AgoraServiceConfig` for domain limit management.
-- Added `VadDumpUtils` utility class, supporting export of debug data from the VAD process.
-- Added `AudioConsumerUtils` class, providing an optimized PCM data transmission mechanism.
-- Modified `registerAudioFrameObserver` method in `AgoraLocalUser` to support configuration of `AgoraAudioVadConfigV2` parameters.
-- Added `vadResult` parameter to the `onPlaybackAudioFrameBeforeMixing` callback in `IAudioFrameObserver`.
-- Added `sendAudioMetaData` method in `AgoraLocalUser` class to support sending audio metadata.
-- Added `onAudioMetaDataReceived` callback in `ILocalUserObserver` class for receiving audio metadata.
-- Added `ColorSpace` property in `ExternalVideoFrame` class to support custom color space settings.
-
-#### **Improvements & Optimizations**
-
-- Optimized code logic architecture, significantly improving memory usage efficiency.
-- Fixed multiple memory leak issues, enhancing system stability.
-- Strengthened memory access security mechanisms, effectively preventing memory corruption issues.
-
-### v4.4.30.2 (2024-11-20)
-
-#### **API Changes**
-
-- Enhanced `processFrame` handling in AgoraAudioVadV2, adding `START_SPEAKING` and `STOP_SPEAKING` state callbacks.
-- Improved parameter types for encoded frame callbacks: `onEncodedAudioFrameReceived`, `onEncodedVideoImageReceived`, `onEncodedVideoFrame` now use `ByteBuffer` instead of `Byte` arrays.
-
-#### **Improvements & Optimizations**
-
-- VAD plugin startup optimization: `enableExtension` is now handled internally by the SDK; applications no longer need to call this method manually.
-- Fixed handling issues with `alphaBuffer` and `metadataBuffer` in `VideoFrame`.
-
-### v4.4.30.1 (2024-11-12)
-
-#### **API Changes**
-
-- Added AgoraAudioVad2 related `Vad2` interface, removed AgoraAudioVad related `Vad` interface.
-- Added callback interface `IAudioEncodedFrameObserver` for receiving encoded audio.
-
-#### **Improvements & Optimizations**
-
-- Fixed crash issues related to `LocalAudioDetailedStats` callbacks.
-- Modified parameter types for the `onAudioVolumeIndication` callback.
-
-### v4.4.30 (2024-10-24)
-
-- For detailed changelog, please refer to the [Release Notes](https://docs.agora.io/en/rtc-server-sdk/java/overview/release-notes/)
-
-## Other References
-
-Refer to the official website for details (<https://docs.agora.io/en/rtc-server-sdk/java/landing-page/>)
-
-Official API documentation [Agora Server Java SDK API Reference](https://docs.agora.io/en/rtc-server-sdk/java/reference/api-overview/)
-
-
-#### **Improvements & Optimizations**
-
-- Fixed exception handling issues potentially caused by memory reuse.
+- **Improvements & Optimizations**
+  - Fixed exception handling issues potentially caused by memory reuse.
 
 ### v4.4.31.2 (2025-02-19)
 
-#### **API Changes**
+- **API Changes**
 
 - Added `sendStreamMessage(int streamId, byte[] messageData)` method, deprecated `sendStreamMessage(int streamId, String message, int length)` method.
 
-#### **Improvements & Optimizations**
-
-- Optimized code handling, improving system robustness.
+- **Improvements & Optimizations**
+  - Optimized code handling, improving system robustness.
 
 ### v4.4.31.1 (2025-01-06)
 
-#### **Improvements & Optimizations**
-
-- Optimized VAD function configuration; VAD is now enabled by default, manual configuration is not required.
+- **Improvements & Optimizations**
+  - Optimized VAD function configuration; VAD is now enabled by default, manual configuration is not required.
 
 ### v4.4.31 (2024-12-23)
 
-#### **API Changes**
+- **API Changes**
+  - Added `DomainLimit` configuration option in `AgoraServiceConfig` for domain limit management.
+  - Added `VadDumpUtils` utility class, supporting export of debug data from the VAD process.
+  - Added `AudioConsumerUtils` class, providing an optimized PCM data transmission mechanism.
+  - Modified `registerAudioFrameObserver` method in `AgoraLocalUser` to support configuration of `AgoraAudioVadConfigV2` parameters.
+  - Added `vadResult` parameter to the `onPlaybackAudioFrameBeforeMixing` callback in `IAudioFrameObserver`.
+  - Added `sendAudioMetaData` method in `AgoraLocalUser` class to support sending audio metadata.
+  - Added `onAudioMetaDataReceived` callback in `ILocalUserObserver` class for receiving audio metadata.
+  - Added `ColorSpace` property in `ExternalVideoFrame` class to support custom color space settings.
 
-- Added `DomainLimit` configuration option in `AgoraServiceConfig` for domain limit management.
-- Added `VadDumpUtils` utility class, supporting export of debug data from the VAD process.
-- Added `AudioConsumerUtils` class, providing an optimized PCM data transmission mechanism.
-- Modified `registerAudioFrameObserver` method in `AgoraLocalUser` to support configuration of `AgoraAudioVadConfigV2` parameters.
-- Added `vadResult` parameter to the `onPlaybackAudioFrameBeforeMixing` callback in `IAudioFrameObserver`.
-- Added `sendAudioMetaData` method in `AgoraLocalUser` class to support sending audio metadata.
-- Added `onAudioMetaDataReceived` callback in `ILocalUserObserver` class for receiving audio metadata.
-- Added `ColorSpace` property in `ExternalVideoFrame` class to support custom color space settings.
-
-#### **Improvements & Optimizations**
-
-- Optimized code logic architecture, significantly improving memory usage efficiency.
-- Fixed multiple memory leak issues, enhancing system stability.
-- Strengthened memory access security mechanisms, effectively preventing memory corruption issues.
+- **Improvements & Optimizations**
+  - Optimized code logic architecture, significantly improving memory usage efficiency.
+  - Fixed multiple memory leak issues, enhancing system stability.
+  - Strengthened memory access security mechanisms, effectively preventing memory corruption issues.
 
 ### v4.4.30.2 (2024-11-20)
 
-#### **API Changes**
+- **API Changes**
+  - Enhanced `processFrame` handling in AgoraAudioVadV2, adding `START_SPEAKING` and `STOP_SPEAKING` state callbacks.
+  - Improved parameter types for encoded frame callbacks: `onEncodedAudioFrameReceived`, `onEncodedVideoImageReceived`, `onEncodedVideoFrame` now use `ByteBuffer` instead of `Byte` arrays.
 
-- Enhanced `processFrame` handling in AgoraAudioVadV2, adding `START_SPEAKING` and `STOP_SPEAKING` state callbacks.
-- Improved parameter types for encoded frame callbacks: `onEncodedAudioFrameReceived`, `onEncodedVideoImageReceived`, `onEncodedVideoFrame` now use `ByteBuffer` instead of `Byte` arrays.
-
-#### **Improvements & Optimizations**
-
-- VAD plugin startup optimization: `enableExtension` is now handled internally by the SDK; applications no longer need to call this method manually.
-- Fixed handling issues with `alphaBuffer` and `metadataBuffer` in `VideoFrame`.
+- **Improvements & Optimizations**
+  - VAD plugin startup optimization: `enableExtension` is now handled internally by the SDK; applications no longer need to call this method manually.
+  - Fixed handling issues with `alphaBuffer` and `metadataBuffer` in `VideoFrame`.
 
 ### v4.4.30.1 (2024-11-12)
 
-#### **API Changes**
+- **API Changes**
+  - Added AgoraAudioVad2 related `Vad2` interface, removed AgoraAudioVad related `Vad` interface.
+  - Added callback interface `IAudioEncodedFrameObserver` for receiving encoded audio.
 
-- Added AgoraAudioVad2 related `Vad2` interface, removed AgoraAudioVad related `Vad` interface.
-- Added callback interface `IAudioEncodedFrameObserver` for receiving encoded audio.
-
-#### **Improvements & Optimizations**
-
-- Fixed crash issues related to `LocalAudioDetailedStats` callbacks.
-- Modified parameter types for the `onAudioVolumeIndication` callback.
+- **Improvements & Optimizations**
+  - Fixed crash issues related to `LocalAudioDetailedStats` callbacks.
+  - Modified parameter types for the `onAudioVolumeIndication` callback.
 
 ### v4.4.30 (2024-10-24)
-
-- For detailed changelog, please refer to the [Release Notes](https://docs.agora.io/en/rtc-server-sdk/java/overview/release-notes/)
+- **API Changes**
+  - For detailed changelog, please refer to the [Release Notes](https://docs.agora.io/en/rtc-server-sdk/java/overview/release-notes/)
 
 ## Other References
 
-Refer to the official website for details (<https://docs.agora.io/en/rtc-server-sdk/java/landing-page/>)
+- Refer to the official website for details (<https://docs.agora.io/en/rtc-server-sdk/java/landing-page/>)
 
-Official API documentation [Agora Server Java SDK API Reference](https://docs.agora.io/en/rtc-server-sdk/java/reference/api-overview/)
-
+- Official API documentation [Agora Server Java SDK API Reference](https://docs.agora.io/en/rtc-server-sdk/java/reference/api-overview/)

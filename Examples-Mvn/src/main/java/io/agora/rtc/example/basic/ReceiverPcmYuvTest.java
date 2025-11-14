@@ -285,9 +285,9 @@ public class ReceiverPcmYuvTest {
 
                 singleExecutorService.execute(() -> {
                     SampleLogger.log(
-                            String.format("onFrame width:%d height:%d channelId:%s remoteUserId:%s "
+                            String.format("onFrame frame:%s channelId:%s remoteUserId:%s "
                                     + "frame size:%d %d %d with  channelId:%s userId:%s",
-                                    frame.getWidth(), frame.getHeight(), channelId, remoteUserId, yDataSize,
+                                    frame, channelId, remoteUserId, yDataSize,
                                     uvDataSize, uvDataSize, channelId, userIdHolder.get()));
 
                     if (metaDataBufferData != null) {

@@ -47,6 +47,8 @@ public class ArgsConfig implements Cloneable {
     private boolean isBroadcaster = false;
     private boolean isRecvAudioEncodedFrame = false;
     private boolean enableAssistantDevice = false;
+    private boolean isAutoTest = false;
+    private boolean enableApmAndDump = false;
 
     // Getter and Setter methods
     public String getAppId() {
@@ -409,6 +411,22 @@ public class ArgsConfig implements Cloneable {
         this.enableAssistantDevice = enableAssistantDevice;
     }
 
+    public boolean isAutoTest() {
+        return isAutoTest;
+    }
+
+    public void setAutoTest(boolean isAutoTest) {
+        this.isAutoTest = isAutoTest;
+    }
+
+    public boolean isEnableApmAndDump() {
+        return enableApmAndDump;
+    }
+
+    public void setEnableApmAndDump(boolean enableApmAndDump) {
+        this.enableApmAndDump = enableApmAndDump;
+    }
+
     @Override
     public ArgsConfig clone() {
         try {
@@ -472,6 +490,8 @@ public class ArgsConfig implements Cloneable {
         cloned.isBroadcaster = this.isBroadcaster;
         cloned.isRecvAudioEncodedFrame = this.isRecvAudioEncodedFrame;
         cloned.enableAssistantDevice = this.enableAssistantDevice;
+        cloned.isAutoTest = this.isAutoTest;
+        cloned.enableApmAndDump = this.enableApmAndDump;
         return cloned;
     }
 
@@ -502,6 +522,7 @@ public class ArgsConfig implements Cloneable {
                 + ", sleepTime='" + sleepTime + '\'' + ", timeForStressLeave='" + timeForStressLeave
                 + '\'' + ", isBroadcaster='" + isBroadcaster + '\'' + ", isRecvAudioEncodedFrame='"
                 + isRecvAudioEncodedFrame + '\'' + ", enableAssistantDevice='" + enableAssistantDevice
+                + '\'' + ", isAutoTest='" + isAutoTest + '\'' + ", enableApmAndDump='" + enableApmAndDump
                 + '\'' + '}';
     }
 }

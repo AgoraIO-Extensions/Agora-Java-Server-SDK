@@ -4,6 +4,7 @@ import io.agora.rtc.AgoraParameter;
 import io.agora.rtc.AgoraService;
 import io.agora.rtc.AgoraServiceConfig;
 import io.agora.rtc.Constants;
+import io.agora.rtc.apm.AgoraApmConfig;
 import io.agora.rtc.example.utils.Utils;
 import java.io.File;
 
@@ -48,6 +49,13 @@ public class AgoraServiceInitializer {
         config.setLogFilters(argsConfig.getLogFilter());
         config.setConfigDir(DEFAULT_CONFIG_DIR);
         config.setDataDir(DEFAULT_DATA_DIR);
+
+        if (argsConfig.isEnableApmAndDump()) {
+            config.setEnableApm(true);
+            AgoraApmConfig apmConfig = new AgoraApmConfig();
+            apmConfig.setEnableDump(true);
+            config.setApmConfig(apmConfig);
+        }
 
         SampleLogger.log("initAgoraService config=" + config);
 
