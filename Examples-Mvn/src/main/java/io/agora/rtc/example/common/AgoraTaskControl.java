@@ -4,7 +4,6 @@ import io.agora.rtc.AgoraRtcConn;
 import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnPublishConfig;
-import io.agora.rtc.SenderOptions;
 import io.agora.rtc.example.utils.Utils;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -59,6 +58,7 @@ public class AgoraTaskControl {
         SEND_PCM_H264,
         SEND_PCM_AI,
         SEND_PCM_AI_WITH_PTS,
+        SEND_H265,
         RECEIVE_PCM,
         RECEIVE_YUV,
         RECEIVE_H264,
@@ -68,7 +68,8 @@ public class AgoraTaskControl {
         SEND_RECEIVE_PCM_YUV,
         RECEIVE_DATA_STREAM,
         RECEIVE_PCM_AI,
-        RECEIVE_PCM_AI_WITH_PTS
+        RECEIVE_PCM_AI_WITH_PTS,
+        RECEIVE_H265,
     }
 
     private AgoraTaskManager.AgoraTaskListener agoraTaskListener;
@@ -238,6 +239,14 @@ public class AgoraTaskControl {
                     publishConfig.setAudioPublishType(Constants.AudioPublishType.PCM);
                     publishConfig.setVideoPublishType(Constants.VideoPublishType.NO_PUBLISH);
                     break;
+                case SEND_H265:
+                    publishConfig.setIsPublishAudio(false);
+                    publishConfig.setIsPublishVideo(true);
+                    publishConfig.setAudioPublishType(Constants.AudioPublishType.NO_PUBLISH);
+                    publishConfig.setVideoPublishType(Constants.VideoPublishType.ENCODED_IMAGE);
+                    publishConfig.getSenderOptions().setCcMode(Constants.TCC_ENABLED);
+                    publishConfig.getSenderOptions().setCodecType(Constants.VIDEO_CODEC_H265);
+                    break;
                 case SEND_DATA_STREAM:
                 case RECEIVE_DATA_STREAM:
                     publishConfig.setIsPublishAudio(false);
@@ -251,6 +260,7 @@ public class AgoraTaskControl {
                 case RECEIVE_YUV:
                 case RECEIVE_H264:
                 case RECEIVE_ENCODED_AUDIO:
+                case RECEIVE_H265:
                     publishConfig.setIsPublishAudio(false);
                     publishConfig.setIsPublishVideo(false);
                     publishConfig.setAudioPublishType(Constants.AudioPublishType.NO_PUBLISH);
@@ -381,12 +391,15 @@ public class AgoraTaskControl {
                 case SEND_PCM_AI_WITH_PTS:
                     connTask.sendPcmTask(true, true);
                     break;
+                case SEND_H265:
+                    connTask.sendH265Task(true);
+                    break;
                 case RECEIVE_PCM:
                     connTask.registerPcmObserverTask(true, false);
                     break;
                 case RECEIVE_PCM_H264:
                     connTask.registerPcmObserverTask(false, false);
-                    connTask.registerH264ObserverTask(true);
+                    connTask.registerEncodedVideoObserverTask(true, "h264");
                     break;
                 case RECEIVE_MIXED_AUDIO:
                     connTask.registerMixedAudioObserverTask(true);
@@ -395,7 +408,7 @@ public class AgoraTaskControl {
                     connTask.registerYuvObserverTask(true);
                     break;
                 case RECEIVE_H264:
-                    connTask.registerH264ObserverTask(true);
+                    connTask.registerEncodedVideoObserverTask(true, "h264");
                     break;
                 case RECEIVE_ENCODED_AUDIO:
                     connTask.registerEncodedAudioObserverTask(true);
@@ -412,6 +425,9 @@ public class AgoraTaskControl {
                 case RECEIVE_PCM_AI:
                 case RECEIVE_PCM_AI_WITH_PTS:
                     connTask.registerPcmObserverTask(true, true);
+                    break;
+                case RECEIVE_H265:
+                    connTask.registerEncodedVideoObserverTask(true, "h265");
                     break;
                 case NONE:
                 default:

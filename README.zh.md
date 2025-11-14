@@ -49,7 +49,7 @@
         - [类和方法](#类和方法-1)
           - [AgoraAudioVadV2 类](#agoraaudiovadv2-类)
           - [AgoraAudioVadConfigV2 属性](#agoraaudiovadconfigv2-属性)
-          - [注意事项](#注意事项)
+          - [参数说明](#参数说明)
           - [方法](#方法)
         - [VadProcessResult](#vadprocessresult)
           - [构造方法](#构造方法)
@@ -70,39 +70,24 @@
           - [主要方法 (Setters/Getters)](#主要方法-settersgetters)
       - [使用示例](#使用示例-2)
   - [更新日志](#更新日志)
+    - [v4.4.32.200（2025-11-14）](#v44322002025-11-14)
     - [v4.4.32.101（2025-09-01）](#v44321012025-09-01)
     - [v4.4.32.100（2025-07-22）](#v44321002025-07-22)
     - [v4.4.32.1（2025-06-12）](#v443212025-06-12)
-      - [**API 变更**](#api-变更)
-      - [**改进与优化**](#改进与优化)
     - [v4.4.32（2025-05-27）](#v44322025-05-27)
-      - [**API 变更**](#api-变更-1)
-      - [**改进与优化**](#改进与优化-1)
     - [v4.4.31.4（2025-03-21）](#v443142025-03-21)
-      - [**改进与优化**](#改进与优化-2)
     - [v4.4.31.3（2025-02-26）](#v443132025-02-26)
-      - [**改进与优化**](#改进与优化-3)
     - [v4.4.31.2（2025-02-19）](#v443122025-02-19)
-      - [**API 变更**](#api-变更-2)
-      - [**改进与优化**](#改进与优化-4)
     - [v4.4.31.1（2025-01-06）](#v443112025-01-06)
-      - [**改进与优化**](#改进与优化-5)
     - [v4.4.31（2024-12-23）](#v44312024-12-23)
-      - [**API 变更**](#api-变更-3)
-      - [**改进与优化**](#改进与优化-6)
     - [v4.4.30.2（2024-11-20）](#v443022024-11-20)
-      - [**API 变更**](#api-变更-4)
-      - [**改进与优化**](#改进与优化-7)
     - [v4.4.30.1（2024-11-12）](#v443012024-11-12)
-      - [**API 变更**](#api-变更-5)
-      - [**改进与优化**](#改进与优化-8)
     - [v4.4.30（2024-10-24）](#v44302024-10-24)
   - [其他参考](#其他参考)
-  - [其他参考](#其他参考-1)
 
 ## 简介
 
-Agora Linux Server Java SDK (v4.4.32.101) 为您提供了强大的实时音视频通信能力，可无缝集成到 Linux 服务器端 Java 应用程序中。借助此 SDK，您的服务器可以作为数据源或处理节点加入 Agora 频道，实时获取和处理音视频流，从而实现多种业务相关的其他高级功能。
+Agora Linux Server Java SDK (v4.4.32.200) 为您提供了强大的实时音视频通信能力，可无缝集成到 Linux 服务器端 Java 应用程序中。借助此 SDK，您的服务器可以作为数据源或处理节点加入 Agora 频道，实时获取和处理音视频流，从而实现多种业务相关的其他高级功能。
 
 Agora Linux Gateway SDK 暂未发布，相关功能暂未支持。
 
@@ -134,13 +119,13 @@ Agora Linux Gateway SDK 暂未发布，相关功能暂未支持。
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.101</version>
+    <version>4.4.32.200</version>
 </dependency>
 ```
 
 ### CDN 下载
 
-[Agora-Linux-Java-SDK-v4.4.32.101-x86_64-860822-199c582312-20250901_154513](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.101-x86_64-860822-199c582312-20250901_154513.zip)
+[Agora-Linux-Java-SDK-v4.4.32.200-x86_64-964478-6b09067690-20251114_115603](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.200-x86_64-964478-6b09067690-20251114_115603.zip)
 
 ## 集成 SDK
 
@@ -159,7 +144,7 @@ Maven 集成是最简单的方式，可以自动管理 Java 依赖关系。
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.101</version>
+    <version>4.4.32.200</version>
 </dependency>
 ```
 
@@ -194,7 +179,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32.101 \
+  -Dversion=4.4.32.200 \
   -Dpackaging=jar \
   -DgeneratePom=true
 ```
@@ -206,7 +191,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32.101 \
+  -Dversion=4.4.32.200 \
   -Dpackaging=jar \
   -DgeneratePom=true \
   -Djavadoc=sdk/agora-sdk-javadoc.jar
@@ -218,7 +203,7 @@ mvn install:install-file \
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.101</version>
+    <version>4.4.32.200</version>
 </dependency>
 ```
 
@@ -267,7 +252,7 @@ Agora Linux Server Java SDK 依赖于底层的 C++ 原生库（`.so` 文件）�
     jar xvf agora-sdk.jar
 
     # 如果使用 Maven 集成方式，JAR 文件在 Maven 缓存中，例如：
-    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.101/linux-java-sdk-4.4.32.101.jar
+    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.200/linux-java-sdk-4.4.32.200.jar
     ```
 
 3.  提取后，`libs` 目录下会生成 `native/linux/x86_64` 子目录，其中包含所需的 `.so` 文件：
@@ -472,7 +457,7 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.101</version>  <!-- 确保版本号与您需要使用的版本一致 -->
+    <version>4.4.32.200</version>  <!-- 确保版本号与您需要使用的版本一致 -->
 </dependency>
 ```
 
@@ -708,14 +693,14 @@ public synchronized void destroy()
 | fftSz                  | int   | FFT 大小，仅支持 128、256、512、1024 | 1024   | [128, 256, 512, 1024]  |
 | hopSz                  | int   | FFT 跳跃大小，用于检查               | 160    | [1, Integer.MAX_VALUE] |
 | anaWindowSz            | int   | FFT 窗口大小，用于计算 RMS           | 768    | [1, Integer.MAX_VALUE] |
-| voiceProbThr           | float | 语音概率阈值                         | 0.8    | [0.0, 1.0]             |
+| voiceProbThr           | float | 语音概率阈值                         | 0.7    | [0.0, 1.0]             |
 | rmsThr                 | float | RMS 阈值（dB）                       | -40.0  | [-100.0, 0.0]          |
 | jointThr               | float | 联合阈值（dB）                       | 0.0    | [-100.0, 100.0]        |
-| aggressive             | float | 激进因子，值越大越激进               | 5.0    | [0.0, 10.0]            |
-| startRecognizeCount    | int   | 开始识别计数                         | 10     | [1, Integer.MAX_VALUE] |
-| stopRecognizeCount     | int   | 停止识别计数                         | 6      | [1, Integer.MAX_VALUE] |
-| preStartRecognizeCount | int   | 预开始识别计数                       | 10     | [0, Integer.MAX_VALUE] |
-| activePercent          | float | 活跃百分比                           | 0.6    | [0.0, 1.0]             |
+| aggressive             | float | 激进因子，值越大越激进               | 2.0    | [0.0, 10.0]            |
+| startRecognizeCount    | int   | 开始识别计数                         | 30     | [1, Integer.MAX_VALUE] |
+| stopRecognizeCount     | int   | 停止识别计数                         | 48     | [1, Integer.MAX_VALUE] |
+| preStartRecognizeCount | int   | 预开始识别计数                       | 16     | [0, Integer.MAX_VALUE] |
+| activePercent          | float | 活跃百分比                           | 0.8    | [0.0, 1.0]             |
 | inactivePercent        | float | 非活跃百分比                         | 0.2    | [0.0, 1.0]             |
 
 ##### 使用示例
@@ -787,27 +772,45 @@ public AgoraAudioVadV2(AgoraAudioVadConfigV2 config)
 
 ###### AgoraAudioVadConfigV2 属性
 
-| 属性名                 | 类型  | 描述                                       | 默认值 | 取值范围               |
-| ---------------------- | ----- | ------------------------------------------ | ------ | ---------------------- |
-| preStartRecognizeCount | int   | 开始说话状态前保存的音频帧数               | 16     | [0, Integer.MAX_VALUE] |
-| startRecognizeCount    | int   | 说话状态的音频帧数                         | 30     | [1, Integer.MAX_VALUE] |
-| stopRecognizeCount     | int   | 停止说话状态的音频帧数                     | 20     | [1, Integer.MAX_VALUE] |
-| activePercent          | float | 在 startRecognizeCount 帧中活跃帧的百分比  | 0.7    | [0.0, 1.0]             |
-| inactivePercent        | float | 在 stopRecognizeCount 帧中非活跃帧的百分比 | 0.5    | [0.0, 1.0]             |
-| startVoiceProb         | int   | 开始语音检测的概率阈值                     | 70     | [0, 100]               |
-| stopVoiceProb          | int   | 停止语音检测的概率阈值                     | 70     | [0, 100]               |
-| startRmsThreshold      | int   | 开始语音检测的 RMS 阈值                    | -50    | [-100, 0]              |
-| stopRmsThreshold       | int   | 停止语音检测的 RMS 阈值                    | -50    | [-100, 0]              |
+| 属性名                       | 类型    | 描述                                       | 默认值 | 取值范围               |
+| ---------------------------- | ------- | ------------------------------------------ | ------ | ---------------------- |
+| preStartRecognizeCount       | int     | 开始说话状态前保存的音频帧数               | 16     | [0, Integer.MAX_VALUE] |
+| startRecognizeCount          | int     | 说话状态的音频帧数                         | 30     | [1, Integer.MAX_VALUE] |
+| stopRecognizeCount           | int     | 停止说话状态的音频帧数                     | 65     | [1, Integer.MAX_VALUE] |
+| activePercent                | float   | 在 startRecognizeCount 帧中活跃帧的百分比  | 0.7    | [0.0, 1.0]             |
+| inactivePercent              | float   | 在 stopRecognizeCount 帧中非活跃帧的百分比 | 0.5    | [0.0, 1.0]             |
+| startVoiceProb               | int     | 开始语音检测的概率阈值                     | 70     | [0, 100]               |
+| stopVoiceProb                | int     | 停止语音检测的概率阈值                     | 70     | [0, 100]               |
+| startRmsThreshold            | int     | 开始语音检测的 RMS 阈值 (dB)               | -70    | [-100, 0]              |
+| stopRmsThreshold             | int     | 停止语音检测的 RMS 阈值 (dB)               | -70    | [-100, 0]              |
+| enableAdaptiveRmsThreshold   | boolean | 是否启用自适应 RMS 阈值                    | true   | true/false             |
+| adaptiveRmsThresholdFactor   | float   | 自适应 RMS 阈值因子                        | 0.67   | [0.0, 1.0]             |
 
-###### 注意事项
+###### 参数说明
 
-- `startVoiceProb`: 值越低，帧被判断为活跃的概率越高，开始阶段会更早开始。在需要更敏感的语音检测时可以适当降低。
-- `stopVoiceProb`: 值越高，帧被判断为非活跃的概率越高，结束阶段会更早开始。在需要更快结束语音检测时可以适当提高。
-- `startRmsThreshold` 和 `stopRmsThreshold`:
-  - 值越高，对语音活动越敏感。
-  - 在安静环境中推荐使用默认值 -50。
-  - 在嘈杂环境中可以调高到 -40 到 -30 之间，以减少误检。
-  - 根据实际使用场景和音频特征进行微调可获得最佳效果。
+**窗口大小参数**：
+- `preStartRecognizeCount`: 预启动缓冲帧数，用于保留语音开头部分（16帧 = 160ms）
+- `startRecognizeCount`: 启动检测窗口大小，判断是否开始说话（30帧 = 300ms）
+- `stopRecognizeCount`: 停止检测窗口大小，判断是否停止说话（65帧 = 650ms）
+
+**百分比阈值**：
+- `activePercent`: 启动活动帧比例阈值（默认0.7 = 70%），值越高启动越严格
+- `inactivePercent`: 停止非活动帧比例阈值（默认0.5 = 50%），值越高停止越快
+
+**语音概率阈值**：
+- `startVoiceProb`: 启动语音概率阈值（0-100），值越低越敏感，更早开始检测
+- `stopVoiceProb`: 停止语音概率阈值（0-100），值越高越早停止检测
+
+**RMS 能量阈值**：
+- `startRmsThreshold`: 启动 RMS 阈值（dB），值越高对语音越敏感
+  - 安静环境：-70 dB（默认）
+  - 噪声环境：-50 到 -40 dB
+  - 高噪声环境：-40 到 -30 dB
+- `stopRmsThreshold`: 停止 RMS 阈值（dB），通常与 startRmsThreshold 保持一致
+
+**自适应阈值**：
+- `enableAdaptiveRmsThreshold`: 启用后根据历史语音统计自动调整 RMS 阈值，提高环境适应性
+- `adaptiveRmsThresholdFactor`: 自适应因子（默认0.67 = 2/3），值越小阈值越低越敏感
 
 ###### 方法
 
@@ -855,27 +858,44 @@ public class VadV2Example {
     public static void main(String[] args) {
         // 创建 VAD 配置
         AgoraAudioVadConfigV2 config = new AgoraAudioVadConfigV2();
+        // 以下为默认值，可根据需要调整
         config.setPreStartRecognizeCount(16);
         config.setStartRecognizeCount(30);
-        config.setStopRecognizeCount(20);
+        config.setStopRecognizeCount(65);
         config.setActivePercent(0.7f);
         config.setInactivePercent(0.5f);
         config.setStartVoiceProb(70);
         config.setStopVoiceProb(70);
-        config.setStartRmsThreshold(-50);
-        config.setStopRmsThreshold(-50);
+        config.setStartRmsThreshold(-70);
+        config.setStopRmsThreshold(-70);
+        config.setEnableAdaptiveRmsThreshold(true);
+        config.setAdaptiveRmsThresholdFactor(0.67f);
 
         // 创建 VAD 实例
         AgoraAudioVadV2 vad = new AgoraAudioVadV2(config);
 
         // 模拟音频帧处理
         AudioFrame frame = new AudioFrame();
-        // 设置 frame 的属性...
+        // 设置 frame 的属性
+        frame.setType(Constants.AudioFrameType.PCM16.getValue());
+        frame.setSamplesPerSec(16000); // 16kHz
+        frame.setChannels(1); // 单声道
+        frame.setSamplesPerChannel(160); // 10ms 帧，16000/100 = 160
+        frame.setBytesPerSample(Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue()); // PCM16
+        // 设置音频数据缓冲区
+        byte[] pcmData = new byte[320]; // 160 samples * 1 channel * 2 bytes
+        // ... 填充 PCM 数据 ...
+        java.nio.ByteBuffer buffer = java.nio.ByteBuffer.allocateDirect(320);
+        buffer.put(pcmData);
+        buffer.flip();
+        frame.setBuffer(buffer);
 
         VadProcessResult result = vad.processFrame(frame);
         if (result != null) {
             System.out.println("VAD State: " + result.getState());
-            System.out.println("Processed Data Length: " + result.getResult().length);
+            if (result.getOutFrame() != null) {
+                System.out.println("Processed Data Length: " + result.getOutFrame().length);
+            }
         }
 
         // 销毁 VAD 实例
@@ -1226,6 +1246,15 @@ public class Audio3AProcessingExample {
 
 ## 更新日志
 
+### v4.4.32.200（2025-11-14）
+
+- **API 变更**
+  - **AgoraServiceConfig**: 新增 `enableApm` 和 `apmConfig` 属性，支持配置 APM（Audio Processing Module）模块。
+
+- **改进与优化**
+  - 优化了 VAD V2 的默认配置参数，提升语音活动检测的准确性。
+  - 修复了 Audio 和 Video 回调参数中pts值的准确性问题。
+
 ### v4.4.32.101（2025-09-01）
 
 - **API 变更**
@@ -1239,119 +1268,96 @@ public class Audio3AProcessingExample {
 
 ### v4.4.32.100（2025-07-22）
 
-- 该版本支持AIQoS，同时API有变更，请参考[AIQoS升级指南](AIQoS_Upgrade_Guide.md)
+- **API 变更**
+  - 该版本支持AIQoS，同时API有变更，请参考[AIQoS升级指南](AIQoS_Upgrade_Guide.md)
 
 ### v4.4.32.1（2025-06-12）
 
-#### **API 变更**
+- **API 变更**
+  - 优化 `ILocalUserObserver` 接口的 `onStreamMessage` 回调参数，将原有的 `onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data, long length)` 修改为 `onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, byte[] data)`，提升消息处理的灵活性和效率。
 
-- 优化 `ILocalUserObserver` 接口的 `onStreamMessage` 回调参数，将原有的 `onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data, long length)` 修改为 `onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, byte[] data)`，提升消息处理的灵活性和效率。
-
-#### **改进与优化**
-
-- 修复了 `AgoraServiceConfig` 的 `setLogFileSize` 方法，单位为 KB 时实际生效单位为 Byte 的问题，现已正确按 KB 设置日志文件大小。
+- **改进与优化**
+  - 修复了 `AgoraServiceConfig` 的 `setLogFileSize` 方法，单位为 KB 时实际生效单位为 Byte 的问题，现已正确按 KB 设置日志文件大小。
 
 ### v4.4.32（2025-05-27）
 
-#### **API 变更**
-
-- `AgoraService` 新增 `getSdkVersion` 方法，用于获取 SDK 版本号
-- `AgoraAudioEncodedFrameSender` 移除 `send(byte[] payloadData, int payloadSize, EncodedAudioFrameInfo info)` 方法，新增 `sendEncodedAudioFrame(byte[] payloadData, EncodedAudioFrameInfo info)` 方法替代
-- `AgoraAudioPcmDataSender` 的 `send(byte[] audioData, int captureTimestamp, int samplesPerChannel, int bytesPerSample,
+- **API 变更**
+  - `AgoraService` 新增 `getSdkVersion` 方法，用于获取 SDK 版本号
+  - `AgoraAudioEncodedFrameSender` 移除 `send(byte[] payloadData, int payloadSize, EncodedAudioFrameInfo info)` 方法，新增 `sendEncodedAudioFrame(byte[] payloadData, EncodedAudioFrameInfo info)` 方法替代
+  - `AgoraAudioPcmDataSender` 的 `send(byte[] audioData, int captureTimestamp, int samplesPerChannel, int bytesPerSample,
 int numberOfChannels, int sampleRate) ` 方法标位不推荐，新增 `sendAudioPcmData(AudioFrame audioFrame)` 方法替代
-- `AgoraVideoEncodedImageSender` 移除 `send(byte[] imageBuffer, int length, EncodedVideoFrameInfo info` 方法，新增 `sendEncodedVideoImage(byte[] imageBuffer, EncodedVideoFrameInfo info)` 方法替代
-- `AgoraVideoFrameSender` 移除 `send(ExternalVideoFrame frame)` 方法，新增 `sendVideoFrame(ExternalVideoFrame frame)` 方法替代
+  - `AgoraVideoEncodedImageSender` 移除 `send(byte[] imageBuffer, int length, EncodedVideoFrameInfo info` 方法，新增 `sendEncodedVideoImage(byte[] imageBuffer, EncodedVideoFrameInfo info)` 方法替代
+  - `AgoraVideoFrameSender` 移除 `send(ExternalVideoFrame frame)` 方法，新增 `sendVideoFrame(ExternalVideoFrame frame)` 方法替代
 
-#### **改进与优化**
-
-- 修复了 `destroy` 方法可能导致的崩溃问题
+- **改进与优化**
+  - 修复了 `destroy` 方法可能导致的崩溃问题
 
 ### v4.4.31.4（2025-03-21）
 
-#### **改进与优化**
-
-- 修复了多线程环境下可能导致的异常崩溃问题
-- 改进了错误处理流程，增强了异常情况下的恢复能力
+- **改进与优化**
+  - 修复了多线程环境下可能导致的异常崩溃问题
+  - 改进了错误处理流程，增强了异常情况下的恢复能力
 
 ### v4.4.31.3（2025-02-26）
 
-#### **改进与优化**
-
+- **改进与优化**
 - 修复了由于内存复用可能导致的异常处理问题
 
 ### v4.4.31.2（2025-02-19）
 
-#### **API 变更**
+- **API 变更**
+  - 新增 `sendStreamMessage(int streamId, byte[] messageData)` 方法，弃用 `sendStreamMessage(int streamId, String message, int length)` 方法
 
-- 新增 `sendStreamMessage(int streamId, byte[] messageData)` 方法，弃用 `sendStreamMessage(int streamId, String message, int length)` 方法
-
-#### **改进与优化**
-
-- 优化代码处理，提高系统稳健性
+- **改进与优化**
+  - 优化代码处理，提高系统稳健性
 
 ### v4.4.31.1（2025-01-06）
 
-#### **改进与优化**
-
-- 优化 VAD 功能配置，现在默认开启 VAD 功能，无需手动配置
+- **改进与优化**
+  - 优化 VAD 功能配置，现在默认开启 VAD 功能，无需手动配置
 
 ### v4.4.31（2024-12-23）
 
-#### **API 变更**
+- **API 变更**
+  - 在 `AgoraServiceConfig` 中新增 `DomainLimit` 配置选项，用于域名限制管理
+  - 新增 `VadDumpUtils` 工具类，支持导出 VAD 处理过程的调试数据
+  - 新增 `AudioConsumerUtils` 类，提供优化的 PCM 数据传输机制
+  - 在 `AgoraLocalUser` 中修改 `registerAudioFrameObserver` 方法，支持配置 `AgoraAudioVadConfigV2` 参数
+  - 在 `IAudioFrameObserver` 中新增 `onPlaybackAudioFrameBeforeMixing` 回调的 `vadResult` 参数
+  - 在 `AgoraLocalUser` 类中新增 `sendAudioMetaData` 方法，支持发送音频元数据
+  - 在 `ILocalUserObserver` 类中新增 `onAudioMetaDataReceived` 回调，用于接收音频元数据
+  - 在 `ExternalVideoFrame` 类中增加 `ColorSpace` 属性，支持自定义颜色空间设置
 
-- 在 `AgoraServiceConfig` 中新增 `DomainLimit` 配置选项，用于域名限制管理
-- 新增 `VadDumpUtils` 工具类，支持导出 VAD 处理过程的调试数据
-- 新增 `AudioConsumerUtils` 类，提供优化的 PCM 数据传输机制
-- 在 `AgoraLocalUser` 中修改 `registerAudioFrameObserver` 方法，支持配置 `AgoraAudioVadConfigV2` 参数
-- 在 `IAudioFrameObserver` 中新增 `onPlaybackAudioFrameBeforeMixing` 回调的 `vadResult` 参数
-- 在 `AgoraLocalUser` 类中新增 `sendAudioMetaData` 方法，支持发送音频元数据
-- 在 `ILocalUserObserver` 类中新增 `onAudioMetaDataReceived` 回调，用于接收音频元数据
-- 在 `ExternalVideoFrame` 类中增加 `ColorSpace` 属性，支持自定义颜色空间设置
-
-#### **改进与优化**
-
-- 优化代码逻辑架构，显著提升内存使用效率
-- 修复多处内存泄露问题，提高系统稳定性
-- 增强内存访问安全机制，有效防止内存踩踏问题
+- **改进与优化**
+  - 优化代码逻辑架构，显著提升内存使用效率
+  - 修复多处内存泄露问题，提高系统稳定性
+  - 增强内存访问安全机制，有效防止内存踩踏问题
 
 ### v4.4.30.2（2024-11-20）
 
-#### **API 变更**
+**API 变更**
+  - 增强了 AgoraAudioVadV2 的 `processFrame` 处理，新增 `START_SPEAKING` 和 `STOP_SPEAKING` 状态回调
+  - 改进了编码帧回调的参数类型，`onEncodedAudioFrameReceived`、`onEncodedVideoImageReceived`、`onEncodedVideoFrame` 现在使用 `ByteBuffer` 替代 `Byte` 数组
 
-- 增强了 AgoraAudioVadV2 的 `processFrame` 处理，新增 `START_SPEAKING` 和 `STOP_SPEAKING` 状态回调
-- 改进了编码帧回调的参数类型，`onEncodedAudioFrameReceived`、`onEncodedVideoImageReceived`、`onEncodedVideoFrame` 现在使用 `ByteBuffer` 替代 `Byte` 数组
-
-#### **改进与优化**
-
-- VAD 插件启动优化，`enableExtension` 现在在 SDK 内部实现，应用程序不再需要手动调用此方法
-- 修复了 `VideoFrame` 中 `alphaBuffer` 和 `metadataBuffer` 的处理问题
+- **改进与优化**
+  - VAD 插件启动优化，`enableExtension` 现在在 SDK 内部实现，应用程序不再需要手动调用此方法
+  - 修复了 `VideoFrame` 中 `alphaBuffer` 和 `metadataBuffer` 的处理问题
 
 ### v4.4.30.1（2024-11-12）
 
-#### **API 变更**
+- **API 变更**
+  - 增加 AgoraAudioVad2 相关 `Vad2` 接口，移除 AgoraAudioVad 相关 `Vad` 接口
+  - 新增接收编码音频回调接口 `IAudioEncodedFrameObserver`
 
-- 增加 AgoraAudioVad2 相关 `Vad2` 接口，移除 AgoraAudioVad 相关 `Vad` 接口
-- 新增接收编码音频回调接口 `IAudioEncodedFrameObserver`
-
-#### **改进与优化**
-
-- 修复 `LocalAudioDetailedStats` 相关回调崩溃问题
-- 修改 `onAudioVolumeIndication` 回调参数类型
+- **改进与优化**
+  - 修复 `LocalAudioDetailedStats` 相关回调崩溃问题
+  - 修改 `onAudioVolumeIndication` 回调参数类型
 
 ### v4.4.30（2024-10-24）
 
 - 详细更新日志请参考 [发版说明](https://doc.shengwang.cn/doc/rtc-server-sdk/java/overview/release-notes)
 
 ## 其他参考
-详细参考官网（<https://doc.shengwang.cn/doc/rtc-server-sdk/java/landing-page>）
+- 详细参考官网（<https://doc.shengwang.cn/doc/rtc-server-sdk/java/landing-page>）
 
-官网 API 文档 [Agora Server Java SDK API 参考](https://doc.shengwang.cn/api-ref/rtc-server-sdk/java/overview)
-
-
-- 详细更新日志请参考 [发版说明](https://doc.shengwang.cn/doc/rtc-server-sdk/java/overview/release-notes)
-
-## 其他参考
-详细参考官网（<https://doc.shengwang.cn/doc/rtc-server-sdk/java/landing-page>）
-
-官网 API 文档 [Agora Server Java SDK API 参考](https://doc.shengwang.cn/api-ref/rtc-server-sdk/java/overview)
-
+- 官网 API 文档 [Agora Server Java SDK API 参考](https://doc.shengwang.cn/api-ref/rtc-server-sdk/java/overview)

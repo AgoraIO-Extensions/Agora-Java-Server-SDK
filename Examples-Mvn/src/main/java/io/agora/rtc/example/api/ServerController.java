@@ -1,23 +1,11 @@
 package io.agora.rtc.example.api;
 
 import io.agora.rtc.Constants;
-import io.agora.rtc.example.basic.AIReceiverSendPcmTest;
-import io.agora.rtc.example.basic.ReceiverPcmDirectSendTest;
-import io.agora.rtc.example.basic.ReceiverPcmH264Test;
-import io.agora.rtc.example.basic.ReceiverPcmVadTest;
-import io.agora.rtc.example.basic.ReceiverPcmYuvTest;
-import io.agora.rtc.example.basic.SendAv1Test;
-import io.agora.rtc.example.basic.SendH264Test;
-import io.agora.rtc.example.basic.SendMp4Test;
-import io.agora.rtc.example.basic.SendOpusTest;
-import io.agora.rtc.example.basic.SendPcmFileTest;
-import io.agora.rtc.example.basic.SendPcmRealTimeTest;
-import io.agora.rtc.example.basic.SendReceiverStreamMessageTest;
-import io.agora.rtc.example.basic.SendYuvTest;
 import io.agora.rtc.example.common.AgoraTaskControl;
 import io.agora.rtc.example.common.AgoraTaskManager;
 import io.agora.rtc.example.common.ArgsConfig;
 import io.agora.rtc.example.common.SampleLogger;
+import io.agora.rtc.example.common.TaskLauncher;
 import io.agora.rtc.example.utils.Utils;
 import java.io.File;
 import java.io.IOException;
@@ -150,79 +138,15 @@ public class ServerController implements DisposableBean, ApplicationContextAware
         // return sseEmitter immediately to client to avoid timeout
         taskExecutorService.execute(() -> {
             try {
-                if (taskName.equals("ReceiverPcmDirectSendTest")) {
-                    ReceiverPcmDirectSendTest receiverPcmDirectSendTest = new ReceiverPcmDirectSendTest();
-                    receiverPcmDirectSendTest.start();
-                } else if (taskName.equals("ReceiverPcmH264Test")) {
-                    ReceiverPcmH264Test receiverPcmH264Test = new ReceiverPcmH264Test();
-                    receiverPcmH264Test.start();
-                } else if (taskName.equals("ReceiverPcmVadTest")) {
-                    ReceiverPcmVadTest receiverPcmVadTest = new ReceiverPcmVadTest();
-                    receiverPcmVadTest.start();
-                } else if (taskName.equals("ReceiverPcmYuvTest")) {
-                    ReceiverPcmYuvTest receiverPcmYuvTest = new ReceiverPcmYuvTest();
-                    receiverPcmYuvTest.start();
-                } else if (taskName.equals("SendH264Test")) {
-                    SendH264Test sendH264Test = new SendH264Test();
-                    sendH264Test.start();
-                } else if (taskName.equals("SendAv1Test")) {
-                    SendAv1Test sendAv1Test = new SendAv1Test();
-                    sendAv1Test.start();
-                } else if (taskName.equals("SendMp4Test")) {
-                    SendMp4Test sendMp4Test = new SendMp4Test();
-                    sendMp4Test.start();
-                } else if (taskName.equals("SendOpusTest")) {
-                    SendOpusTest sendOpusTest = new SendOpusTest();
-                    sendOpusTest.start();
-                } else if (taskName.equals("SendPcmFileTest")) {
-                    SendPcmFileTest sendPcmFileTest = new SendPcmFileTest();
-                    sendPcmFileTest.start();
-                } else if (taskName.equals("SendPcmRealTimeTest")) {
-                    SendPcmRealTimeTest sendPcmRealTimeTest = new SendPcmRealTimeTest();
-                    sendPcmRealTimeTest.start();
-                } else if (taskName.equals("SendReceiverStreamMessageTest")) {
-                    SendReceiverStreamMessageTest sendReceiverStreamMessageTest = new SendReceiverStreamMessageTest();
-                    sendReceiverStreamMessageTest.start();
-                } else if (taskName.equals("SendYuvTest")) {
-                    SendYuvTest sendYuvTest = new SendYuvTest();
-                    sendYuvTest.start();
-                } else if (taskName.equals("VadV1Test")) {
-                    try {
-                        Class<?> clazz = Class.forName("io.agora.rtc.example.basic.VadV1Test");
-                        Object instance = clazz.getDeclaredConstructor().newInstance();
-                        clazz.getMethod("start").invoke(instance);
-                    } catch (ClassNotFoundException e) {
-                        log.error(
-                                "VadV1Test class not found - possibly disabled in build configuration");
-                        sendSseEvent("VadV1Test is not available in this build");
-                    } catch (Exception e) {
-                        log.error("Error executing VadV1Test", e);
-                        sendSseEvent("Error executing VadV1Test: " + e.getMessage());
-                    }
-                } else if (taskName.equals("Audio3aTest")) {
-                    try {
-                        Class<?> clazz = Class.forName("io.agora.rtc.example.basic.Audio3aTest");
-                        Object instance = clazz.getDeclaredConstructor().newInstance();
-                        clazz.getMethod("start").invoke(instance);
-                    } catch (ClassNotFoundException e) {
-                        log.error("Audio3aTest class not found - possibly disabled in build "
-                                + "configuration");
-                        sendSseEvent("Audio3aTest is not available in this build");
-                    } catch (Exception e) {
-                        log.error("Error executing Audio3aTest", e);
-                        sendSseEvent("Error executing Audio3aTest: " + e.getMessage());
-                    }
-                } else if (taskName.equals("AIReceiverSendPcmTest")) {
-                    AIReceiverSendPcmTest aiReceiverSendPcmTest = new AIReceiverSendPcmTest();
-                    aiReceiverSendPcmTest.start();
-                } else {
-                    log.error("Invalid taskName: {}", taskName);
-                    sendSseEvent("Invalid taskName: " + taskName);
+                // Use TaskLauncher to start the basic task
+                boolean success = TaskLauncher.startBasicTask(taskName);
+                if (!success) {
+                    sendSseEvent("Failed to start basic task: " + taskName);
                 }
 
                 sseEmitter.complete();
             } catch (Exception e) {
-                log.error("Error in SSE task for startRecording", e);
+                log.error("Error in SSE task for startBasicServer", e);
                 try {
                     sendSseEvent("Error in SSE task: " + e.getMessage());
                 } catch (Exception ex) {
@@ -311,6 +235,20 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             Thread.sleep(5 * 1000);
 
+            if (!testH265Task(sseEmitter)) {
+                sendSseEvent("Error: test h265 task failed", sseEmitter);
+                return;
+            }
+
+            Thread.sleep(5 * 1000);
+
+            if (!testApmPcmTask(sseEmitter)) {
+                sendSseEvent("Error: test h265 task failed", sseEmitter);
+                return;
+            }
+
+            Thread.sleep(5 * 1000);
+
             long endTime = System.currentTimeMillis();
             long timeCostMs = endTime - startTime;
             double timeCostMinutes = timeCostMs / 1000.0 / 60.0;
@@ -335,6 +273,7 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             String recvConfigFileName = "pcm_recv.json";
             ArgsConfig recvArgsConfig = agoraTaskManager.parseArgsConfig(recvConfigFileName);
+            recvArgsConfig.setAutoTest(true);
             agoraTaskManager.startTask(
                     recvConfigFileName, recvArgsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM);
 
@@ -347,6 +286,13 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             if (!Utils.checkFileExists(recvArgsConfig.getAudioOutFile())) {
                 sendSseEvent("Error: recv pcm audioOutFile does not exist: "
                         + recvArgsConfig.getAudioOutFile(),
+                        sseEmitter);
+                return false;
+            }
+
+            if (!Utils.checkFileExists(recvArgsConfig.getAudioOutFile() + "_pts.txt")) {
+                sendSseEvent("Error: recv pcm pts file does not exist: "
+                        + recvArgsConfig.getAudioOutFile() + "_pts.txt",
                         sseEmitter);
                 return false;
             }
@@ -452,7 +398,7 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             if (recvArgsConfig.isEnableVad()) {
                 if (!Utils.checkFileExists(recvArgsConfig.getAudioOutFile(), "_vad.pcm")) {
-                    sendSseEvent("Error: recv pcm with remote user id audioOutFile does not exist: "
+                    sendSseEvent("Error: recv pcm with remote user id audioOutFile vad pcm does not exist: "
                             + recvArgsConfig.getAudioOutFile(), sseEmitter);
                     return false;
                 }
@@ -547,6 +493,7 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             String recvConfigFileName = "encoded_audio_recv.json";
             ArgsConfig recvArgsConfig = agoraTaskManager.parseArgsConfig(recvConfigFileName);
+            recvArgsConfig.setAutoTest(true);
             agoraTaskManager.startTask(recvConfigFileName, recvArgsConfig,
                     AgoraTaskControl.TestTask.RECEIVE_ENCODED_AUDIO);
 
@@ -562,6 +509,13 @@ public class ServerController implements DisposableBean, ApplicationContextAware
                 sendSseEvent("Error: recv encoded audio audioOutFile does not exist: "
                         + recvArgsConfig.getAudioOutFile()
                         + " or not match expectedFile: " + recvArgsConfig.getExpectedFile(),
+                        sseEmitter);
+                return false;
+            }
+
+            if (!Utils.checkFileExists(recvArgsConfig.getAudioOutFile() + "_pts.txt")) {
+                sendSseEvent("Error: recv encoded audio pts file does not exist: "
+                        + recvArgsConfig.getAudioOutFile() + "_pts.txt",
                         sseEmitter);
                 return false;
             }
@@ -623,6 +577,7 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             String recvConfigFileName = "yuv_recv.json";
             ArgsConfig recvArgsConfig = agoraTaskManager.parseArgsConfig(recvConfigFileName);
+            recvArgsConfig.setAutoTest(true);
             agoraTaskManager.startTask(
                     recvConfigFileName, recvArgsConfig, AgoraTaskControl.TestTask.RECEIVE_YUV);
 
@@ -636,6 +591,13 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             if (!Utils.checkFileExists(recvArgsConfig.getVideoOutFile())) {
                 sendSseEvent("Error: recv yuv videoOutFile does not exist: "
                         + recvArgsConfig.getVideoOutFile(),
+                        sseEmitter);
+                return false;
+            }
+
+            if (!Utils.checkFileExists(recvArgsConfig.getVideoOutFile() + "_pts.txt")) {
+                sendSseEvent("Error: recv yuv pts file does not exist: "
+                        + recvArgsConfig.getVideoOutFile() + "_pts.txt",
                         sseEmitter);
                 return false;
             }
@@ -843,6 +805,7 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             recvConfigFileName = "h264_recv_with_remote_user_id.json";
             recvArgsConfig = agoraTaskManager.parseArgsConfig(recvConfigFileName);
+            recvArgsConfig.setAutoTest(true);
             agoraTaskManager.startTask(
                     recvConfigFileName, recvArgsConfig, AgoraTaskControl.TestTask.RECEIVE_H264);
 
@@ -856,6 +819,13 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             if (!Utils.checkFileExists(recvArgsConfig.getVideoOutFile())) {
                 sendSseEvent("Error: recv h264 with remote user id videoOutFile does not exist: "
                         + recvArgsConfig.getVideoOutFile(),
+                        sseEmitter);
+                return false;
+            }
+
+            if (!Utils.checkFileExists(recvArgsConfig.getVideoOutFile() + "_pts.txt")) {
+                sendSseEvent("Error: recv h264 with remote user id pts file does not exist: "
+                        + recvArgsConfig.getVideoOutFile() + "_pts.txt",
                         sseEmitter);
                 return false;
             }
@@ -1124,6 +1094,7 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             String recvConfigFileName = "ai_pcm_recv.json";
             ArgsConfig recvArgsConfig = agoraTaskManager.parseArgsConfig(recvConfigFileName);
+            recvArgsConfig.setAutoTest(true);
             agoraTaskManager.startTask(
                     recvConfigFileName, recvArgsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM_AI);
 
@@ -1144,10 +1115,19 @@ public class ServerController implements DisposableBean, ApplicationContextAware
                 return false;
             }
             File sendFile = new File(argsConfig.getAudioFile());
+            String recvAudioBytes = Utils.readStringFromFile(recvArgsConfig.getAudioOutFile() + "_receiveAudioBytes.txt");
+            if (recvAudioBytes == null || recvAudioBytes.isEmpty()) {
+                sendSseEvent("Error: recv ai pcm receiveAudioBytes file does not exist: "
+                        + recvArgsConfig.getAudioOutFile() + "_receiveAudioBytes.txt",
+                        sseEmitter);
+                return false;
+            }
+            int recvAudioBytesInt = Integer.parseInt(recvAudioBytes);
             File recvFile = files.get(0);
+            SampleLogger.log("sendFile.length():" + sendFile.length() + " recvFile.length():" + recvFile.length() + " recvAudioBytesInt:" + recvAudioBytesInt);
             int bytesPerMs = argsConfig.getNumOfChannels() * (argsConfig.getSampleRate() / 1000) * 2;
             if (sendFile.exists() && recvFile.exists()
-                    && sendFile.length() - recvFile.length() > 10 * bytesPerMs) {
+                    && sendFile.length() - recvAudioBytesInt > 10 * bytesPerMs) {
                 sendSseEvent(
                         "Error: recv ai pcm audioOutFile length does not correct,send file length: "
                                 + sendFile.length() + " recv file length: " + recvFile.length()
@@ -1264,6 +1244,90 @@ public class ServerController implements DisposableBean, ApplicationContextAware
         return true;
     }
 
+    private boolean testH265Task(SseEmitter sseEmitter) {
+        try {
+            long startTime = System.currentTimeMillis();
+            taskFinishLatch = new CountDownLatch(1);
+
+            String configFileName = "h265_send.json";
+            ArgsConfig argsConfig = agoraTaskManager.parseArgsConfig(configFileName);
+            agoraTaskManager.startTask(configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_H265);
+
+            String recvConfigFileName = "h265_recv.json";
+            ArgsConfig recvArgsConfig = agoraTaskManager.parseArgsConfig(recvConfigFileName);
+            agoraTaskManager.startTask(recvConfigFileName, recvArgsConfig, AgoraTaskControl.TestTask.RECEIVE_H265);
+
+            taskFinishLatch.await();
+
+            if (!Utils.checkFileExists(recvArgsConfig.getVideoOutFile())) {
+                sendSseEvent("Error: recv h265 videoOutFile does not exist: "
+                        + recvArgsConfig.getVideoOutFile(),
+                        sseEmitter);
+                return false;
+            }
+
+            long endTime = System.currentTimeMillis();
+            long timeCostMs = endTime - startTime;
+            double timeCostMinutes = timeCostMs / 1000.0 / 60.0;
+            sendSseEvent("Test h265 task finished, time cost: "
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                    sseEmitter);
+            return true;
+        } catch (Exception e) {
+            sendSseEvent("Error: test h265 task failed: " + e.getMessage(), sseEmitter);
+            return false;
+        }
+    }
+
+    private boolean testApmPcmTask(SseEmitter sseEmitter) {
+        try {
+            agoraTaskManager.releaseAgoraService();
+
+            long startTime = System.currentTimeMillis();
+            taskFinishLatch = new CountDownLatch(1);
+
+            String recvConfigFileName = "apm_pcm_recv.json";
+            ArgsConfig recvArgsConfig = agoraTaskManager.parseArgsConfig(recvConfigFileName);
+            agoraTaskManager.startTask(recvConfigFileName, recvArgsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM);
+
+            String configFileName = "apm_pcm_send.json";
+            ArgsConfig argsConfig = agoraTaskManager.parseArgsConfig(configFileName);
+            agoraTaskManager.startTask(configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_PCM);
+
+            taskFinishLatch.await();
+
+            String basePath = "logs/agora_logs/";
+            String[] apmDumpFiles = new String[]{"af_agc_", "af_ed_", "af_ns_", "af_ps_", "af_sfnlp_"};
+
+            for (String apmDumpFile : apmDumpFiles) {
+                if (!Utils.checkFileExists(basePath + apmDumpFile)) {
+                    sendSseEvent("Error: apm dump file does not exist: " + basePath + apmDumpFile,
+                            sseEmitter);
+                    return false;
+                }
+            }
+
+            List<String> apmVadDumpFiles = Utils.findFilePathsRecursively(basePath + "vad_dump", 2, "vad_session", ".pcm");
+            SampleLogger.log("apmVadDumpFiles: " + apmVadDumpFiles.toString());
+            if (apmVadDumpFiles.size() != 2) {
+                sendSseEvent("Error: apm vad dump file count is not 2: " + apmVadDumpFiles.size(),
+                        sseEmitter);
+                return false;
+            }
+
+            long endTime = System.currentTimeMillis();
+            long timeCostMs = endTime - startTime;
+            double timeCostMinutes = timeCostMs / 1000.0 / 60.0;
+            sendSseEvent("Test apm pcm task finished, time cost: "
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                    sseEmitter);
+            return true;
+        } catch (Exception e) {
+            sendSseEvent("Error: test apm pcm task failed: " + e.getMessage(), sseEmitter);
+            return false;
+        }
+    }
+
     private boolean startSingleServerSse(String configFileName, SseEmitter sseEmitter) {
         sendSseEvent(String.format(
                 "--- Starting single server (SSE) --- ConfigFileName: %s", configFileName),
@@ -1272,192 +1336,10 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             long startTime = System.currentTimeMillis();
             taskFinishLatch = new CountDownLatch(1);
 
-            ArgsConfig argsConfig = agoraTaskManager.parseArgsConfig(configFileName);
-
-            // Stress related config files
-            if ("stress_recv_pcm_h264.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startStressTask(
-                        false, configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM_H264);
-            } else if ("stress_recv_yuv.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startStressTask(
-                        false, configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_YUV);
-            } else if ("stress_send_pcm_h264.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startStressTask(
-                        true, configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_PCM_H264);
-            } else if ("stress_send_yuv.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startStressTask(
-                        true, configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_YUV);
-            }
-
-            // PCM related config files
-            else if ("pcm_recv.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM);
-            } else if ("pcm_send.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_PCM);
-            } else if ("pcm_yuv_send.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_PCM_YUV);
-            } else if ("pcm_h264_send.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_PCM_H264);
-            } else if ("pcm_recv_encrypted.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM);
-            } else if ("pcm_send_encrypted.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_PCM);
-            } else if ("pcm_recv_with_remote_user_id.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM);
-            } else if ("pcm_send_with_remote_user_id.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_PCM);
-            } else if ("pcm_recv_by_cloud_proxy.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM);
-            } else if ("pcm_send_by_cloud_proxy.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_PCM);
-            } else if ("pcm_h264_recv.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM_H264);
-            }
-
-            // Encoded Audio related config files
-            else if ("encoded_audio_recv.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_ENCODED_AUDIO);
-            } else if ("opus_send.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_OPUS);
-            }
-
-            // Mixed Audio related config files
-            else if ("mixed_audio_recv.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_MIXED_AUDIO);
-            } else if ("aac_send.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_AAC);
-            }
-
-            // YUV related config files
-            else if ("yuv_recv.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_YUV);
-            } else if ("yuv_send.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_YUV);
-            } else if ("yuv_recv_with_remote_user_id.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_YUV);
-            } else if ("yuv_send_with_remote_user_id.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_YUV);
-            } else if ("yuv_recv_with_alpha.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_YUV);
-            } else if ("yuv_send_with_alpha.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_YUV);
-            } else if ("yuv_recv_dual_stream_high.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_YUV);
-            } else if ("yuv_recv_dual_stream_low.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_YUV);
-            } else if ("yuv_send_dual_stream.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_YUV_DUAL_STREAM);
-            }
-
-            // H264 related config files
-            else if ("h264_recv.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_H264);
-            } else if ("h264_send.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_H264);
-            } else if ("h264_recv_with_remote_user_id.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_H264);
-            } else if ("h264_send_with_remote_user_id.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_H264);
-            } else if ("h264_recv_encrypted.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_H264);
-            } else if ("h264_send_encrypted.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_H264);
-            } else if ("h264_recv_dual_stream_high.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_H264);
-            } else if ("h264_recv_dual_stream_low.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_H264);
-            } else if ("h264_send_dual_stream.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_H264_DUAL_STREAM);
-            }
-
-            // Agora Parameter related config files
-            else if ("agora_parameter_test.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.testAgoraParameterTask(configFileName, argsConfig);
-            }
-
-            // Data Stream related config files
-            else if ("data_stream_send.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_DATA_STREAM);
-            } else if ("data_stream_recv.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_DATA_STREAM);
-            }
-
-            // RGBA related config files
-            else if ("rgba_send.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_RGBA);
-            } else if ("rgba_pcm_send.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_RGBA_PCM);
-            } else if ("rgba_recv.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_H264);
-            }
-
-            // VP8 related config files
-            else if ("vp8_send.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_VP8);
-            } else if ("vp8_pcm_send.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_VP8_PCM);
-            } else if ("vp8_recv.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_YUV);
-            }
-
-            // MP4 related config files
-            else if ("mp4_send.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_MP4);
-            }
-
-            // AI PCM related config files
-            else if ("ai_pcm_send.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_PCM_AI);
-            } else if ("ai_pcm_recv.json".equalsIgnoreCase(configFileName)) {
-                agoraTaskManager.startTask(
-                        configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM_AI);
-            }
-            // Default case for unknown config files
-            else {
-                sendSseEvent("Error: Unknown config file: " + configFileName, sseEmitter);
+            // Use TaskLauncher to start the JSON task
+            boolean success = TaskLauncher.startJsonTask(configFileName, agoraTaskManager);
+            if (!success) {
+                sendSseEvent("Error: Failed to start task with config: " + configFileName, sseEmitter);
                 return false;
             }
 

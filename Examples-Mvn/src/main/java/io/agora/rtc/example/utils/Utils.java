@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 public class Utils {
     public static boolean areFilesIdentical(String file1Path, String file2Path) {
         try (FileInputStream fis1 = new FileInputStream(file1Path);
-            FileInputStream fis2 = new FileInputStream(file2Path)) {
+                FileInputStream fis2 = new FileInputStream(file2Path)) {
             // 比较文件大小
             if (fis1.available() != fis2.available()) {
                 return false;
@@ -71,7 +71,7 @@ public class Utils {
 
     public static String[] readAppIdAndToken(String filePath) {
         if (filePath == null || filePath.isEmpty()) {
-            return new String[] {"", ""};
+            return new String[] { "", "" };
         }
 
         String appId = "";
@@ -111,19 +111,19 @@ public class Utils {
             }
 
             if (!foundAppId || appId.isEmpty()) {
-                return new String[] {"", ""};
+                return new String[] { "", "" };
             }
 
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return new String[] {appId, token};
+        return new String[] { appId, token };
     }
 
     public static String[] readAppIdAndLicense(String filePath) {
         if (filePath == null || filePath.isEmpty()) {
-            return new String[] {null, null};
+            return new String[] { null, null };
         }
         String appId = null;
         String license = null;
@@ -152,7 +152,7 @@ public class Utils {
             e.printStackTrace();
         }
 
-        return new String[] {appId, license};
+        return new String[] { appId, license };
     }
 
     public static boolean isNullOrEmpty(String str) {
@@ -239,7 +239,7 @@ public class Utils {
     }
 
     public static boolean checkFileExists(
-        String fileName, String fileNameSuffix, String expectedFile) {
+            String fileName, String fileNameSuffix, String expectedFile) {
         List<File> files = getFilesInDirectory(fileName, fileNameSuffix);
         if (files.isEmpty()) {
             return false;
@@ -312,6 +312,102 @@ public class Utils {
         }
 
         return Arrays.asList(matchingFiles);
+    }
+
+    /**
+     * Recursively search for files in a directory with specified depth, prefix and
+     * suffix
+     * 
+     * @param directoryPath  The base directory path to search from
+     * @param maxDepth       Maximum depth of subdirectories to search (0 = current
+     *                       directory only, 1 = one level deep, etc.)
+     * @param fileNamePrefix The prefix that file names must start with (empty
+     *                       string to match any prefix)
+     * @param fileNameSuffix The suffix that file names must end with (empty string
+     *                       to match any suffix)
+     * @return List of File objects that match the criteria
+     */
+    public static List<File> findFilesRecursively(String directoryPath, int maxDepth,
+            String fileNamePrefix, String fileNameSuffix) {
+        List<File> resultFiles = new ArrayList<>();
+
+        // Validate input parameters
+        if (directoryPath == null || directoryPath.trim().isEmpty()) {
+            return resultFiles;
+        }
+
+        File baseDir = new File(directoryPath);
+        if (!baseDir.exists() || !baseDir.isDirectory()) {
+            return resultFiles;
+        }
+
+        // Start recursive search
+        searchDirectory(baseDir, maxDepth, 0, fileNamePrefix, fileNameSuffix, resultFiles);
+
+        return resultFiles;
+    }
+
+    /**
+     * Helper method for recursive directory search
+     * 
+     * @param directory      Current directory to search
+     * @param maxDepth       Maximum allowed depth
+     * @param currentDepth   Current depth level (0 = base directory)
+     * @param fileNamePrefix File name prefix filter
+     * @param fileNameSuffix File name suffix filter
+     * @param resultFiles    List to accumulate matching files
+     */
+    private static void searchDirectory(File directory, int maxDepth, int currentDepth,
+            String fileNamePrefix, String fileNameSuffix,
+            List<File> resultFiles) {
+        // Stop if we've reached the maximum depth
+        if (currentDepth > maxDepth) {
+            return;
+        }
+
+        File[] files = directory.listFiles();
+        if (files == null) {
+            return;
+        }
+
+        for (File file : files) {
+            if (file.isFile()) {
+                // Check if file matches the prefix and suffix criteria
+                String fileName = file.getName();
+                boolean prefixMatch = fileNamePrefix == null || fileNamePrefix.isEmpty()
+                        || fileName.startsWith(fileNamePrefix);
+                boolean suffixMatch = fileNameSuffix == null || fileNameSuffix.isEmpty()
+                        || fileName.endsWith(fileNameSuffix);
+
+                if (prefixMatch && suffixMatch) {
+                    resultFiles.add(file);
+                }
+            } else if (file.isDirectory()) {
+                // Recursively search subdirectories if we haven't reached max depth
+                searchDirectory(file, maxDepth, currentDepth + 1, fileNamePrefix, fileNameSuffix, resultFiles);
+            }
+        }
+    }
+
+    /**
+     * Get absolute paths of files found recursively
+     * 
+     * @param directoryPath  The base directory path to search from
+     * @param maxDepth       Maximum depth of subdirectories to search
+     * @param fileNamePrefix The prefix that file names must start with
+     * @param fileNameSuffix The suffix that file names must end with
+     * @return List of absolute file paths as strings
+     */
+    public static List<String> findFilePathsRecursively(String directoryPath, int maxDepth,
+            String fileNamePrefix, String fileNameSuffix) {
+        List<File> files = findFilesRecursively(directoryPath, maxDepth, fileNamePrefix, fileNameSuffix);
+        List<String> filePaths = new ArrayList<>();
+
+        for (File file : files) {
+            filePaths.add(file.getAbsolutePath());
+        }
+
+        return filePaths;
     }
 
     public static String byteBufferToString(ByteBuffer buffer) {
@@ -400,7 +496,7 @@ public class Utils {
             }
             // Append content to file
             Files.write(Paths.get(filePath), content.getBytes(StandardCharsets.UTF_8),
-                java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+                    java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -421,11 +517,31 @@ public class Utils {
             }
 
             Files.write(Paths.get(filePath), bytes, java.nio.file.StandardOpenOption.CREATE,
-                java.nio.file.StandardOpenOption.APPEND);
+                    java.nio.file.StandardOpenOption.APPEND);
             return true;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    /**
+     * Read all content from a file as a string.
+     *
+     * @param filePath The path of the file to read.
+     * @return The file content as a string, or null if an error occurs.
+     */
+    public static String readStringFromFile(String filePath) {
+        if (filePath == null || filePath.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            byte[] bytes = Files.readAllBytes(Paths.get(filePath));
+            return new String(bytes, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
     }
 }

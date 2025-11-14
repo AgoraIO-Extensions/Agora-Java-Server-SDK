@@ -15,9 +15,9 @@ import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
 import io.agora.rtc.RtcConnPublishConfig;
 import io.agora.rtc.VadProcessResult;
+import io.agora.rtc.apm.AgoraApmConfig;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.Utils;
-import io.agora.rtc.utils.VadDumpUtils;
 import java.io.File;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
@@ -34,14 +34,12 @@ public class ReceiverPcmVadTest {
     private AgoraRtcConn conn;
     private IAudioFrameObserver audioFrameObserver;
 
-    private VadDumpUtils vadDumpUtils;
-
     private String channelId = "agaa";
     private String audioOutFile = "test_data_out/receiver_audio_out";
     private int numOfChannels = 1;
     private int sampleRate = 16000;
     private String remoteUserId = "";
-    private long testTime = 60 * 1000;
+    private long testTime = 60 * 60 * 1000;
 
     private final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
 
@@ -85,6 +83,11 @@ public class ReceiverPcmVadTest {
             config.setLogFilePath(DEFAULT_LOG_PATH);
             config.setLogFileSize(DEFAULT_LOG_SIZE);
             config.setLogFilters(Constants.LOG_FILTER_DEBUG);
+            config.setEnableApm(true);
+            AgoraApmConfig apmConfig = new AgoraApmConfig();
+            // just for test, should be false in production
+            apmConfig.setEnableDump(true);
+            config.setApmConfig(apmConfig);
 
             ret = service.initialize(config);
             if (ret != 0) {
@@ -163,7 +166,6 @@ public class ReceiverPcmVadTest {
             return;
         }
 
-        vadDumpUtils = new VadDumpUtils("test_data_out/vad_dump");
         audioFrameObserver = new IAudioFrameObserver() {
             boolean isFirstAudioFrame = true;
 
@@ -208,8 +210,6 @@ public class ReceiverPcmVadTest {
                                     finalAudioOutFile + "_vad.pcm");
                         }
                     });
-
-                    vadDumpUtils.write(frame, vadResult.getOutFrame(), vadResult.getState());
                 }
                 return 1;
             }
@@ -245,11 +245,6 @@ public class ReceiverPcmVadTest {
         SampleLogger.log("releaseConn for channelId:" + channelId + " userId:" + userIdHolder.get());
         if (conn == null) {
             return;
-        }
-
-        if (null != vadDumpUtils) {
-            vadDumpUtils.release();
-            vadDumpUtils = null;
         }
 
         int ret = conn.disconnect();

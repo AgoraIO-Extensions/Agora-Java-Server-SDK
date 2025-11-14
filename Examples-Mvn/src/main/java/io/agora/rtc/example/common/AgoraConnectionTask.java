@@ -34,6 +34,7 @@ import io.agora.rtc.example.ffmpegutils.MediaDecode;
 import io.agora.rtc.example.ffmpegutils.MediaDecodeUtils;
 import io.agora.rtc.example.mediautils.AacReader;
 import io.agora.rtc.example.mediautils.H264Reader;
+import io.agora.rtc.example.mediautils.H265Reader;
 import io.agora.rtc.example.mediautils.OpusReader;
 import io.agora.rtc.example.mediautils.Vp8Reader;
 import io.agora.rtc.example.utils.AudioFrameManager;
@@ -86,7 +87,9 @@ public class AgoraConnectionTask {
     private final ReentrantLock opusLock = new ReentrantLock();
 
     private static final ThreadLocal<H264Reader> threadLocalH264Reader = new ThreadLocal<>();
+    private static final ThreadLocal<H265Reader> threadLocalH265Reader = new ThreadLocal<>();
     private static final ThreadLocal<H264Reader> threadLocalH264ReaderLow = new ThreadLocal<>();
+    private static final ThreadLocal<H265Reader> threadLocalH265ReaderLow = new ThreadLocal<>();
     private static final ThreadLocal<Vp8Reader> threadLocalVp8Reader = new ThreadLocal<>();
     private static final ThreadLocal<OpusReader> threadLocalOpusReader = new ThreadLocal<>();
     private static final ThreadLocal<AacReader> threadLocalAacReader = new ThreadLocal<>();
@@ -1272,6 +1275,248 @@ public class AgoraConnectionTask {
         }
     }
 
+    public void sendH265Task(boolean waitRelease) {
+        int intervalMs = 1000 / argsConfig.getFps(); // ms
+        long remainingTime = getRemainingTime();
+        SampleLogger.log("sendH265Task remainingTime:" + remainingTime + " argsConfig:" + argsConfig
+                + " intervalMs:" + intervalMs);
+
+        if (remainingTime == -1) {
+            if (waitRelease) {
+                releaseConn();
+            }
+            return;
+        }
+
+        if (argsConfig.isEnableSimulcastStream()) {
+            SimulcastStreamConfig lowStreamConfig = new SimulcastStreamConfig();
+            // lowStreamConfig.setBitrate(65);
+            lowStreamConfig.setFramerate(argsConfig.getLowFps());
+            VideoDimensions dimensions = new VideoDimensions(argsConfig.getLowWidth(), argsConfig.getLowHeight());
+            lowStreamConfig.setDimensions(dimensions);
+            int ret = conn.enableSimulcastStream(1, lowStreamConfig);
+            SampleLogger.log("sendH265Task enableSimulcastStream ret:" + ret);
+        }
+
+        // Publish video track
+        int ret = conn.publishVideo();
+        SampleLogger.log("sendH265Task publishVideo ret:" + ret);
+        waitUntilPublishSuccess();
+
+        final int streamType = getStreamType(argsConfig.getStreamType());
+
+        boolean isLoopSend = argsConfig.getTestTime() > 0 || !waitRelease;
+        FileSender h265SendThread = new FileSender(argsConfig.getVideoFile(), intervalMs) {
+            int lastFrameType = 0;
+            int frameIndex = 0;
+            private boolean canLog = argsConfig.isEnableLog();
+            private EncodedVideoFrameInfo info = new EncodedVideoFrameInfo();
+            private H265Reader localH265Reader;
+            private int h265Width = 0;
+            private int h265Height = 0;
+
+            @Override
+            public void sendOneFrame(byte[] data, long timestamp) {
+                h264Lock.lock();
+                try {
+                    if (data == null) {
+                        return;
+                    }
+                    if (!taskStarted.get()) {
+                        release();
+                        return;
+                    }
+
+                    info.setFrameType(lastFrameType);
+                    info.setStreamType(streamType);
+                    info.setWidth(h265Width);
+                    info.setHeight(h265Height);
+                    info.setCodecType(Constants.VIDEO_CODEC_H265);
+                    info.setFramesPerSecond(argsConfig.getFps());
+                    info.setRotation(0);
+
+                    int ret = conn.pushVideoEncodedData(data, info);
+                    frameIndex++;
+                    if (canLog) {
+                        SampleLogger.log("send h265 frame data size:" + data.length + " info:"
+                                + info + " ret:" + ret + " timestamp:" + timestamp + " frameIndex:"
+                                + frameIndex + " testStartTime:" + Utils.formatTimestamp(testStartTime)
+                                + " testTime:" + argsConfig.getTestTime() + " from channelId:"
+                                + argsConfig.getChannelId() + " userId:" + argsConfig.getUserId());
+                        if (argsConfig.isEnableStressTest()) {
+                            canLog = false;
+                        }
+                    }
+                } finally {
+                    h264Lock.unlock();
+                }
+            }
+
+            @Override
+            public byte[] readOneFrame(FileInputStream fos) {
+                if (localH265Reader == null) {
+                    localH265Reader = threadLocalH265Reader.get();
+                    if (localH265Reader == null) {
+                        localH265Reader = new H265Reader(argsConfig.getVideoFile());
+                        threadLocalH265Reader.set(localH265Reader);
+                    }
+                }
+
+                H265Reader.H265Frame frame = localH265Reader.readNextFrame();
+                if (frame == null) {
+                    if (isLoopSend) {
+                        localH265Reader.reset();
+                        reset();
+                    } else {
+                        if (null != taskFinishLatch) {
+                            taskFinishLatch.countDown();
+                        }
+                    }
+                    return null;
+                }
+
+                lastFrameType = frame.frameType;
+                // h265Width = frame.getWidth();
+                // h265Height = frame.getHeight();
+                return frame.data;
+            }
+
+            @Override
+            public void release() {
+                super.release();
+                h264Lock.lock();
+                try {
+                    if (localH265Reader != null) {
+                        localH265Reader.close();
+                        threadLocalH265Reader.remove();
+                        localH265Reader = null;
+                    }
+                    info = null;
+                } finally {
+                    h264Lock.unlock();
+                }
+            }
+        };
+
+        FileSender h265SendThreadLow = null;
+        if (argsConfig.isEnableSimulcastStream() && argsConfig.getLowVideoFile() != null
+                && argsConfig.getLowVideoFile().length() > 0) {
+            h265SendThreadLow = new FileSender(argsConfig.getLowVideoFile(), intervalMs) {
+                int lastFrameType = 0;
+                int frameIndex = 0;
+                private boolean canLog = argsConfig.isEnableLog();
+                private EncodedVideoFrameInfo info = new EncodedVideoFrameInfo();
+                private H265Reader localH265Reader;
+                private int h265Width = 0;
+                private int h265Height = 0;
+
+                @Override
+                public void sendOneFrame(byte[] data, long timestamp) {
+                    h264Lock.lock();
+                    try {
+                        if (data == null) {
+                            return;
+                        }
+                        if (!taskStarted.get()) {
+                            release();
+                            return;
+                        }
+
+                        info.setFrameType(lastFrameType);
+                        info.setStreamType(Constants.VIDEO_STREAM_LOW);
+                        info.setWidth(h265Width);
+                        info.setHeight(h265Height);
+                        info.setCodecType(Constants.VIDEO_CODEC_H265);
+                        info.setFramesPerSecond(argsConfig.getLowFps());
+                        info.setRotation(0);
+
+                        int ret = conn.pushVideoEncodedData(data, info);
+                        frameIndex++;
+                        if (canLog) {
+                            SampleLogger.log("send h265 low frame data size:" + data.length
+                                    + " info:" + info + " ret:" + ret + " timestamp:" + timestamp
+                                    + " frameIndex:" + frameIndex
+                                    + " testStartTime:" + Utils.formatTimestamp(testStartTime)
+                                    + " testTime:" + argsConfig.getTestTime() + " from channelId:"
+                                    + argsConfig.getChannelId() + " userId:" + argsConfig.getUserId());
+                            if (argsConfig.isEnableStressTest()) {
+                                canLog = false;
+                            }
+                        }
+                    } finally {
+                        h264Lock.unlock();
+                    }
+                }
+
+                @Override
+                public byte[] readOneFrame(FileInputStream fos) {
+                    if (localH265Reader == null) {
+                        localH265Reader = threadLocalH265ReaderLow.get();
+                        if (localH265Reader == null) {
+                            localH265Reader = new H265Reader(argsConfig.getLowVideoFile());
+                            threadLocalH265ReaderLow.set(localH265Reader);
+                        }
+                    }
+
+                    H265Reader.H265Frame frame = localH265Reader.readNextFrame();
+                    if (frame == null) {
+                        if (isLoopSend) {
+                            localH265Reader.reset();
+                            reset();
+                        } else {
+                            if (null != taskFinishLatch) {
+                                taskFinishLatch.countDown();
+                            }
+                        }
+                        return null;
+                    }
+
+                    lastFrameType = frame.frameType;
+                    // h265Width = frame.width;
+                    // h265Height = frame.height;
+                    return frame.data;
+                }
+
+                @Override
+                public void release() {
+                    super.release();
+                    h264Lock.lock();
+                    try {
+                        if (localH265Reader != null) {
+                            localH265Reader.close();
+                            threadLocalH265ReaderLow.remove();
+                            localH265Reader = null;
+                        }
+                        info = null;
+                    } finally {
+                        h264Lock.unlock();
+                    }
+                }
+            };
+        }
+
+        testTaskExecutorService.execute(h265SendThread);
+        if (h265SendThreadLow != null) {
+            testTaskExecutorService.execute(h265SendThreadLow);
+        }
+
+        SampleLogger.log("sendH265Task start");
+
+        if (waitRelease) {
+            try {
+                handleWaitRelease(remainingTime);
+                h265SendThread.release();
+                if (h265SendThreadLow != null) {
+                    h265SendThreadLow.release();
+                }
+                SampleLogger.log("sendH265Task end");
+                releaseConn();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     public void sendRgbaTask(boolean waitRelease) {
         int intervalMs = 1000 / argsConfig.getFps(); // ms
         long remainingTime = getRemainingTime();
@@ -1740,6 +1985,7 @@ public class AgoraConnectionTask {
 
         audioFrameObserver = new SampleAudioFrameObserver(finalAudioOutFile) {
             private boolean canLog = argsConfig.isEnableLog();
+            private long receiveAudioBytes = 0;
 
             @Override
             public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser,
@@ -1787,6 +2033,27 @@ public class AgoraConnectionTask {
                     singleExecutorService.execute(() -> {
                         writeAudioFrameToFile(byteArray);
                     });
+                }
+
+                if (argsConfig.isAutoTest()) {
+                    receiveAudioBytes += byteArray.length;
+                    SampleLogger.log("receiveAudioBytes:" + receiveAudioBytes);
+
+                    singleExecutorService.execute(() -> {
+                        Utils.writeStringToFile(
+                                receiveAudioBytes + "",
+                                argsConfig.getAudioOutFile() + "_receiveAudioBytes.txt");
+                    });
+
+                    if (frame.getRenderTimeMs() > 0 && frame.getPresentationMs() > 0) {
+                        singleExecutorService.execute(() -> {
+                            Utils.appendStringToFile(
+                                    "channelId:" + channelId + " userId:" + userId + " renderTimeMs:"
+                                            + frame.getRenderTimeMs() + " presentationMs:"
+                                            + frame.getPresentationMs() + "\n",
+                                    argsConfig.getAudioOutFile() + "_pts.txt");
+                        });
+                    }
                 }
                 if (null != vadResult) {
                     if (argsConfig.isEnableSaveFile()) {
@@ -2001,9 +2268,9 @@ public class AgoraConnectionTask {
                 if (canLog) {
                     testTaskExecutorService.execute(() -> {
                         SampleLogger.log(String.format(
-                                "onFrame width:%d height:%d channelId:%s remoteUserId:%s "
+                                "onFrame frame:%s channelId:%s remoteUserId:%s "
                                         + "frame size:%d %d %d with current channelId:%s userId:%s",
-                                frame.getWidth(), frame.getHeight(), channelId, remoteUserId, yDataSize,
+                                frame, channelId, remoteUserId, yDataSize,
                                 uvDataSize, uvDataSize, argsConfig.getChannelId(), argsConfig.getUserId()));
 
                         if (metaDataBufferData != null) {
@@ -2036,6 +2303,17 @@ public class AgoraConnectionTask {
                         }
                     });
                 }
+
+                if (argsConfig.isAutoTest()) {
+                    singleExecutorService.execute(() -> {
+                        if (frame.getRenderTimeMs() > 0) {
+                            Utils.appendStringToFile(
+                                    "channelId:" + channelId + " remoteUserId:" + remoteUserId + " renderTimeMs:"
+                                            + frame.getRenderTimeMs() + "\n",
+                                    argsConfig.getVideoOutFile() + "_pts.txt");
+                        }
+                    });
+                }
             }
         });
         conn.registerVideoFrameObserver(videoFrameObserver);
@@ -2051,11 +2329,11 @@ public class AgoraConnectionTask {
         }
     }
 
-    public void registerH264ObserverTask(boolean waitRelease) {
+    public void registerEncodedVideoObserverTask(boolean waitRelease, String fileType) {
         String finalVideoOutFile = argsConfig.getVideoOutFile() + "_" + argsConfig.getChannelId()
-                + "_" + argsConfig.getUserId() + ".h264";
+                + "_" + argsConfig.getUserId() + "." + fileType;
         long remainingTime = getRemainingTime();
-        SampleLogger.log("registerH264ObserverTask videoOutFile:" + finalVideoOutFile
+        SampleLogger.log("registerEncodedVideoObserverTask videoOutFile:" + finalVideoOutFile
                 + " remainingTime:" + remainingTime + " argsConfig:" + argsConfig);
 
         if (remainingTime == -1) {
@@ -2066,7 +2344,7 @@ public class AgoraConnectionTask {
         VideoSubscriptionOptions subscriptionOptions = new VideoSubscriptionOptions();
         subscriptionOptions.setEncodedFrameOnly(1);
         subscriptionOptions.setType(getStreamType(argsConfig.getStreamType()));
-        SampleLogger.log("registerH264ObserverTask subscriptionOptions:" + subscriptionOptions);
+        SampleLogger.log("registerEncodedVideoObserverTask subscriptionOptions:" + subscriptionOptions);
         if (!Utils.isNullOrEmpty(argsConfig.getRemoteUserId())) {
             conn.getLocalUser().subscribeVideo(argsConfig.getRemoteUserId(), subscriptionOptions);
         } else {
@@ -2109,6 +2387,17 @@ public class AgoraConnectionTask {
                         if (argsConfig.isEnableSaveFile()) {
                             singleExecutorService.execute(() -> {
                                 writeVideoDataToFile(byteArray);
+                            });
+                        }
+
+                        if (argsConfig.isAutoTest()) {
+                            singleExecutorService.execute(() -> {
+                                if (info.getCaptureTimeMs() > 0 && info.getDecodeTimeMs() > 0) {
+                                    Utils.appendStringToFile(
+                                            "captureTimeMs:" + info.getCaptureTimeMs() + " decodeTimeMs:"
+                                                    + info.getDecodeTimeMs() + "\n",
+                                            argsConfig.getVideoOutFile() + "_pts.txt");
+                                }
                             });
                         }
 
@@ -2174,6 +2463,17 @@ public class AgoraConnectionTask {
                 }
 
                 writeAudioFrameToFile(byteArray, finalAudioOutFile);
+
+                if (argsConfig.isAutoTest()) {
+                    singleExecutorService.execute(() -> {
+                        if (info.getSendTs() > 0) {
+                            Utils.appendStringToFile(
+                                    "channelId:" + argsConfig.getChannelId() + " remoteUserId:" + remoteUserId
+                                            + " sendTs:" + info.getSendTs() + "\n",
+                                    argsConfig.getAudioOutFile() + "_pts.txt");
+                        }
+                    });
+                }
                 return 1;
             }
         };

@@ -121,6 +121,8 @@ http://10.200.0.85:18080/api/server/start?configFileName=stress_recv_pcm_h264.js
 http://10.200.0.85:18080/api/server/start?configFileName=stress_recv_yuv.json
 http://10.200.0.85:18080/api/server/start?configFileName=stress_send_pcm_h264.json
 http://10.200.0.85:18080/api/server/start?configFileName=stress_send_yuv.json
+http://10.200.0.85:18080/api/server/start?configFileName=h265_recv.json
+http://10.200.0.85:18080/api/server/start?configFileName=h265_send.json
 
 curl "http://127.0.0.1:18080/api/server/start?configFileName=stress_recv_pcm_h264.json"
 
@@ -129,6 +131,7 @@ http://10.200.0.85:18080/api/server/basic?taskName=ReceiverPcmH264Test
 http://10.200.0.85:18080/api/server/basic?taskName=ReceiverPcmVadTest
 http://10.200.0.85:18080/api/server/basic?taskName=ReceiverPcmYuvTest
 http://10.200.0.85:18080/api/server/basic?taskName=SendH264Test
+http://10.200.0.85:18080/api/server/basic?taskName=SendH265Test
 http://10.200.0.85:18080/api/server/basic?taskName=SendAv1Test
 http://10.200.0.85:18080/api/server/basic?taskName=SendMp4Test
 http://10.200.0.85:18080/api/server/basic?taskName=SendOpusTest
