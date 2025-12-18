@@ -109,7 +109,6 @@ sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
 
 ```properties
 enable_asan=false
-enable_gateway=false
 ```
 
 ## 故障排除

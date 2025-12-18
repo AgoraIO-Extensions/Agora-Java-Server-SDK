@@ -9,9 +9,7 @@ This document provides a reference for the main classes and methods of the Agora
   - [AgoraRtcConn](#agorartcconn)
   - [AgoraLocalUser](#agoralocaluser)
   - [AgoraParameter](#agoraparameter)
-  - [AgoraAudioProcessor](#agoraaudioprocessor)
-  - [AgoraAudioVad](#agoraaudiovad)
-  - [AgoraAudioVadV2](#agoraaudiovadev2)
+  - [AgoraExternalAudioProcessor](#agoraexternalaudioprocessor)
 - [Observer Interfaces](#observer-interfaces)
   - [IRtcConnObserver](#irtcconnobserver)
   - [ILocalUserObserver](#ilocaluserobserver)
@@ -20,7 +18,7 @@ This document provides a reference for the main classes and methods of the Agora
   - [IAudioFrameObserver](#iaudioframeobserver)
   - [IAudioEncodedFrameObserver](#iaudioencodedframeobserver)
   - [IVideoEncodedFrameObserver](#ivideoencodedframeobserver)
-  - [IAgoraAudioProcessorEventHandler](#iagoraaudioprocessoreventhandler)
+  - [IExternalAudioProcessorObserver](#iexternalaudioprocessorobserver)
 - [Data Structures](#data-structures)
   - [AgoraServiceConfig](#agoraserviceconfig)
   - [RtcConnConfig](#rtcconnconfig)
@@ -41,7 +39,6 @@ This document provides a reference for the main classes and methods of the Agora
   - [UserInfo](#userinfo)
   - [VadProcessResult](#vadprocessresult)
   - [AgoraAudioVadConfigV2](#agoraaudiovadconfigv2)
-  - [AgoraAudioVadConfig](#agoraaudiovadconfig)
   - [LocalAudioTrackStats](#localaudiotrackstats)
   - [LocalVideoTrackStats](#localvideotrackstats)
   - [RemoteAudioTrackStats](#remoteaudiotrackstats)
@@ -50,12 +47,11 @@ This document provides a reference for the main classes and methods of the Agora
   - [UplinkNetworkInfo](#uplinknetworkinfo)
   - [DownlinkNetworkInfo](#downlinknetworkinfo)
   - [PeerDownlinkInfo](#peerdownlinkinfo)
-  - [AecConfig](#aecconfig)
-  - [AnsConfig](#ansconfig)
-  - [AgcConfig](#agcconfig)
-  - [BghvsConfig](#bghvsconfig)
-  - [AgoraAudioProcessorConfig](#agoraaudioprocessorconfig)
-  - [AgoraAudioFrame](#agoraaudioframe)
+  - [AgoraApmConfig](#agoraapmconfig)
+  - [AinsConfig](#ainsconfig)
+  - [AIAecConfig](#aiaecconfig)
+  - [BghvsConfig (apm)](#bghvsconfig-apm)
+  - [AgcConfig (apm)](#agcconfig-apm)
 - [Utility Classes](#utility-classes)
   - [VadDumpUtils](#vaddumputils)
 
@@ -317,69 +313,31 @@ Gets a string parameter.
   - `value`: `Out` - An Out object to store the string value.
 - **Returns:** `int` - 0 on success, <0 on failure.
 
-### AgoraAudioProcessor
-The `AgoraAudioProcessor` class is used to process audio frames.
+### AgoraExternalAudioProcessor
+The `AgoraExternalAudioProcessor` class is used for Local Mode APM (Audio Processing Module), supporting VAD (Voice Activity Detection) and audio processing features (3A + BGHVS) without joining a channel.
 
 #### Methods
 
-##### `getSdkVersion()`
-Gets the SDK version.
-- **Returns:** `String` - The SDK version.
-
-##### `init(String appId, String license, IAgoraAudioProcessorEventHandler eventHandler, AgoraAudioProcessorConfig config)`
-Initializes the audio processor.
+##### `create(AgoraService agoraService, AgoraAudioVadConfigV2 vadConfig, AgoraApmConfig apmConfig, IExternalAudioProcessorObserver observer)`
+Creates an external audio processor instance.
 - **Parameters:**
-  - `appId`: `String` - The App ID.
-  - `license`: `String` - The license for the audio processor.
-  - `eventHandler`: `IAgoraAudioProcessorEventHandler` - The event handler.
-  - `config`: `AgoraAudioProcessorConfig` - The configuration for the audio processor.
-- **Returns:** `int` - 0 for success, or an error code.
+  - `agoraService`: `AgoraService` - The AgoraService instance.
+  - `vadConfig`: `AgoraAudioVadConfigV2` - VAD configuration. If null, VAD is disabled.
+  - `apmConfig`: `AgoraApmConfig` - APM configuration. If null, 3A+BGHVS is disabled, only VAD is used.
+  - `observer`: `IExternalAudioProcessorObserver` - The observer for receiving processed audio frames.
+- **Returns:** `AgoraExternalAudioProcessor` - The created instance, or null on failure.
 
-##### `process(AgoraAudioFrame nearIn)`
-Processes an audio frame.
+##### `pushAudioPcmData(byte[] pcmData, int sampleRate, int numOfChannels, long presentationMs)`
+Pushes PCM audio data for processing.
 - **Parameters:**
-  - `nearIn`: `AgoraAudioFrame` - The input audio frame.
-- **Returns:** `AgoraAudioFrame` - The processed audio frame.
-
-##### `process(AgoraAudioFrame nearIn, AgoraAudioFrame farIn)`
-Processes audio frames from near and far ends.
-- **Parameters:**
-  - `nearIn`: `AgoraAudioFrame` - The near-end input audio frame.
-  - `farIn`: `AgoraAudioFrame` - The far-end input audio frame.
-- **Returns:** `AgoraAudioFrame` - The processed audio frame.
-
-##### `release()`
-Releases the resources used by the audio processor.
-- **Returns:** `int` - 0 for success, or an error code.
-
-### AgoraAudioVad
-The `AgoraAudioVad` class provides Voice Activity Detection (VAD) functionality. It's managed by `AgoraAudioVadManager`.
-
-#### Methods
-
-##### `getVadInstance(String channelId, String userId)`
-Retrieves the VAD instance for a specified channel and user.
-- **Parameters:**
-  - `channelId`: `String` - Channel ID.
-  - `userId`: `String` - User ID.
-- **Returns:** `AgoraAudioVadV2` - The VAD instance, or null if not found.
-
-##### `delVadInstance(String channelId, String userId)`
-Removes and destroys a specified VAD instance.
-- **Parameters:**
-  - `channelId`: `String` - Channel ID.
-  - `userId`: `String` - User ID.
-
-##### `process(String channelId, String userId, AudioFrame frame)`
-Processes an audio frame for VAD.
-- **Parameters:**
-  - `channelId`: `String` - Channel ID.
-  - `userId`: `String` - User ID.
-  - `frame`: `AudioFrame` - The audio frame to process.
-- **Returns:** `VadProcessResult` - The result of the VAD processing.
+  - `pcmData`: `byte[]` - The PCM audio data.
+  - `sampleRate`: `int` - The sample rate (e.g., 16000).
+  - `numOfChannels`: `int` - The number of channels (e.g., 1 for mono).
+  - `presentationMs`: `long` - The presentation timestamp in milliseconds.
+- **Returns:** `int` - 0 for success, < 0 for failure.
 
 ##### `destroy()`
-Destroys the VAD manager and cleans up all VAD instances.
+Destroys the audio processor instance and releases all resources.
 
 ---
 
@@ -545,20 +503,17 @@ Occurs when an encoded video frame is received.
   - `info`: `EncodedVideoFrameInfo` - Information about the encoded video frame.
 - **Returns:** `int` - 0/1 (no practical significance).
 
-### IAgoraAudioProcessorEventHandler
-The event handler interface for the Agora Audio Processor.
+### IExternalAudioProcessorObserver
+The observer interface for receiving processed audio frames from `AgoraExternalAudioProcessor`.
 
 #### Methods
 
-##### `onEvent(Constants.AgoraAudioProcessorEventType eventType)`
-Reports an event from the audio processor.
+##### `onAudioFrame(AgoraExternalAudioProcessor audioProcessor, AudioFrame audioFrame, VadProcessResult vadProcessResult)`
+Called when a processed audio frame is available.
 - **Parameters:**
-  - `eventType`: `Constants.AgoraAudioProcessorEventType` - The type of the event.
-
-##### `onError(int errorCode)`
-Reports an error from the audio processor.
-- **Parameters:**
-  - `errorCode`: `int` - The error code.
+  - `audioProcessor`: `AgoraExternalAudioProcessor` - The audio processor instance that generated this callback, useful when multiple processors share the same observer.
+  - `audioFrame`: `AudioFrame` - The processed audio frame.
+  - `vadProcessResult`: `VadProcessResult` - The VAD processing result, including the VAD state.
 
 ---
 
@@ -582,6 +537,8 @@ Configuration for the AgoraService.
 - **`domainLimit`**: `int` - Whether to enable domain limit. `1` enables, `0` (default) disables.
 - **`configDir`**: `String` - The path for configuration files. Default is `NULL`.
 - **`dataDir`**: `String` - The path for data files. Default is `NULL`.
+- **`enableApm`**: `boolean` - Whether to enable APM (Audio Processing Module). `true` (default) enables, `false` disables.
+- **`apmConfig`**: `AgoraApmConfig` - The APM configuration.
 
 ### RtcConnConfig
 Configuration for the RTC connection.
@@ -742,29 +699,24 @@ Information about a user.
 Result of a Voice Activity Detection (VAD) process.
 
 - **`outFrame`**: `byte[]` - The output frame after VAD processing.
-- **`state`**: `Constants.VadState` - The state of the VAD process.
-
-### AgoraAudioVadConfig
-Configuration for Voice Activity Detection (VAD).
-
-- **`fftSz`**: `int` - FFT size. Default is 1024.
-- **`hopSz`**: `int` - FFT Hop Size. Default is 160.
-- **`anaWindowSz`**: `int` - FFT window size. Default is 768.
-- **`voiceProbThr`**: `float` - Voice probability threshold. Default is 0.8.
-- **`rmsThr`**: `float` - RMS threshold in dB. Default is -40.0.
+- **`state`**: `Constants.VadState` - The state of the VAD process. Possible values:
+  - `START_SPEAKING`: Speech start detected
+  - `SPEAKING`: Currently speaking
+  - `STOP_SPEAKING`: Speech end detected
+  - `NONE`: No speech detected
 
 ### AgoraAudioVadConfigV2
-Configuration for Voice Activity Detection (VAD) version 2.
+Configuration for Voice Activity Detection (VAD) version 2. This is the recommended VAD configuration class.
 
-- **`preStartRecognizeCount`**: `int` - Number of audio frames to save before speech starts. Default is 16.
-- **`startRecognizeCount`**: `int` - Number of audio frames to confirm speech state. Default is 30.
-- **`stopRecognizeCount`**: `int` - Number of audio frames to confirm silence state. Default is 20.
-- **`activePercent`**: `float` - Percentage of active frames to enter speaking state. Default is 0.7.
-- **`inactivePercent`**: `float` - Percentage of inactive frames to enter silence state. Default is 0.5.
-- **`startVoiceProb`**: `int` - Voice probability gate threshold to start speech. Default is 70.
-- **`stopVoiceProb`**: `int` - Voice probability gate threshold to stop speech. Default is 70.
-- **`startRmsThreshold`**: `int` - RMS threshold to start speech. Default is -50.
-- **`stopRmsThreshold`**: `int` - RMS threshold to stop speech. Default is -50.
+- **`preStartRecognizeCount`**: `int` - Number of audio frames to cache before speech starts. These cached frames will be included when speech is detected. Default is 16 (approximately 160ms).
+- **`startRecognizeCount`**: `int` - Number of consecutive audio frames required to confirm speech start. Larger values reduce false triggers but increase latency. Default is 30 (approximately 300ms).
+- **`stopRecognizeCount`**: `int` - Number of consecutive audio frames required to confirm speech end. Larger values prevent premature cutoff but may include more silence. Default is 20 (approximately 200ms).
+- **`activePercent`**: `float` - Percentage of active frames within the detection window required to enter speaking state. Range: 0.0-1.0. Default is 0.7.
+- **`inactivePercent`**: `float` - Percentage of inactive frames within the detection window required to enter silence state. Range: 0.0-1.0. Default is 0.5.
+- **`startVoiceProb`**: `int` - Voice probability threshold to start speech detection. Range: 0-100. Higher values require more confidence. Default is 70.
+- **`stopVoiceProb`**: `int` - Voice probability threshold to stop speech detection. Range: 0-100. Default is 70.
+- **`startRmsThreshold`**: `int` - RMS (volume) threshold in dB to start speech detection. Range: -100-0. Lower values are more sensitive. Default is -50.
+- **`stopRmsThreshold`**: `int` - RMS (volume) threshold in dB to stop speech detection. Range: -100-0. Default is -50.
 
 ### LocalAudioTrackStats
 Statistics for a local audio track.
@@ -834,48 +786,42 @@ Information about a peer's downlink.
 - **`currentDownscaleLevel`**: `int` - The current downscale level.
 - **`expectedBitrateBps`**: `int` - The expected bitrate in bps.
 
-### AecConfig
-Configuration for Acoustic Echo Cancellation (AEC).
+### AgoraApmConfig
+APM (Audio Processing Module) configuration. Used for audio processing features including AI Noise Suppression, AI Echo Cancellation, Background Human Voice Suppression, and Automatic Gain Control.
 
-- **`enabled`**: `boolean` - Whether to enable AEC.
-- **`stereoAecEnabled`**: `boolean` - Whether to enable stereo AEC.
-- **`filterLength`**: `Constants.AecFilterLength` - The AEC linear filter length.
-- **`aecModelType`**: `Constants.AecModelType` - The AEC model type.
-- **`aecSuppressionMode`**: `Constants.AecSuppressionMode` - The AEC suppression level.
+- **`aiNsConfig`**: `AinsConfig` - AI Noise Suppression configuration.
+- **`aiAecConfig`**: `AIAecConfig` - AI Acoustic Echo Cancellation configuration.
+- **`bghvsConfig`**: `BghvsConfig` - Background Human Voice Suppression configuration.
+- **`agcConfig`**: `AgcConfig` - Automatic Gain Control configuration.
+- **`enableDump`**: `boolean` - Whether to enable APM dump for debugging. Default is `false`.
 
-### AnsConfig
-Configuration for Automatic Noise Suppression (ANS).
+### AinsConfig
+AI Noise Suppression (AINS) configuration.
 
-- **`enabled`**: `boolean` - Whether to enable ANS.
-- **`suppressionMode`**: `Constants.AnsSuppressionMode` - The ANS noise suppression mode.
-- **`ansModelType`**: `Constants.AnsModelType` - The ANS model type.
+- **`aiNsEnabled`**: `boolean` - Whether to enable AI Noise Suppression. Default is `true` (enabled).
+- **`nsEnabled`**: `boolean` - Whether to enable Noise Suppression. Default is `true` (enabled).
+- **`aiNsModelPref`**: `int` - AI NS model preference. Default is `10`.
+- **`nsngAlgRoute`**: `int` - NSNG algorithm route. Default is `12`.
+- **`nsngPredefAgg`**: `int` - NSNG predefined aggressiveness. Default is `11`.
 
-### AgcConfig
-Configuration for Automatic Gain Control (AGC).
+### AIAecConfig
+AI Acoustic Echo Cancellation (AIAEC) configuration.
 
-- **`enabled`**: `boolean` - Whether to enable AGC.
-- **`useAnalogMode`**: `boolean` - Whether to use analog AGC mode.
-- **`maxDigitalGaindB`**: `int` - The maximum digital AGC gain in dB.
-- **`targetleveldB`**: `int` - The target digital AGC level in dB.
+- **`enabled`**: `boolean` - Whether to enable AIAEC. Default is `false` (disabled).
+- **`splitSrateFor48k`**: `int` - Split sample rate for 48k audio. Default is `16000`.
 
-### BghvsConfig
-Configuration for Background Human Voice Suppression (BGHVS).
+### BghvsConfig (apm)
+Background Human Voice Suppression (BGHVS) configuration for APM.
 
-- **`enabled`**: `boolean` - Whether to enable BGHVS.
-- **`bghvsSosLenInMs`**: `int` - The duration to trigger Start of Speech (SOS) in ms.
-- **`bghvsEosLenInMs`**: `int` - The duration to trigger End of Speech (EOS) in ms.
-- **`bghvsSppMode`**: `Constants.BghvsSuppressionMode` - The BGHVS aggressive level.
+- **`enabled`**: `boolean` - Whether to enable BGHVS. Default is `true` (enabled).
+- **`vadThr`**: `double` - VAD (Voice Activity Detection) threshold. Range: 0.0 - 1.0. Default is `0.8`.
 
-### AgoraAudioProcessorConfig
-Configuration for the Agora Audio Processor.
+### AgcConfig (apm)
+Automatic Gain Control (AGC) configuration for APM.
 
-- **`modelPath`**: `String` - The file path to the audio processing model.
-- **`aecConfig`**: `AecConfig` - The configuration for AEC.
-- **`ansConfig`**: `AnsConfig` - The configuration for ANS.
-- **`agcConfig`**: `AgcConfig` - The configuration for AGC.
-- **`bghvsConfig`**: `BghvsConfig` - The configuration for BGHVS.
+- **`enabled`**: `boolean` - Whether to enable AGC. Default is `false` (disabled).
 
-### AgoraAudioFrame
+### AudioFrame
 Represents an audio frame.
 
 - **`type`**: `int` - The audio frame type.
@@ -884,7 +830,7 @@ Represents an audio frame.
 - **`samplesPerChannel`**: `int` - The number of samples per channel in this frame.
 - **`bytesPerSample`**: `int` - The number of bytes per sample.
 - **`buffer`**: `ByteBuffer` - The data buffer of the audio frame.
-- **`presentationMs`**: `long` - The presentation timestamp (PTS) of the audio frame in ms.
+- **`renderTimeMs`**: `long` - The timestamp to render the audio frame.
 
 ---
 

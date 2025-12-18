@@ -9,33 +9,34 @@ import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
 import io.agora.rtc.RtcConnPublishConfig;
 import io.agora.rtc.example.common.SampleLogger;
+import io.agora.rtc.example.utils.AudioSenderHelper;
 import io.agora.rtc.example.utils.Utils;
-import java.util.Arrays;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class SendPcmFileTest {
+public class SendAacTest {
+    static {
+        System.loadLibrary("media_utils");
+    }
+
     private String appId;
     private String token;
     private final String DEFAULT_LOG_PATH = "logs/agora_logs/agorasdk.log";
     private final int DEFAULT_LOG_SIZE = 5 * 1024; // default log size is 5 mb
-    private String channelId = "agaa";
-    private String userId = "0";
 
     private static AgoraService service;
 
     private AgoraRtcConn conn;
 
-    private String audioFilePath = "test_data/tts_ai_16k_1ch.pcm";
-    private int numOfChannels = 1;
-    private int sampleRate = 16000;
-    private int pushMaxCount = 2;
+    private AudioSenderHelper audioSenderHelper;
+
+    private String channelId = "agaa";
+    private String userId = "0";
+    private String audioFilePath = "test_data/send_audio.aac";
+    private long testTime = 60 * 1000;
     private boolean forceExit = true;
 
     private final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
-
-    private CountDownLatch taskFinishLatch = new CountDownLatch(1);
 
     public void setForceExit(boolean forceExit) {
         this.forceExit = forceExit;
@@ -85,7 +86,7 @@ public class SendPcmFileTest {
         publishConfig.setAudioProfile(Constants.AUDIO_PROFILE_DEFAULT);
         publishConfig.setIsPublishAudio(true);
         publishConfig.setIsPublishVideo(false);
-        publishConfig.setAudioPublishType(Constants.AudioPublishType.PCM);
+        publishConfig.setAudioPublishType(Constants.AudioPublishType.ENCODED_PCM);
         publishConfig.setVideoPublishType(Constants.VideoPublishType.NO_PUBLISH);
         conn = service.agoraRtcConnCreate(ccfg, publishConfig);
         if (conn == null) {
@@ -105,22 +106,12 @@ public class SendPcmFileTest {
             @Override
             public void onUserJoined(AgoraRtcConn agoraRtcConn, String userId) {
                 SampleLogger.log("onUserJoined userId:" + userId);
-                pushPcmData();
+                pushAacData();
             }
 
             @Override
             public void onUserLeft(AgoraRtcConn agoraRtcConn, String userId, int reason) {
                 SampleLogger.log("onUserLeft userId:" + userId + " reason:" + reason);
-            }
-
-            @Override
-            public void onChangeRoleSuccess(AgoraRtcConn agoraRtcConn, int oldRole, int newRole) {
-                SampleLogger.log("onChangeRoleSuccess oldRole:" + oldRole + " newRole:" + newRole);
-            }
-
-            @Override
-            public void onChangeRoleFailure(AgoraRtcConn agoraRtcConn) {
-                SampleLogger.log("onChangeRoleFailure");
             }
         });
         SampleLogger.log("registerObserver ret:" + ret);
@@ -136,14 +127,35 @@ public class SendPcmFileTest {
             return;
         }
 
-        // Create audio track
         conn.publishAudio();
 
-        try {
-            taskFinishLatch.await();
-        } catch (Exception e) {
-            e.printStackTrace();
+        audioSenderHelper = new AudioSenderHelper();
+        audioSenderHelper.setCallback(new AudioSenderHelper.AudioSenderCallback() {
+            @Override
+            public void onTaskStart(AudioSenderHelper.TaskInfo task) {
+                SampleLogger.log("onTaskStart for task:" + task);
+            }
+
+            @Override
+            public void onTaskComplete(AudioSenderHelper.TaskInfo task) {
+                SampleLogger.log("onTaskComplete for task:" + task);
+            }
+
+            @Override
+            public void onTaskCancel(AudioSenderHelper.TaskInfo task) {
+                SampleLogger.log("onTaskCancel for task:" + task);
+            }
+        });
+
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime < testTime) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
+        audioSenderHelper.cleanupAllTask();
 
         releaseConn();
         releaseAgoraService();
@@ -152,42 +164,20 @@ public class SendPcmFileTest {
         }
     }
 
-    private void pushPcmData() {
+    private void pushAacData() {
         testTaskExecutorService.execute(() -> {
-            byte[] pcmData = Utils.readPcmFromFile(audioFilePath);
-            // The data length must be an integer multiple of the data length of 1ms.If not,
-            // then the remaining audio needs to be saved and sent together with the next
-            // audio.
-            // Assuming 16-bit samples (2 bytes per sample).
-            int bytesPerMs = numOfChannels * (sampleRate / 1000) * 2;
-            if (bytesPerMs > 0 && pcmData.length % bytesPerMs != 0) {
-                int newLength = (pcmData.length / bytesPerMs) * bytesPerMs;
-                SampleLogger.log(String.format("sendPcmTask: pcmData length is not a multiple of "
-                        + "1ms data bytes. Truncating from %d to %d bytes.",
-                        pcmData.length, newLength));
-                pcmData = Arrays.copyOf(pcmData, newLength);
+            audioSenderHelper.send(new AudioSenderHelper.TaskInfo(channelId, userId, audioFilePath,
+                    AudioSenderHelper.FileType.AAC, conn, 1),
+                    true);
+
+            try {
+                Thread.sleep(10 * 1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-
-            SampleLogger.log("pushPcmData start pcm data length:" + pcmData.length + " time:"
-                    + (pcmData.length / bytesPerMs) + "ms");
-
-            int count = 1;
-            while (count <= pushMaxCount) {
-                int ret = conn.pushAudioPcmData(pcmData, sampleRate, numOfChannels);
-                SampleLogger.log("pushAudioPcmData " + pcmData.length + " ret: " + ret);
-
-                while (!conn.isPushToRtcCompleted()) {
-                    // SampleLogger.log("pushAudioPcmData not completed");
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                SampleLogger.log("pushAudioPcmData completed count:" + count);
-                count++;
-            }
-            taskFinishLatch.countDown();
+            audioSenderHelper.send(new AudioSenderHelper.TaskInfo(channelId, userId, audioFilePath,
+                    AudioSenderHelper.FileType.AAC, conn, 10),
+                    true);
         });
     }
 
@@ -197,6 +187,10 @@ public class SendPcmFileTest {
             return;
         }
 
+        if (null != audioSenderHelper) {
+            audioSenderHelper.destroy();
+            audioSenderHelper = null;
+        }
         int ret = conn.disconnect();
         if (ret != 0) {
             SampleLogger.log("conn.disconnect fail ret=" + ret);
@@ -213,7 +207,6 @@ public class SendPcmFileTest {
             service.destroy();
             service = null;
         }
-        testTaskExecutorService.shutdown();
 
         SampleLogger.log("releaseAgoraService");
     }

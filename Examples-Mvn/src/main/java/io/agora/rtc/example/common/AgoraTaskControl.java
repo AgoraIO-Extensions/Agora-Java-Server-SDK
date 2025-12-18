@@ -14,6 +14,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class AgoraTaskControl {
     private final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
@@ -21,6 +22,7 @@ public class AgoraTaskControl {
             0, Integer.MAX_VALUE, 1L, TimeUnit.SECONDS, new SynchronousQueue<>());
 
     private AtomicInteger testTaskCount = new AtomicInteger(0);
+    private static AtomicLong totalTaskExecutedCount = new AtomicLong(0);
     private final Object taskCountLock = new Object();
     private final List<AgoraConnectionTask> connTasksList = new CopyOnWriteArrayList<>();
 
@@ -87,10 +89,11 @@ public class AgoraTaskControl {
                 + " userId:" + userId + " testTask:" + testTask + " testTime:" + testTime);
         synchronized (taskCountLock) {
             testTaskCount.incrementAndGet();
+            totalTaskExecutedCount.incrementAndGet();
             System.out.println(Utils.formatTimestamp(System.currentTimeMillis())
                     + " testTaskCount:" + testTaskCount.get() + " testTask:" + testTask
-                    + " channelId:" + channelId + " userId:" + userId);
-            SampleLogger.log("test start testTaskCount:" + testTaskCount.get());
+                    + " channelId:" + channelId + " userId:" + userId + " totalTaskExecutedCount:" + totalTaskExecutedCount.get());
+            SampleLogger.log("test start testTaskCount:" + testTaskCount.get() + " totalTaskExecutedCount:" + totalTaskExecutedCount.get());
         }
         AgoraServiceInitializer.initAgoraService(0, 1, 1, argsConfig);
         testTaskExecutorService.execute(() -> {
@@ -265,7 +268,11 @@ public class AgoraTaskControl {
                     publishConfig.setIsPublishVideo(false);
                     publishConfig.setAudioPublishType(Constants.AudioPublishType.NO_PUBLISH);
                     publishConfig.setVideoPublishType(Constants.VideoPublishType.NO_PUBLISH);
-                    needConnect = false;
+                    if (argsConfig.isEnableStressTest()) {
+                        needConnect = true;
+                    } else {
+                        needConnect = false;
+                    }
                     break;
                 case SEND_RECEIVE_PCM_YUV:
                     break;
@@ -462,7 +469,7 @@ public class AgoraTaskControl {
             }
             SampleLogger.log("test finished for connTask:" + testTask + " channelId:" + channelId
                     + " userId:" + threadLocalUserId.get()
-                    + " with left testTaskCount:" + leftTestTaskCount.get() + "\n");
+                    + " with left testTaskCount:" + leftTestTaskCount.get() + " totalTaskExecutedCount:" + totalTaskExecutedCount.get() + "\n");
         });
         return true;
     }
@@ -478,15 +485,37 @@ public class AgoraTaskControl {
 
     public void cleanup() {
         SampleLogger.log("cleanup");
+
+        // Release all connections
         for (AgoraConnectionTask connTask : connTasksList) {
             connTask.releaseConn();
         }
         connTasksList.clear();
 
+        // Shutdown executor services and wait for all tasks to complete
         singleExecutorService.shutdown();
         testTaskExecutorService.shutdown();
-        // connPool.releaseAllConn();
-        // Destroy Agora Service
+
+        try {
+            // Wait for all connection tasks to finish (max 10 seconds)
+            SampleLogger.log("Waiting for all connection tasks to complete...");
+            if (!singleExecutorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                SampleLogger.error("singleExecutorService did not terminate in time, forcing shutdown");
+                singleExecutorService.shutdownNow();
+            }
+            if (!testTaskExecutorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                SampleLogger.error("testTaskExecutorService did not terminate in time, forcing shutdown");
+                testTaskExecutorService.shutdownNow();
+            }
+            SampleLogger.log("All connection tasks completed");
+        } catch (InterruptedException e) {
+            SampleLogger.error("Interrupted while waiting for tasks to complete: " + e.getMessage());
+            singleExecutorService.shutdownNow();
+            testTaskExecutorService.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+
+        // Now it's safe to destroy Agora Service
         releaseAgoraService();
 
         SampleLogger.release();

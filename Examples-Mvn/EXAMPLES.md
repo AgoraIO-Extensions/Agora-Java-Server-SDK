@@ -141,9 +141,6 @@ http://10.200.0.85:18080/api/server/basic?taskName=SendReceiverStreamMessageTest
 http://10.200.0.85:18080/api/server/basic?taskName=SendYuvTest
 http://10.200.0.85:18080/api/server/basic?taskName=AIReceiverSendPcmTest
 
-// gateway sdk
-http://10.200.0.85:18080/api/server/basic?taskName=VadV1Test
-http://10.200.0.85:18080/api/server/basic?taskName=Audio3aTest
 ```
 
 ## 停止运行

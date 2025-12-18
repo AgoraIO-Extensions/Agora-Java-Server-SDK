@@ -37,13 +37,18 @@ public class AIReceiverSendPcmTest {
     private String audioOutFile = "test_data_out/receiver_audio_out_ai";
     private int numOfChannels = 1;
     private int sampleRate = 16000;
-    private long testTime = 5 * 60 * 1000;
-    private int pushMaxCount = 100;
+    private long testTime = 60 * 1000;
+    private int pushMaxCount = 2;
+    private boolean forceExit = true;
 
     private final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
     private final ExecutorService fileWriteTaskExecutorService = Executors.newSingleThreadExecutor();
 
     private final AtomicInteger testTaskCount = new AtomicInteger(0);
+
+    public void setForceExit(boolean forceExit) {
+        this.forceExit = forceExit;
+    }
 
     class UserIdHolder {
         private volatile String userId;
@@ -108,7 +113,9 @@ public class AIReceiverSendPcmTest {
         } while (testTaskCount.get() != 0);
 
         releaseAgoraService();
-        System.exit(0);
+        if (forceExit) {
+            System.exit(0);
+        }
     }
 
     private void startSendPcmData() {
@@ -196,11 +203,11 @@ public class AIReceiverSendPcmTest {
             }
         }
 
-        try {
-            userJoinLatch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        // try {
+        // userJoinLatch.await();
+        // } catch (InterruptedException e) {
+        // e.printStackTrace();
+        // }
 
         byte[] pcmData = Utils.readPcmFromFile(audioFilePath);
         // The data length must be an integer multiple of the data length of 1ms.

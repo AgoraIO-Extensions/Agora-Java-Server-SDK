@@ -40,8 +40,13 @@ public class SendYuvTest {
     private boolean enableSimulcastStream = false;
     private String videoFile = "test_data/360p_I420.yuv";
     private long testTime = 60 * 1000;
+    private boolean forceExit = true;
 
     private final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
+
+    public void setForceExit(boolean forceExit) {
+        this.forceExit = forceExit;
+    }
 
     public void start() {
         if (appId == null || token == null) {
@@ -69,7 +74,7 @@ public class SendYuvTest {
             ret = service.initialize(config);
             if (ret != 0) {
                 SampleLogger.log(
-                    "createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
+                        "createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
                 releaseAgoraService();
                 return;
             }
@@ -117,7 +122,7 @@ public class SendYuvTest {
 
         ret = conn.connect(token, channelId, userId);
         SampleLogger.log(
-            "Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
+                "Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
         if (ret != 0) {
             SampleLogger.log("conn.connect fail ret=" + ret);
             releaseConn();
@@ -155,7 +160,9 @@ public class SendYuvTest {
 
         releaseConn();
         releaseAgoraService();
-        System.exit(0);
+        if (forceExit) {
+            System.exit(0);
+        }
     }
 
     private void pushYuvData() {
@@ -198,11 +205,10 @@ public class SendYuvTest {
 
                     String testMetaData = "testMetaData";
                     if (null == matedataByteBuffer) {
-                        matedataByteBuffer =
-                            ByteBuffer.allocateDirect(testMetaData.getBytes().length);
+                        matedataByteBuffer = ByteBuffer.allocateDirect(testMetaData.getBytes().length);
                     }
                     if (matedataByteBuffer == null
-                        || matedataByteBuffer.limit() < testMetaData.getBytes().length) {
+                            || matedataByteBuffer.limit() < testMetaData.getBytes().length) {
                         return;
                     }
                     matedataByteBuffer.put(testMetaData.getBytes());
@@ -226,8 +232,8 @@ public class SendYuvTest {
                     frameIndex++;
 
                     SampleLogger.log("send yuv frame data size:" + data.length + " ret:" + ret
-                        + " timestamp:" + timestamp + " frameIndex:" + frameIndex
-                        + " from channelId:" + channelId + " userId:" + userId);
+                            + " timestamp:" + timestamp + " frameIndex:" + frameIndex
+                            + " from channelId:" + channelId + " userId:" + userId);
                 }
 
                 @Override

@@ -62,13 +62,13 @@ public class CliLauncher {
     }
 
     private static void printUsageAndExit() {
-        System.out.println("Usage: ./build.sh cli <jsonFileName>");
-        System.out.println("   or: ./build.sh cli <basicClassName>");
+        System.out.println("Usage: ./build.sh cli [jsonFileName|basicClassName]");
         System.out.println("");
         System.out.println("Examples:");
-        System.out.println("  ./build.sh cli pcm_send.json");
-        System.out.println("  ./build.sh cli SendPcmFileTest");
-        System.out.println("  ./build.sh cli ReceiverPcmVadTest");
+        System.out.println("  ./build.sh cli                    # Run all basic test cases");
+        System.out.println("  ./build.sh cli pcm_send.json      # Run specific JSON config");
+        System.out.println("  ./build.sh cli SendPcmFileTest    # Run specific basic test");
+        System.out.println("  ./build.sh cli ReceiverPcmVadTest # Run specific basic test");
         System.exit(1);
     }
 
@@ -200,8 +200,23 @@ public class CliLauncher {
             task = options.getOrDefault("configFileName", "");
         }
 
+        // If task is empty, run all basic test cases
         if (task.isEmpty()) {
-            printUsageAndExit();
+            SampleLogger.log("No task specified, running all basic test cases...");
+            try {
+                boolean success = TaskLauncher.startAllBasicCase();
+                if (success) {
+                    SampleLogger.log("All basic test cases completed successfully");
+                    System.exit(0);
+                } else {
+                    SampleLogger.error("Some basic test cases failed");
+                    System.exit(1);
+                }
+            } catch (Exception e) {
+                SampleLogger.error("Error running all basic test cases: " + e.getMessage());
+                e.printStackTrace();
+                System.exit(1);
+            }
             return;
         }
 
@@ -257,16 +272,11 @@ public class CliLauncher {
                     if (agoraTaskManager != null) {
                         SampleLogger.log("Cleaning up AgoraTaskManager (normal exit)...");
                         agoraTaskManager.cleanup();
+                        // Note: cleanup() already calls releaseAgoraService(), so we don't need to call
+                        // it again
                     }
                 } catch (Exception e) {
                     SampleLogger.error("Error during cleanup: " + e.getMessage());
-                }
-
-                try {
-                    SampleLogger.log("Destroying AgoraService (normal exit)...");
-                    AgoraServiceInitializer.destroyAgoraService();
-                } catch (Exception e) {
-                    SampleLogger.error("Error destroying AgoraService: " + e.getMessage());
                 }
             } else {
                 SampleLogger.log("Cleanup already performed by stop command (pressing '1')");

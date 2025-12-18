@@ -3,6 +3,7 @@ package io.agora.rtc.example.utils;
 import io.agora.rtc.AgoraRtcConn;
 import io.agora.rtc.EncodedAudioFrameInfo;
 import io.agora.rtc.example.common.SampleLogger;
+import io.agora.rtc.example.mediautils.AacReader;
 import io.agora.rtc.example.mediautils.OpusReader;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -23,13 +24,16 @@ public class AudioSenderHelper {
     private EncodedAudioFrameInfo encodedInfo = null;
 
     private OpusReader opusReader;
+    private AacReader aacReader;
     private final List<TaskInfo> taskList;
     private volatile TaskInfo currentTask;
     private volatile boolean isRunning = false;
 
     private AudioSenderCallback callback;
 
-    public enum FileType { OPUS }
+    public enum FileType {
+        OPUS, AAC
+    }
 
     public AudioSenderHelper() {
         this.scheduler = Executors.newScheduledThreadPool(SCHEDULER_POOL_SIZE, r -> {
@@ -56,12 +60,12 @@ public class AudioSenderHelper {
 
         if (null == readFileFuture) {
             readFileFuture = scheduler.scheduleAtFixedRate(
-                this::readFile, 0, INTERVAL_ONE_FRAME, TimeUnit.MILLISECONDS);
+                    this::readFile, 0, INTERVAL_ONE_FRAME, TimeUnit.MILLISECONDS);
         }
 
         if (sendDataFuture == null) {
             sendDataFuture = scheduler.scheduleAtFixedRate(
-                this::sendData, 0, INTERVAL_ONE_FRAME, TimeUnit.MILLISECONDS);
+                    this::sendData, 0, INTERVAL_ONE_FRAME, TimeUnit.MILLISECONDS);
         }
 
         return 0;
@@ -84,12 +88,11 @@ public class AudioSenderHelper {
                     if (opusReader == null) {
                         opusReader = new OpusReader(currentTask.getFilePath());
                     }
-                    io.agora.rtc.example.mediautils.AudioFrame opusFrame =
-                        opusReader.getAudioFrame(INTERVAL_ONE_FRAME);
+                    io.agora.rtc.example.mediautils.AudioFrame opusFrame = opusReader.getAudioFrame(INTERVAL_ONE_FRAME);
                     if (opusFrame != null) {
                         if (audioFrameCache == null) {
                             audioFrameCache = new AudioFrameCache(opusFrame.numberOfChannels,
-                                opusFrame.sampleRate, opusFrame.samplesPerChannel, opusFrame.codec);
+                                    opusFrame.sampleRate, opusFrame.samplesPerChannel, opusFrame.codec);
                         }
                         audioFrameCache.pushFrame(new AudioFrameCache.Frame(opusFrame.buffer));
                     } else {
@@ -109,8 +112,41 @@ public class AudioSenderHelper {
                             }
                         } else if (currentTask.getRemainingLoops() > 0) {
                             SampleLogger.log(
-                                "readFile getRemainingLoops: " + currentTask.getRemainingLoops());
+                                    "readFile getRemainingLoops: " + currentTask.getRemainingLoops());
                             opusReader.reset();
+                        }
+                    }
+                    break;
+                case AAC:
+                    if (aacReader == null) {
+                        aacReader = new AacReader(currentTask.getFilePath());
+                    }
+                    AacReader.AacFrame aacFrame = aacReader.getAudioFrame(INTERVAL_ONE_FRAME);
+                    if (aacFrame != null) {
+                        if (audioFrameCache == null) {
+                            audioFrameCache = new AudioFrameCache(aacFrame.numberOfChannels,
+                                    aacFrame.sampleRate, aacFrame.samplesPerChannel, aacFrame.codec);
+                        }
+                        audioFrameCache.pushFrame(new AudioFrameCache.Frame(aacFrame.buffer));
+                    } else {
+                        currentTask.decrementLoopCount();
+                        if (currentTask.getRemainingLoops() <= 0) {
+                            if (callback != null) {
+                                callback.onTaskComplete(currentTask);
+                            }
+                            cleanupCurrentTask();
+                            if (taskList.isEmpty()) {
+                                if (readFileFuture != null && !readFileFuture.isCancelled()) {
+                                    readFileFuture.cancel(true);
+                                    readFileFuture = null;
+                                }
+                            } else {
+                                currentTask = null;
+                            }
+                        } else if (currentTask.getRemainingLoops() > 0) {
+                            SampleLogger.log(
+                                    "readFile getRemainingLoops: " + currentTask.getRemainingLoops());
+                            aacReader.reset();
                         }
                     }
                     break;
@@ -144,6 +180,7 @@ public class AudioSenderHelper {
             }
             switch (currentTask.getFileType()) {
                 case OPUS:
+                case AAC:
                     for (AudioFrameCache.Frame frame : frames) {
                         byte[] sendData = frame.getData();
                         if (encodedInfo == null) {
@@ -152,13 +189,13 @@ public class AudioSenderHelper {
                             encodedInfo.setNumberOfChannels(audioFrameCache.getNumOfChannels());
                             encodedInfo.setSampleRateHz(audioFrameCache.getSampleRate());
                             encodedInfo.setSamplesPerChannel(
-                                audioFrameCache.getSamplesPerChannel());
+                                    audioFrameCache.getSamplesPerChannel());
                         }
                         int ret = ((AgoraRtcConn) currentTask.getSender())
-                                      .pushAudioEncodedData(sendData, encodedInfo);
+                                .pushAudioEncodedData(sendData, encodedInfo);
                         if (ret != 0) {
                             SampleLogger.log("sendData failed sendData.length: " + sendData.length
-                                + " ret: " + ret);
+                                    + " ret: " + ret);
                         }
                     }
                     break;
@@ -178,8 +215,12 @@ public class AudioSenderHelper {
         if (opusReader != null) {
             opusReader.close();
             opusReader = null;
-            encodedInfo = null;
         }
+        if (aacReader != null) {
+            aacReader.close();
+            aacReader = null;
+        }
+        encodedInfo = null;
     }
 
     public void cleanupAllTask() {
@@ -236,6 +277,13 @@ public class AudioSenderHelper {
                     opusReader = null;
                 }
             }
+            if (aacReader != null) {
+                try {
+                    aacReader.close();
+                } finally {
+                    aacReader = null;
+                }
+            }
             if (audioFrameCache != null) {
                 audioFrameCache.clear();
                 audioFrameCache = null;
@@ -258,7 +306,7 @@ public class AudioSenderHelper {
         private volatile int remainingLoops;
 
         public TaskInfo(String channelId, String userId, String filePath, FileType fileType,
-            Object sender, int loopCount) {
+                Object sender, int loopCount) {
             this.channelId = channelId;
             this.userId = userId;
             this.filePath = filePath;
@@ -303,9 +351,9 @@ public class AudioSenderHelper {
         @Override
         public String toString() {
             return "TaskInfo{"
-                + "channelId='" + channelId + '\'' + ", userId='" + userId + '\'' + ", filePath='"
-                + filePath + '\'' + ", fileType=" + fileType + ", sender=" + sender
-                + ", loopCount=" + loopCount + '}';
+                    + "channelId='" + channelId + '\'' + ", userId='" + userId + '\'' + ", filePath='"
+                    + filePath + '\'' + ", fileType=" + fileType + ", sender=" + sender
+                    + ", loopCount=" + loopCount + '}';
         }
     }
 

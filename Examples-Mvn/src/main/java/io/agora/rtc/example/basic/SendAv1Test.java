@@ -40,8 +40,13 @@ public class SendAv1Test {
     private boolean enableSimulcastStream = false;
     private String videoFile = "test_data/360p_I420.yuv";
     private long testTime = 60 * 1000;
+    private boolean forceExit = true;
 
     private final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
+
+    public void setForceExit(boolean forceExit) {
+        this.forceExit = forceExit;
+    }
 
     public void start() {
         if (appId == null || token == null) {
@@ -155,7 +160,9 @@ public class SendAv1Test {
 
         releaseConn();
         releaseAgoraService();
-        System.exit(0);
+        if (forceExit) {
+            System.exit(0);
+        }
     }
 
     private void pushAv1Data() {

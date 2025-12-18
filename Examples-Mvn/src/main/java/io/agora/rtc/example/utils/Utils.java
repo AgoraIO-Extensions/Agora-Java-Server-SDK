@@ -196,10 +196,11 @@ public class Utils {
     }
 
     /**
-     * Delete all files in the specified directory.
+     * Recursively delete all files and subdirectories in the specified directory.
      *
      * @param directoryPath The path of the directory.
-     * @return true if all files are deleted successfully, false otherwise.
+     * @return true if all files and subdirectories are deleted successfully, false
+     *         otherwise.
      */
     public static boolean deleteAllFilesInDirectory(String directoryPath) {
         if (directoryPath == null || directoryPath.isEmpty()) {
@@ -208,23 +209,42 @@ public class Utils {
 
         File directory = new File(directoryPath);
 
-        // Check if the directory exists and is a directory
-        if (!directory.exists() || !directory.isDirectory()) {
+        // Check if the path exists
+        if (!directory.exists()) {
             return false;
         }
 
-        File[] files = directory.listFiles();
-        if (files == null) {
+        return deleteRecursively(directory);
+    }
+
+    /**
+     * Recursively delete a file or directory and all its contents.
+     *
+     * @param file The file or directory to delete.
+     * @return true if deletion was successful, false otherwise.
+     */
+    private static boolean deleteRecursively(File file) {
+        if (file == null || !file.exists()) {
             return false;
         }
 
         boolean allDeleted = true;
-        for (File file : files) {
-            if (file.isFile()) {
-                if (!file.delete()) {
-                    allDeleted = false;
+
+        // If it's a directory, first delete all its contents
+        if (file.isDirectory()) {
+            File[] children = file.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    if (!deleteRecursively(child)) {
+                        allDeleted = false;
+                    }
                 }
             }
+        }
+
+        // Delete the file or empty directory
+        if (!file.delete()) {
+            allDeleted = false;
         }
 
         return allDeleted;

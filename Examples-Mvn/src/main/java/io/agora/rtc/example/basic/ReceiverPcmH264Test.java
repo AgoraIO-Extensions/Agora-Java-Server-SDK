@@ -42,8 +42,13 @@ public class ReceiverPcmH264Test {
     private int sampleRate = 16000;
     private String remoteUserId = "";
     private long testTime = 60 * 1000;
+    private boolean forceExit = true;
 
     private final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
+
+    public void setForceExit(boolean forceExit) {
+        this.forceExit = forceExit;
+    }
 
     private UserIdHolder userIdHolder = new UserIdHolder("0");
 
@@ -257,7 +262,9 @@ public class ReceiverPcmH264Test {
 
         releaseConn();
         releaseAgoraService();
-        System.exit(0);
+        if (forceExit) {
+            System.exit(0);
+        }
     }
 
     private void releaseConn() {

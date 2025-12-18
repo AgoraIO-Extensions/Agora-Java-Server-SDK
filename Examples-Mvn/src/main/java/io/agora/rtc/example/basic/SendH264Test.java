@@ -42,9 +42,14 @@ public class SendH264Test {
     private boolean enableSimulcastStream = false;
     private String videoFile = "test_data/send_video.h264";
     private long testTime = 60 * 1000;
+    private boolean forceExit = true;
 
     private final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
     private final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
+
+    public void setForceExit(boolean forceExit) {
+        this.forceExit = forceExit;
+    }
 
     public void start() {
         if (appId == null || token == null) {
@@ -155,7 +160,9 @@ public class SendH264Test {
 
         releaseConn();
         releaseAgoraService();
-        System.exit(0);
+        if (forceExit) {
+            System.exit(0);
+        }
     }
 
     private void pushH264Data() {
