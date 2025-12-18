@@ -152,21 +152,21 @@ if $build_mediaUtils; then
 fi
 
 # 读取配置文件
-CONFIG_FILE="run_config"
-ENABLE_GATEWAY=false
+# CONFIG_FILE="run_config"
+# ENABLE_GATEWAY=false
 
-if [ -f "$CONFIG_FILE" ]; then
-    echo "Reading configuration from $CONFIG_FILE"
-    # 读取配置文件中的设置
-    while IFS='=' read -r key value; do
-        # 忽略注释行和空行
-        if [[ "$key" =~ ^[[:space:]]*# ]] || [[ -z "$key" ]]; then
-            continue
-        fi
-        if [ "$key" = "enable_gateway" ]; then
-            ENABLE_GATEWAY=$value
-        fi
-    done <"$CONFIG_FILE"
-fi
+# if [ -f "$CONFIG_FILE" ]; then
+#     echo "Reading configuration from $CONFIG_FILE"
+#     # 读取配置文件中的设置
+#     while IFS='=' read -r key value; do
+#         # 忽略注释行和空行
+#         if [[ "$key" =~ ^[[:space:]]*# ]] || [[ -z "$key" ]]; then
+#             continue
+#         fi
+#         if [ "$key" = "enable_gateway" ]; then
+#             ENABLE_GATEWAY=$value
+#         fi
+#     done <"$CONFIG_FILE"
+# fi
 
 echo "Build completed successfully"

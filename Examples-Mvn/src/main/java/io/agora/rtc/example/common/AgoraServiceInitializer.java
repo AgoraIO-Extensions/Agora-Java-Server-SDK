@@ -20,12 +20,12 @@ public class AgoraServiceInitializer {
     public static boolean isFirstInit = true;
 
     public synchronized static int initAgoraService(
-        int enableAudioDevice, int enableAudioProcessor, int enableVideo, ArgsConfig argsConfig) {
+            int enableAudioDevice, int enableAudioProcessor, int enableVideo, ArgsConfig argsConfig) {
         if (service != null) {
             return 0;
         }
         SampleLogger.log(
-            "initAgoraService AgoraService.getSdkVersion=" + AgoraService.getSdkVersion());
+                "initAgoraService AgoraService.getSdkVersion=" + AgoraService.getSdkVersion());
 
         initData(argsConfig);
 
@@ -50,11 +50,13 @@ public class AgoraServiceInitializer {
         config.setConfigDir(DEFAULT_CONFIG_DIR);
         config.setDataDir(DEFAULT_DATA_DIR);
 
-        if (argsConfig.isEnableApmAndDump()) {
-            config.setEnableApm(true);
-            AgoraApmConfig apmConfig = new AgoraApmConfig();
-            apmConfig.setEnableDump(true);
-            config.setApmConfig(apmConfig);
+        if (argsConfig.getApmMode() == Constants.ApmMode.ENABLE.getValue()) {
+            config.setApmMode(Constants.ApmMode.ENABLE);
+            if (argsConfig.isEnableApm3a()) {
+                AgoraApmConfig apmConfig = new AgoraApmConfig();
+                apmConfig.setEnableDump(argsConfig.isEnableApmDump());
+                config.setApmConfig(apmConfig);
+            }
         }
 
         SampleLogger.log("initAgoraService config=" + config);
@@ -93,7 +95,7 @@ public class AgoraServiceInitializer {
                 argsConfig.setToken(appIdAndToken[1]);
             } catch (Exception e) {
                 SampleLogger.error(
-                    "Error reading appId and token from .keys file: " + e.getMessage());
+                        "Error reading appId and token from .keys file: " + e.getMessage());
             }
         }
     }

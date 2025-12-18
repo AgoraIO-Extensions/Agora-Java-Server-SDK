@@ -34,8 +34,13 @@ public class SendOpusTest {
     private String userId = "0";
     private String audioFilePath = "test_data/send_audio.opus";
     private long testTime = 60 * 1000;
+    private boolean forceExit = true;
 
     private final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
+
+    public void setForceExit(boolean forceExit) {
+        this.forceExit = forceExit;
+    }
 
     public void start() {
         if (appId == null || token == null) {
@@ -63,7 +68,7 @@ public class SendOpusTest {
             ret = service.initialize(config);
             if (ret != 0) {
                 SampleLogger.log(
-                    "createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
+                        "createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
                 releaseAgoraService();
                 return;
             }
@@ -94,7 +99,7 @@ public class SendOpusTest {
             @Override
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
                 SampleLogger.log("onConnected chennalId:" + connInfo.getChannelId()
-                    + " userId:" + connInfo.getLocalUserId());
+                        + " userId:" + connInfo.getLocalUserId());
                 userId = connInfo.getLocalUserId();
             }
 
@@ -113,7 +118,7 @@ public class SendOpusTest {
 
         ret = conn.connect(token, channelId, userId);
         SampleLogger.log(
-            "Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
+                "Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
 
         if (ret != 0) {
             SampleLogger.log("conn.connect fail ret=" + ret);
@@ -154,14 +159,16 @@ public class SendOpusTest {
 
         releaseConn();
         releaseAgoraService();
-        System.exit(0);
+        if (forceExit) {
+            System.exit(0);
+        }
     }
 
     private void pushOpusData() {
         testTaskExecutorService.execute(() -> {
             audioSenderHelper.send(new AudioSenderHelper.TaskInfo(channelId, userId, audioFilePath,
-                                       AudioSenderHelper.FileType.OPUS, conn, 1),
-                true);
+                    AudioSenderHelper.FileType.OPUS, conn, 1),
+                    true);
 
             try {
                 Thread.sleep(10 * 1000);
@@ -169,8 +176,8 @@ public class SendOpusTest {
                 e.printStackTrace();
             }
             audioSenderHelper.send(new AudioSenderHelper.TaskInfo(channelId, userId, audioFilePath,
-                                       AudioSenderHelper.FileType.OPUS, conn, 1),
-                true);
+                    AudioSenderHelper.FileType.OPUS, conn, 1),
+                    true);
         });
     }
 

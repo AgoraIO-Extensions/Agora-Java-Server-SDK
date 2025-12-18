@@ -10,6 +10,8 @@
 #   ./build.sh -native start      - Build project with native libraries and start
 #   ./build.sh cli <jsonFileName> - Run CLI mode with JSON config file
 #   ./build.sh cli <basicClassName> - Run CLI mode with basic class name
+#   ./build.sh -m start           - Build and start with memory leak detection (tcmalloc)
+#   ./build.sh -m cli <config>    - Run CLI mode with memory leak detection (tcmalloc)
 
 set -e
 
@@ -17,6 +19,7 @@ set -e
 build_native=false
 build_ffmpeg=false
 build_media=false
+enable_memleak=false
 action="compile"
 cli_config=""
 
@@ -35,6 +38,10 @@ while [[ $# -gt 0 ]]; do
         build_media=true
         shift
         ;;
+    -m)
+        enable_memleak=true
+        shift
+        ;;
     start)
         action="start"
         shift
@@ -42,73 +49,194 @@ while [[ $# -gt 0 ]]; do
     cli)
         action="cli"
         shift
-        if [ $# -gt 0 ]; then
+        if [ $# -gt 0 ] && [ "$1" != "-m" ]; then
             cli_config="$1"
             shift
         else
-            echo "Error: cli mode requires a config file name or basic class name"
-            echo "Usage: $0 cli <jsonFileName> or $0 cli <basicClassName>"
-            exit 1
+            cli_config=""
         fi
         ;;
     *)
         echo "Unknown option: $1"
-        echo "Usage: $0 [-native|-ffmpegUtils|-mediaUtils] [start|cli <config>]"
+        echo "Usage: $0 [-native|-ffmpegUtils|-mediaUtils|-m] [start|cli <config>]"
         exit 1
         ;;
     esac
 done
 
-# Config file path
-CONFIG_FILE="run_config"
-AUDIO3A_FILE="src/main/java/io/agora/rtc/example/basic/Audio3aTest.java"
-VADV1_FILE="src/main/java/io/agora/rtc/example/basic/VadV1Test.java"
-
-# Default config
-enable_gateway="false"
-
-# Read config
-if [ -f "$CONFIG_FILE" ]; then
-    echo "Reading config file: $CONFIG_FILE"
-    while IFS='=' read -r key value; do
-        if [[ -z "$key" || "$key" =~ ^#.* ]]; then
-            continue
+# Function to setup tcmalloc memory leak detection
+setup_memleak_detection() {
+    local log_dir="$1"
+    
+    # Clean and recreate log directory
+    if [ -d "$log_dir" ]; then
+        echo "Cleaning existing memory leak log directory: $log_dir"
+        rm -rf "$log_dir"
+    fi
+    echo "Creating memory leak log directory: $log_dir"
+    mkdir -p "$log_dir"
+    
+    # Find tcmalloc library
+    TCMALLOC_LIB=""
+    for lib_path in "/usr/lib/x86_64-linux-gnu/libtcmalloc.so" \
+                    "/usr/lib/x86_64-linux-gnu/libtcmalloc.so.4" \
+                    "/usr/lib/libtcmalloc.so" \
+                    "/usr/local/lib/libtcmalloc.so"; do
+        if [ -f "$lib_path" ]; then
+            TCMALLOC_LIB="$lib_path"
+            break
         fi
-        key=$(echo "$key" | xargs)
-        value=$(echo "$value" | xargs)
-        case "$key" in
-        "enable_gateway") enable_gateway="$value" ;;
-        esac
-    done <"$CONFIG_FILE"
+    done
+    
+    if [ -z "$TCMALLOC_LIB" ]; then
+        echo "❌ Error: tcmalloc library not found!"
+        echo "Please install tcmalloc:"
+        echo "   sudo apt-get install libgoogle-perftools-dev"
+        echo ""
+        echo "After installation, tcmalloc will be available at:"
+        echo "   /usr/lib/x86_64-linux-gnu/libtcmalloc.so"
+        exit 1
+    fi
+    
+    echo "✅ Found tcmalloc: $TCMALLOC_LIB"
+    echo "📁 Memory leak log directory: $log_dir"
+    
+    # Set tcmalloc environment variables
+    export LD_PRELOAD="$TCMALLOC_LIB"
+    export HEAPCHECK=normal  # Options: minimal, normal, strict, draconian
+    export HEAP_CHECK_DUMP_DIRECTORY="$log_dir"
+    export PPROF_PATH=$(which pprof 2>/dev/null || which google-pprof 2>/dev/null || echo "/usr/bin/pprof")
+    
+    # Configure tcmalloc to be compatible with JVM and Spring Boot
+    export HEAPCHECK_IGNORE_GLOBAL_LIVE=1      # Ignore global/static allocations
+    export HEAP_CHECK_IDENTIFY_LEAKS=1         # Only report definite leaks
+    export HEAP_CHECK_AFTER_DESTRUCTORS=0      # Don't check after static destructors
+    
+    # Don't use HEAP_CHECK_TEST_POINTER_ALIGNMENT - it causes hangs with Spring Boot Loader
+}
 
-    echo "Config options:"
-    echo "  enable_gateway = $enable_gateway"
-fi
+# Function to analyze tcmalloc leak report using pprof
+analyze_leak_report() {
+    local exit_code=$1
+    local log_file="$2"
+    
+    echo ""
+    echo "=============================================="
+    echo "🔍 Analyzing Memory Leak Report with pprof"
+    echo "=============================================="
+    echo ""
+    
+    # Check if there were any leaks
+    if [ $exit_code -eq 0 ]; then
+        echo "✅ SUCCESS: No memory leaks detected!"
+        echo ""
+        return 0
+    fi
+    
+    # Find the heap dump file
+    local dump_dir=$(dirname "$log_file")
+    local heap_file=$(ls -t "$dump_dir"/*.heap 2>/dev/null | head -1)
+    
+    if [ -z "$heap_file" ]; then
+        echo "❌ No heap dump file found in $dump_dir"
+        echo "Falling back to log file analysis..."
+        echo ""
+        grep "Leak of" "$log_file" | head -20
+        return 1
+    fi
+    
+    echo "📁 Heap dump file: $heap_file"
+    echo ""
+    
+    # Check if pprof is available (Go version required)
+    if ! command -v pprof &> /dev/null; then
+        echo "❌ pprof not found. Please install it first."
+        echo ""
+        echo "=============================================="
+        echo "📦 Installation Guide:"
+        echo "=============================================="
+        echo ""
+        echo "1️⃣  Check if Go is installed:"
+        echo "   go version"
+        echo ""
+        echo "2️⃣  If Go is not installed, install it:"
+        echo "   sudo apt-get update"
+        echo "   sudo apt-get install golang-go"
+        echo ""
+        echo "3️⃣  Install pprof using Go (with China mirror):"
+        echo "   export GOPROXY=https://goproxy.cn,direct"
+        echo "   go install github.com/google/pprof@latest"
+        echo ""
+        echo "4️⃣  Add pprof to PATH:"
+        echo "   echo 'export PATH=\$PATH:\$HOME/go/bin' >> ~/.bashrc"
+        echo "   source ~/.bashrc"
+        echo ""
+        echo "5️⃣  Verify installation:"
+        echo "   pprof -h"
+        echo ""
+        echo "=============================================="
+        echo ""
+        return 1
+    fi
+    
+    local PPROF_CMD="pprof"
+    echo "✅ Using pprof: $(which pprof)"
+    
+    echo ""
+    
+    # Find java binary
+    local JAVA_BIN=$(which java)
+    
+    # Run pprof analysis with different views
+    # echo "📊 Running pprof analysis..."
+    # echo "=============================================="
+    # echo ""
+    
+    # echo "📋 1. Summary (Top allocations):"
+    # echo "--------------------------------------------"
+    # $PPROF_CMD -text -lines "$JAVA_BIN" "$heap_file"
+    # echo ""
+    
+    echo "📋 2. Complete list (All allocations):"
+    echo "--------------------------------------------"
+    # Use -nodefraction=0 to show all nodes, not just the top ones
+    $PPROF_CMD -text -lines -nodefraction=0 -edgefraction=0 "$JAVA_BIN" "$heap_file"
+    echo ""
+    
+    echo "📋 3. SDK Memory Leaks (Agora/RTE only):"
+    echo "--------------------------------------------"
+    # Filter and show only lines containing 'agora' or 'rte' (case-insensitive)
+    local sdk_leaks=$($PPROF_CMD -text -lines -nodefraction=0 -edgefraction=0 "$JAVA_BIN" "$heap_file" | grep -iE '(agora|rte)')
+    
+    if [ -z "$sdk_leaks" ]; then
+        echo "✅ No SDK-related memory leaks detected (no 'agora' or 'rte' in allocations)"
+    else
+        echo "⚠️  Found SDK-related allocations:"
+        echo ""
+        echo "$sdk_leaks"
+        echo ""
+        
+        # Count the number of SDK-related leaks
+        local leak_count=$(echo "$sdk_leaks" | wc -l)
+        echo "📊 Total SDK-related allocation entries: $leak_count"
+        
+        # Calculate total leaked bytes from SDK
+        local total_bytes=$(echo "$sdk_leaks" | awk '{if ($1 ~ /^[0-9]+$/) sum += $1} END {print sum}')
+        if [ -n "$total_bytes" ] && [ "$total_bytes" -gt 0 ]; then
+            echo "💾 Total SDK-related memory: $total_bytes bytes"
+        fi
+    fi
+    echo ""
+    
+    # echo "📋 3. Call graph (Detailed):"
+    # echo "--------------------------------------------"
+    # $PPROF_CMD -tree -lines "$JAVA_BIN" "$heap_file" | head -100
+    # echo ""
+
+}
 
 echo ""
 echo "=== Preparing build environment ==="
-
-# Enable/disable files according to config
-if [ "$enable_gateway" = "false" ]; then
-    if [ -f "$VADV1_FILE" ]; then
-        echo "❌ Disable VadV1Test.java (enable_gateway=false)"
-        mv "$VADV1_FILE" "$VADV1_FILE.disabled"
-    fi
-    if [ -f "$AUDIO3A_FILE" ]; then
-        echo "❌ Disable Audio3aTest.java (enable_gateway=false)"
-        mv "$AUDIO3A_FILE" "$AUDIO3A_FILE.disabled"
-    fi
-else
-    if [ -f "$VADV1_FILE.disabled" ]; then
-        echo "✅ Enable VadV1Test.java (enable_gateway=true)"
-        mv "$VADV1_FILE.disabled" "$VADV1_FILE"
-    fi
-    if [ -f "$AUDIO3A_FILE.disabled" ]; then
-        echo "✅ Enable Audio3aTest.java (enable_gateway=true)"
-        mv "$AUDIO3A_FILE.disabled" "$AUDIO3A_FILE"
-    fi
-fi
-
 echo ""
 echo "=== Start building ==="
 
@@ -159,14 +287,27 @@ if [ $? -eq 0 ]; then
         echo "LD_LIBRARY_PATH = $LD_LIBRARY_PATH"
 
         echo "Starting agora-example.jar on port 18080..."
-        java -Dserver.port=18080 -jar target/agora-example.jar
+        
+        # Setup memory leak detection if enabled
+        if [ "$enable_memleak" = "true" ]; then
+            DUMP_DIR="$(pwd)/logs/memleak"
+            setup_memleak_detection "$DUMP_DIR"
+            LOG_FILE="$DUMP_DIR/app.log"
+            echo "Memory leak detection enabled. Log file: $LOG_FILE"
+            
+            # Use -Xint to disable JIT compilation and avoid crashes with tcmalloc
+            java -Xint -Dserver.port=18080 -jar target/agora-example.jar 2>&1 | tee "$LOG_FILE"
+            APP_EXIT_CODE=${PIPESTATUS[0]}
+            analyze_leak_report $APP_EXIT_CODE "$LOG_FILE"
+        else
+            java -Dserver.port=18080 -jar target/agora-example.jar
+        fi
+        
     elif [ "$action" = "cli" ]; then
         echo "=== Run CLI mode ==="
         
         if [ -z "$cli_config" ]; then
-            echo "Error: cli mode requires a config file name or basic class name"
-            echo "Usage: $0 cli <jsonFileName> or $0 cli <basicClassName>"
-            exit 1
+            echo "No task specified, will run all basic test cases..."
         fi
 
         # Get absolute paths
@@ -196,6 +337,7 @@ if [ $? -eq 0 ]; then
         echo "LD_LIBRARY_PATH = $LD_LIBRARY_PATH"
         
         # Extract JAR if not already extracted to avoid Spring Boot Loader issues with native threads
+        # Do this BEFORE enabling tcmalloc to avoid false positives from jar command
         EXTRACTED_DIR="$PROJECT_DIR/target/extracted"
         if [ ! -d "$EXTRACTED_DIR" ]; then
             echo "Extracting JAR to avoid Spring Boot Loader..."
@@ -211,11 +353,43 @@ if [ $? -eq 0 ]; then
             CLASSPATH="$CLASSPATH:$jar"
         done
         
-        echo "Running: java -cp $CLASSPATH io.agora.rtc.example.cli.CliLauncher --task=$cli_config"
-        java -cp "$CLASSPATH" io.agora.rtc.example.cli.CliLauncher --task="$cli_config"
+        # Prepare task argument
+        if [ -z "$cli_config" ]; then
+            TASK_ARG=""
+            echo "Running: java -cp $CLASSPATH io.agora.rtc.example.cli.CliLauncher (no task - will run all basic tests)"
+        else
+            TASK_ARG="--task=$cli_config"
+            echo "Running: java -cp $CLASSPATH io.agora.rtc.example.cli.CliLauncher --task=$cli_config"
+        fi
+        
+        # Setup memory leak detection if enabled (AFTER jar extraction)
+        if [ "$enable_memleak" = "true" ]; then
+            DUMP_DIR="$PROJECT_DIR/logs/memleak"
+            setup_memleak_detection "$DUMP_DIR"
+            LOG_FILE="$DUMP_DIR/app.log"
+            echo "Memory leak detection enabled. Log file: $LOG_FILE"
+            
+            # Disable exit on error temporarily to capture exit code
+            set +e
+            # Use -Xint to disable JIT compilation and avoid crashes with tcmalloc
+            java -Xint -cp "$CLASSPATH" io.agora.rtc.example.cli.CliLauncher $TASK_ARG 2>&1 | tee "$LOG_FILE"
+            APP_EXIT_CODE=${PIPESTATUS[0]}
+            set -e
+            
+            analyze_leak_report $APP_EXIT_CODE "$LOG_FILE"
+        else
+            java -cp "$CLASSPATH" io.agora.rtc.example.cli.CliLauncher $TASK_ARG
+        fi
+        
     else
         echo "Build finished! To start the application, use: ./build.sh start"
-        echo "To run CLI mode, use: ./build.sh cli <jsonFileName> or ./build.sh cli <basicClassName>"
+        echo "To run CLI mode:"
+        echo "  - Run all basic tests: ./build.sh cli"
+        echo "  - Run specific test: ./build.sh cli <jsonFileName> or ./build.sh cli <basicClassName>"
+        echo "To enable memory leak detection, add -m flag:"
+        echo "  - ./build.sh -m start"
+        echo "  - ./build.sh cli -m"
+        echo "  - ./build.sh cli SendH264Test -m"
     fi
 
 else

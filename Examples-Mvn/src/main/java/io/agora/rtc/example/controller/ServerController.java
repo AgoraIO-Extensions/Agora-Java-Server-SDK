@@ -1,6 +1,8 @@
-package io.agora.rtc.example.api;
+package io.agora.rtc.example.controller;
 
+import io.agora.rtc.AgoraService;
 import io.agora.rtc.Constants;
+import io.agora.rtc.example.basic.ExternalAudioProcessorTest;
 import io.agora.rtc.example.common.AgoraTaskControl;
 import io.agora.rtc.example.common.AgoraTaskManager;
 import io.agora.rtc.example.common.ArgsConfig;
@@ -165,6 +167,20 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
         long startTime = System.currentTimeMillis();
         try {
+            if (!testBasicTask(sseEmitter)) {
+                sendSseEvent("Error: test basic task failed", sseEmitter);
+                return;
+            }
+
+            Thread.sleep(5 * 1000);
+
+            if (!testAiPcmTask(sseEmitter)) {
+                sendSseEvent("Error: test ai pcm task failed", sseEmitter);
+                return;
+            }
+
+            Thread.sleep(5 * 1000);
+
             if (!testPcmTask(sseEmitter)) {
                 sendSseEvent("Error: test pcm task failed", sseEmitter);
                 return;
@@ -228,13 +244,6 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             Thread.sleep(5 * 1000);
 
-            if (!testAiPcmTask(sseEmitter)) {
-                sendSseEvent("Error: test ai pcm task failed", sseEmitter);
-                return;
-            }
-
-            Thread.sleep(5 * 1000);
-
             if (!testH265Task(sseEmitter)) {
                 sendSseEvent("Error: test h265 task failed", sseEmitter);
                 return;
@@ -243,7 +252,7 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             Thread.sleep(5 * 1000);
 
             if (!testApmPcmTask(sseEmitter)) {
-                sendSseEvent("Error: test h265 task failed", sseEmitter);
+                sendSseEvent("Error: test apm pcm task failed", sseEmitter);
                 return;
             }
 
@@ -268,6 +277,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
     private boolean testPcmTask(SseEmitter sseEmitter) {
         try {
+            agoraTaskManager.releaseAgoraService();
+            
             long startTime = System.currentTimeMillis();
             taskFinishLatch = new CountDownLatch(1);
 
@@ -376,6 +387,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             Thread.sleep(5 * 1000);
 
+            agoraTaskManager.releaseAgoraService();
+
             taskFinishLatch = new CountDownLatch(1);
             startTime = System.currentTimeMillis();
 
@@ -423,6 +436,9 @@ public class ServerController implements DisposableBean, ApplicationContextAware
                     sseEmitter);
 
             Thread.sleep(5 * 1000);
+
+            agoraTaskManager.releaseAgoraService();
+            Utils.deleteAllFilesInDirectory("logs/agora_logs/");
 
             taskFinishLatch = new CountDownLatch(1);
             startTime = System.currentTimeMillis();
@@ -1082,6 +1098,24 @@ public class ServerController implements DisposableBean, ApplicationContextAware
         return true;
     }
 
+    private boolean testBasicTask(SseEmitter sseEmitter) {
+        try {
+            String version = AgoraService.getSdkVersion();
+            if(version == null || version.equalsIgnoreCase("Unknown") || version.isEmpty()) {
+                sendSseEvent("Error: test getSdkVersion failed: version is " + version, sseEmitter);
+                return false;
+            }else{
+                sendSseEvent("Test getSdkVersion finished, version: " + version, sseEmitter);
+            }
+
+            sendSseEvent("Test basic task finished", sseEmitter);
+            return true;
+        } catch (Exception e) {
+            sendSseEvent("Error: test getSdkVersion failed: " + e.getMessage(), sseEmitter);
+            return false;
+        }
+    }
+
     private boolean testAiPcmTask(SseEmitter sseEmitter) {
         try {
             long startTime = System.currentTimeMillis();
@@ -1281,6 +1315,9 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
     private boolean testApmPcmTask(SseEmitter sseEmitter) {
         try {
+            String basePath = "logs/agora_logs/";
+            Utils.deleteAllFilesInDirectory(basePath);
+
             agoraTaskManager.releaseAgoraService();
 
             long startTime = System.currentTimeMillis();
@@ -1296,7 +1333,7 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             taskFinishLatch.await();
 
-            String basePath = "logs/agora_logs/";
+            
             String[] apmDumpFiles = new String[]{"af_agc_", "af_ed_", "af_ns_", "af_ps_", "af_sfnlp_"};
 
             for (String apmDumpFile : apmDumpFiles) {
@@ -1314,6 +1351,64 @@ public class ServerController implements DisposableBean, ApplicationContextAware
                         sseEmitter);
                 return false;
             }
+
+            sendSseEvent("Test remote APM Pass, waiting for 5 seconds...", sseEmitter);
+            Thread.sleep(5 * 1000);
+
+            Utils.deleteAllFilesInDirectory(basePath);
+
+            agoraTaskManager.releaseAgoraService();
+
+            ExternalAudioProcessorTest externalAudioProcessorTest = new ExternalAudioProcessorTest();
+            externalAudioProcessorTest.setEnableApmDump(false);
+            externalAudioProcessorTest.setEnableApm3A(false);
+            externalAudioProcessorTest.setForceExit(false);
+            externalAudioProcessorTest.start();
+
+            File expectedFile = new File("test_data/vad_test_16k_1ch_expected.pcm");
+            File outFile = new File(externalAudioProcessorTest.getDefaultVadOutFilePath());
+            if (expectedFile.exists() && outFile.exists()
+                && Utils.areFilesIdentical(expectedFile.getAbsolutePath(), outFile.getAbsolutePath())) {
+                sendSseEvent("Test remote APM Pass, vad out file is correct", sseEmitter);
+            } else {
+                sendSseEvent("Test remote APM Pass, vad out file is incorrect", sseEmitter);
+                return false;
+            }
+
+            externalAudioProcessorTest = new ExternalAudioProcessorTest();
+            externalAudioProcessorTest.setEnableApmDump(true);
+            externalAudioProcessorTest.setEnableApm3A(true);
+            externalAudioProcessorTest.setForceExit(false);
+            externalAudioProcessorTest.start();
+
+            expectedFile = new File("test_data/vad_test_16k_1ch_3A_expected.pcm");
+            File expectedFile2 = new File("test_data/vad_test_16k_1ch_3A_expected_2.pcm");
+            outFile = new File(externalAudioProcessorTest.getDefaultVadOutFilePath());
+            if (expectedFile.exists() && outFile.exists()
+                && (Utils.areFilesIdentical(expectedFile.getAbsolutePath(), outFile.getAbsolutePath())
+                || Utils.areFilesIdentical(expectedFile2.getAbsolutePath(), outFile.getAbsolutePath()))) {
+                sendSseEvent("Test remote APM Pass with 3A, vad out file is correct", sseEmitter);
+            } else {
+                sendSseEvent("Test remote APM Pass with 3A, vad out file is incorrect", sseEmitter);
+                return false;
+            }
+
+            for (String apmDumpFile : apmDumpFiles) {
+                if (!Utils.checkFileExists(basePath + apmDumpFile)) {
+                    sendSseEvent("Error: apm dump file does not exist with 3A: " + basePath + apmDumpFile,
+                            sseEmitter);
+                    return false;
+                }
+            }
+
+            List<String> apmVadDumpFiles3A = Utils.findFilePathsRecursively(basePath + "vad_dump", 2, "vad_session", ".pcm");
+            SampleLogger.log("apmVadDumpFiles3A: " + apmVadDumpFiles3A.toString());
+            if (apmVadDumpFiles3A.size() != 2) {
+                sendSseEvent("Error: apm vad dump file count is not 2 with 3A: " + apmVadDumpFiles3A.size(),
+                        sseEmitter);
+                return false;
+            }
+
 
             long endTime = System.currentTimeMillis();
             long timeCostMs = endTime - startTime;

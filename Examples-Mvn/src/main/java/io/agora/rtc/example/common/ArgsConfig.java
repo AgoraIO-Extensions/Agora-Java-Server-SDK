@@ -1,5 +1,7 @@
 package io.agora.rtc.example.common;
 
+import io.agora.rtc.Constants;
+
 public class ArgsConfig implements Cloneable {
     private String appId = "";
     private String token = "";
@@ -48,7 +50,9 @@ public class ArgsConfig implements Cloneable {
     private boolean isRecvAudioEncodedFrame = false;
     private boolean enableAssistantDevice = false;
     private boolean isAutoTest = false;
-    private boolean enableApmAndDump = false;
+    private int apmMode = Constants.ApmMode.DISABLE.getValue();
+    private boolean enableApm3a = false;
+    private boolean enableApmDump = false;
 
     // Getter and Setter methods
     public String getAppId() {
@@ -419,12 +423,28 @@ public class ArgsConfig implements Cloneable {
         this.isAutoTest = isAutoTest;
     }
 
-    public boolean isEnableApmAndDump() {
-        return enableApmAndDump;
+    public int getApmMode() {
+        return apmMode;
     }
 
-    public void setEnableApmAndDump(boolean enableApmAndDump) {
-        this.enableApmAndDump = enableApmAndDump;
+    public void setApmMode(int apmMode) {
+        this.apmMode = apmMode;
+    }
+
+    public boolean isEnableApm3a() {
+        return enableApm3a;
+    }
+
+    public void setEnableApm3a(boolean enableApm3a) {
+        this.enableApm3a = enableApm3a;
+    }
+
+    public boolean isEnableApmDump() {
+        return enableApmDump;
+    }
+
+    public void setEnableApmDump(boolean enableApmDump) {
+        this.enableApmDump = enableApmDump;
     }
 
     @Override
@@ -491,7 +511,9 @@ public class ArgsConfig implements Cloneable {
         cloned.isRecvAudioEncodedFrame = this.isRecvAudioEncodedFrame;
         cloned.enableAssistantDevice = this.enableAssistantDevice;
         cloned.isAutoTest = this.isAutoTest;
-        cloned.enableApmAndDump = this.enableApmAndDump;
+        cloned.apmMode = this.apmMode;
+        cloned.enableApm3a = this.enableApm3a;
+        cloned.enableApmDump = this.enableApmDump;
         return cloned;
     }
 
@@ -522,7 +544,8 @@ public class ArgsConfig implements Cloneable {
                 + ", sleepTime='" + sleepTime + '\'' + ", timeForStressLeave='" + timeForStressLeave
                 + '\'' + ", isBroadcaster='" + isBroadcaster + '\'' + ", isRecvAudioEncodedFrame='"
                 + isRecvAudioEncodedFrame + '\'' + ", enableAssistantDevice='" + enableAssistantDevice
-                + '\'' + ", isAutoTest='" + isAutoTest + '\'' + ", enableApmAndDump='" + enableApmAndDump
+                + '\'' + ", isAutoTest='" + isAutoTest + '\'' + ", apmMode='" + apmMode + '\'' + ", enableApm3a='"
+                + enableApm3a + '\'' + ", enableApmDump='" + enableApmDump + '\''
                 + '\'' + '}';
     }
 }

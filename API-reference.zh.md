@@ -4,15 +4,13 @@
 
 ## 目录
 
-- [核心类](#core-classes)
+- [核心类](#核心类)
   - [AgoraService](#agoraservice)
   - [AgoraRtcConn](#agorartcconn)
   - [AgoraLocalUser](#agoralocaluser)
   - [AgoraParameter](#agoraparameter)
-  - [AgoraAudioProcessor](#agoraaudioprocessor)
-  - [AgoraAudioVad](#agoraaudiovad)
-  - [AgoraAudioVadV2](#agoraaudiovadev2)
-- [观察者接口](#observer-interfaces)
+  - [AgoraExternalAudioProcessor](#agoraexternalaudioprocessor)
+- [观察者接口](#观察者接口)
   - [IRtcConnObserver](#irtcconnobserver)
   - [ILocalUserObserver](#ilocaluserobserver)
   - [INetworkObserver](#inetworkobserver)
@@ -20,8 +18,8 @@
   - [IAudioFrameObserver](#iaudioframeobserver)
   - [IAudioEncodedFrameObserver](#iaudioencodedframeobserver)
   - [IVideoEncodedFrameObserver](#ivideoencodedframeobserver)
-  - [IAgoraAudioProcessorEventHandler](#iagoraaudioprocessoreventhandler)
-- [数据结构](#data-structures)
+  - [IExternalAudioProcessorObserver](#iexternalaudioprocessorobserver)
+- [数据结构](#数据结构)
   - [AgoraServiceConfig](#agoraserviceconfig)
   - [RtcConnConfig](#rtcconnconfig)
   - [RtcConnPublishConfig](#rtcconnpublishconfig)
@@ -41,7 +39,6 @@
   - [UserInfo](#userinfo)
   - [VadProcessResult](#vadprocessresult)
   - [AgoraAudioVadConfigV2](#agoraaudiovadconfigv2)
-  - [AgoraAudioVadConfig](#agoraaudiovadconfig)
   - [LocalAudioTrackStats](#localaudiotrackstats)
   - [LocalVideoTrackStats](#localvideotrackstats)
   - [RemoteAudioTrackStats](#remoteaudiotrackstats)
@@ -50,13 +47,12 @@
   - [UplinkNetworkInfo](#uplinknetworkinfo)
   - [DownlinkNetworkInfo](#downlinknetworkinfo)
   - [PeerDownlinkInfo](#peerdownlinkinfo)
-  - [AecConfig](#aecconfig)
-  - [AnsConfig](#ansconfig)
-  - [AgcConfig](#agcconfig)
-  - [BghvsConfig](#bghvsconfig)
-  - [AgoraAudioProcessorConfig](#agoraaudioprocessorconfig)
-  - [AgoraAudioFrame](#agoraaudioframe)
-- [工具类](#utility-classes)
+  - [AgoraApmConfig](#agoraapmconfig)
+  - [AinsConfig](#ainsconfig)
+  - [AIAecConfig](#aiaecconfig)
+  - [BghvsConfig (apm)](#bghvsconfig-apm)
+  - [AgcConfig (apm)](#agcconfig-apm)
+- [工具类](#工具类)
   - [VadDumpUtils](#vaddumputils)
 
 ---
@@ -317,69 +313,34 @@
   - `value`: `Out` - 一个用于存储字符串值的 Out 对象。
 - **返回:** `int` - 0 表示成功, <0 表示失败。
 
-### AgoraAudioProcessor
-`AgoraAudioProcessor` 类用于处理音频帧。
+### AgoraExternalAudioProcessor
+`AgoraExternalAudioProcessor` 类是外部音频处理器，用于处理音频数据的 3A（AEC、ANS、AGC）和 VAD。
+此类允许推送 PCM 音频数据进行处理，并通过观察者回调接收处理后的音频。
 
 #### 方法
 
-##### `getSdkVersion()`
-获取 SDK 版本。
-- **返回:** `String` - SDK 版本。
-
-##### `init(String appId, String license, IAgoraAudioProcessorEventHandler eventHandler, AgoraAudioProcessorConfig config)`
-初始化音频处理器。
+##### `initialize(AgoraApmConfig apmConfig, int outputSampleRate, int outputChannels, AgoraAudioVadConfigV2 vadConfig, IExternalAudioProcessorObserver observer)`
+使用指定的音频参数初始化外部音频处理器。
 - **参数:**
-  - `appId`: `String` - App ID。
-  - `license`: `String` - 音频处理器的许可证。
-  - `eventHandler`: `IAgoraAudioProcessorEventHandler` - 事件处理器。
-  - `config`: `AgoraAudioProcessorConfig` - 音频处理器的配置。
-- **返回:** `int` - 0 表示成功，或一个错误码。
+  - `apmConfig`: `AgoraApmConfig` - APM（音频处理模块）配置。设置为 `null` 表示不启用 3A+BGHVS 处理。
+  - `outputSampleRate`: `int` - 输出采样率（例如 16000、48000）。
+  - `outputChannels`: `int` - 输出声道数（1 为单声道，2 为立体声）。
+  - `vadConfig`: `AgoraAudioVadConfigV2` - VAD（语音活动检测）配置。设置为 `null` 表示不启用 VAD。
+  - `observer`: `IExternalAudioProcessorObserver` - 用于接收处理后音频帧的观察者。
+- **返回:** `int` - 0 表示成功，负值表示失败。
 
-##### `process(AgoraAudioFrame nearIn)`
-处理一个音频帧。
+##### `pushAudioPcmData(byte[] data, int sampleRate, int channels, long presentationMs)`
+推送 PCM 音频数据进行处理。
 - **参数:**
-  - `nearIn`: `AgoraAudioFrame` - 输入的音频帧。
-- **返回:** `AgoraAudioFrame` - 处理后的音频帧。
-
-##### `process(AgoraAudioFrame nearIn, AgoraAudioFrame farIn)`
-处理来自近端和远端的音频帧。
-- **参数:**
-  - `nearIn`: `AgoraAudioFrame` - 近端输入的音频帧。
-  - `farIn`: `AgoraAudioFrame` - 远端输入的音频帧。
-- **返回:** `AgoraAudioFrame` - 处理后的音频帧。
-
-##### `release()`
-释放音频处理器使用的资源。
-- **返回:** `int` - 0 表示成功，或一个错误码。
-
-### AgoraAudioVad
-`AgoraAudioVad` 类提供语音活动检测 (VAD) 功能。它由 `AgoraAudioVadManager` 管理。
-
-#### 方法
-
-##### `getVadInstance(String channelId, String userId)`
-获取指定频道和用户的 VAD 实例。
-- **参数:**
-  - `channelId`: `String` - 频道 ID。
-  - `userId`: `String` - 用户 ID。
-- **返回:** `AgoraAudioVadV2` - VAD 实例，如果未找到则为 null。
-
-##### `delVadInstance(String channelId, String userId)`
-移除并销毁指定的 VAD 实例。
-- **参数:**
-  - `channelId`: `String` - 频道 ID。
-  - `userId`: `String` - 用户 ID。
-
-##### `process(String channelId, String userId, AudioFrame frame)`
-处理一个音频帧以进行 VAD。
-- **参数:**
-  - `channelId`: `String` - 频道 ID。
-  - `userId`: `String` - 用户 ID。
-  - `frame`: `AudioFrame` - 要处理的音频帧。
-- **返回:** `VadProcessResult` - VAD 处理的结果。
+  - `data`: `byte[]` - PCM 音频数据缓冲区（16-bit）。
+  - `sampleRate`: `int` - 采样率。
+  - `channels`: `int` - 声道数。
+  - `presentationMs`: `long` - 音频帧的 PTS（毫秒）。
+- **返回:** `int` - 0 表示成功，负值表示失败。
 
 ##### `destroy()`
-销毁 VAD 管理器并清理所有 VAD 实例。
+释放外部音频处理器及其关联资源。
+- **返回:** `int` - 0 表示成功，负值表示失败。
 
 ---
 
@@ -545,20 +506,17 @@ RTC 连接事件的观察者接口。
   - `info`: `EncodedVideoFrameInfo` - 关于编码后视频帧的信息。
 - **返回:** `int` - 0/1 (无实际意义)。
 
-### IAgoraAudioProcessorEventHandler
-声网音频处理器事件处理器的接口。
+### IExternalAudioProcessorObserver
+外部音频处理器观察者接口，用于接收处理后的音频帧。
 
 #### 方法
 
-##### `onEvent(Constants.AgoraAudioProcessorEventType eventType)`
-报告来自音频处理器的事件。
+##### `onAudioFrame(AgoraExternalAudioProcessor audioProcessor, AudioFrame audioFrame, VadProcessResult vadProcessResult)`
+当播放音频帧处理完成时调用。此回调传递可以播放的处理后音频数据。
 - **参数:**
-  - `eventType`: `Constants.AgoraAudioProcessorEventType` - 事件的类型。
-
-##### `onError(int errorCode)`
-报告来自音频处理器的错误。
-- **参数:**
-  - `errorCode`: `int` - 错误码。
+  - `audioProcessor`: `AgoraExternalAudioProcessor` - 生成此回调的音频处理器实例，当多个处理器共用同一个观察者时用于区分来源。
+  - `audioFrame`: `AudioFrame` - 处理后的音频帧。
+  - `vadProcessResult`: `VadProcessResult` - VAD 处理结果。
 
 ---
 
@@ -582,6 +540,8 @@ AgoraService 的配置。
 - **`domainLimit`**: `int` - 是否启用域名限制。`1` 启用, `0` (默认) 禁用。
 - **`configDir`**: `String` - 配置文件的路径。默认为 `NULL`。
 - **`dataDir`**: `String` - 数据文件的路径。默认为 `NULL`。
+- **`enableApm`**: `boolean` - 是否启用 APM (音频处理模块)。`true` (默认) 启用, `false` 禁用。
+- **`apmConfig`**: `AgoraApmConfig` - APM 的配置。
 
 ### RtcConnConfig
 RTC 连接的配置。
@@ -744,27 +704,20 @@ RTC 连接的统计信息。
 - **`outFrame`**: `byte[]` - VAD 处理后的输出帧。
 - **`state`**: `Constants.VadState` - VAD 过程的状态。
 
-### AgoraAudioVadConfig
-语音活动检测 (VAD) 的配置。
-
-- **`fftSz`**: `int` - FFT 大小。默认为 1024。
-- **`hopSz`**: `int` - FFT Hop 大小。默认为 160。
-- **`anaWindowSz`**: `int` - FFT 窗口大小。默认为 768。
-- **`voiceProbThr`**: `float` - 语音概率阈值。默认为 0.8。
-- **`rmsThr`**: `float` - RMS 阈值（dB）。默认为 -40.0。
-
 ### AgoraAudioVadConfigV2
 语音活动检测 (VAD) 版本 2 的配置。
 
 - **`preStartRecognizeCount`**: `int` - 语音开始前要保存的音频帧数。默认为 16。
 - **`startRecognizeCount`**: `int` - 确认语音状态的音频帧数。默认为 30。
-- **`stopRecognizeCount`**: `int` - 确认静音状态的音频帧数。默认为 20。
+- **`stopRecognizeCount`**: `int` - 确认静音状态的音频帧数。默认为 65。
 - **`activePercent`**: `float` - 进入说话状态的活动帧百分比。默认为 0.7。
 - **`inactivePercent`**: `float` - 进入静音状态的非活动帧百分比。默认为 0.5。
 - **`startVoiceProb`**: `int` - 开始语音的语音概率门限。默认为 70。
 - **`stopVoiceProb`**: `int` - 停止语音的语音概率门限。默认为 70。
-- **`startRmsThreshold`**: `int` - 开始语音的 RMS 阈值。默认为 -50。
-- **`stopRmsThreshold`**: `int` - 停止语音的 RMS 阈值。默认为 -50。
+- **`startRmsThreshold`**: `int` - 开始语音的 RMS 阈值 (dB)。默认为 -70。
+- **`stopRmsThreshold`**: `int` - 停止语音的 RMS 阈值 (dB)。默认为 -70。
+- **`enableAdaptiveRmsThreshold`**: `boolean` - 是否启用自适应 RMS 阈值。默认为 `true`。
+- **`adaptiveRmsThresholdFactor`**: `float` - 自适应 RMS 阈值因子。默认为 0.67。
 
 ### LocalAudioTrackStats
 本地音频轨道的统计信息。
@@ -834,57 +787,46 @@ RTC 连接的统计信息。
 - **`currentDownscaleLevel`**: `int` - 当前的降级级别。
 - **`expectedBitrateBps`**: `int` - 预期的比特率（bps）。
 
-### AecConfig
-声学回声消除 (AEC) 的配置。
+### AgoraApmConfig
+APM (Audio Processing Module) 配置。用于音频处理，包括噪声抑制、回声消除、背景人声抑制和自动增益控制。
 
-- **`enabled`**: `boolean` - 是否启用 AEC。
-- **`stereoAecEnabled`**: `boolean` - 是否启用立体声 AEC。
-- **`filterLength`**: `Constants.AecFilterLength` - AEC 线性滤波器长度。
-- **`aecModelType`**: `Constants.AecModelType` - AEC 模型类型。
-- **`aecSuppressionMode`**: `Constants.AecSuppressionMode` - AEC 抑制级别。
+- **`aiNsConfig`**: `AinsConfig` - AI 噪声抑制配置。
+- **`aiAecConfig`**: `AIAecConfig` - AI 回声消除配置。
+- **`bghvsConfig`**: `BghvsConfig` - 背景人声抑制配置。
+- **`agcConfig`**: `AgcConfig` - 自动增益控制配置。
+- **`enableDump`**: `boolean` - 是否启用 APM 转储以进行调试。默认为 `false`。
 
-### AnsConfig
-自动噪声抑制 (ANS) 的配置。
+#### 方法
 
-- **`enabled`**: `boolean` - 是否启用 ANS。
-- **`suppressionMode`**: `Constants.AnsSuppressionMode` - ANS 噪声抑制模式。
-- **`ansModelType`**: `Constants.AnsModelType` - ANS 模型类型。
+##### `toJsonString()`
+将配置转换为 JSON 字符串以传递给原生层。
+- **返回:** `String` - 配置的 JSON 字符串表示。
 
-### AgcConfig
-自动增益控制 (AGC) 的配置。
+### AinsConfig
+AI 噪声抑制 (AINS) 配置。用于音频处理中的智能噪声抑制。
 
-- **`enabled`**: `boolean` - 是否启用 AGC。
-- **`useAnalogMode`**: `boolean` - 是否使用模拟 AGC 模式。
-- **`maxDigitalGaindB`**: `int` - 最大数字 AGC 增益（dB）。
-- **`targetleveldB`**: `int` - 目标数字 AGC 级别（dB）。
+- **`aiNsEnabled`**: `boolean` - 是否启用 AI 噪声抑制。默认为 `true`。
+- **`nsEnabled`**: `boolean` - 是否启用噪声抑制。默认为 `true`。
+- **`aiNsModelPref`**: `int` - AI NS 模型偏好。默认为 `10`。
+- **`nsngAlgRoute`**: `int` - NSNG 算法路由。默认为 `12`。
+- **`nsngPredefAgg`**: `int` - NSNG 预定义激进度。默认为 `11`。
 
-### BghvsConfig
-背景人声抑制 (BGHVS) 的配置。
+### AIAecConfig
+AI 声学回声消除 (AIAEC) 配置。用于音频处理中的智能回声消除。
 
-- **`enabled`**: `boolean` - 是否启用 BGHVS。
-- **`bghvsSosLenInMs`**: `int` - 触发语音开始 (SOS) 的持续时间（毫秒）。
-- **`bghvsEosLenInMs`**: `int` - 触发语音结束 (EOS) 的持续时间（毫秒）。
-- **`bghvsSppMode`**: `Constants.BghvsSuppressionMode` - BGHVS 积极级别。
+- **`enabled`**: `boolean` - 是否启用 AIAEC。默认为 `false`。
+- **`splitSrateFor48k`**: `int` - 48k 音频的分采样率。默认为 `16000`。
 
-### AgoraAudioProcessorConfig
-声网音频处理器的配置。
+### BghvsConfig (apm)
+背景人声抑制 (BGHVS) 配置。用于音频处理中抑制背景人声。
 
-- **`modelPath`**: `String` - 音频处理模型的文件路径。
-- **`aecConfig`**: `AecConfig` - AEC 的配置。
-- **`ansConfig`**: `AnsConfig` - ANS 的配置。
-- **`agcConfig`**: `AgcConfig` - AGC 的配置。
-- **`bghvsConfig`**: `BghvsConfig` - BGHVS 的配置。
+- **`enabled`**: `boolean` - 是否启用 BGHVS。默认为 `true`。
+- **`vadThr`**: `double` - VAD (语音活动检测) 阈值。范围: 0.0 - 1.0。默认为 `0.8`。
 
-### AgoraAudioFrame
-代表一个音频帧。
+### AgcConfig (apm)
+自动增益控制 (AGC) 配置。用于音频处理中的自动音量级别控制。
 
-- **`type`**: `int` - 音频帧类型。
-- **`sampleRate`**: `int` - 每秒的样本数。
-- **`channels`**: `int` - 音频通道数。
-- **`samplesPerChannel`**: `int` - 此帧中每个通道的样本数。
-- **`bytesPerSample`**: `int` - 每个样本的字节数。
-- **`buffer`**: `ByteBuffer` - 音频帧的数据缓冲区。
-- **`presentationMs`**: `long` - 音频帧的显示时间戳（PTS，毫秒）。
+- **`enabled`**: `boolean` - 是否启用 AGC。默认为 `false`。
 
 ---
 

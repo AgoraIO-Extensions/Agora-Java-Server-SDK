@@ -39,9 +39,14 @@ public class ReceiverPcmVadTest {
     private int numOfChannels = 1;
     private int sampleRate = 16000;
     private String remoteUserId = "";
-    private long testTime = 60 * 60 * 1000;
+    private long testTime = 60 * 1000;
+    private boolean forceExit = true;
 
     private final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
+
+    public void setForceExit(boolean forceExit) {
+        this.forceExit = forceExit;
+    }
 
     private UserIdHolder userIdHolder = new UserIdHolder("0");
 
@@ -83,7 +88,7 @@ public class ReceiverPcmVadTest {
             config.setLogFilePath(DEFAULT_LOG_PATH);
             config.setLogFileSize(DEFAULT_LOG_SIZE);
             config.setLogFilters(Constants.LOG_FILTER_DEBUG);
-            config.setEnableApm(true);
+            config.setApmMode(Constants.ApmMode.ENABLE);
             AgoraApmConfig apmConfig = new AgoraApmConfig();
             // just for test, should be false in production
             apmConfig.setEnableDump(true);
@@ -238,7 +243,9 @@ public class ReceiverPcmVadTest {
 
         releaseConn();
         releaseAgoraService();
-        System.exit(0);
+        if (forceExit) {
+            System.exit(0);
+        }
     }
 
     private void releaseConn() {

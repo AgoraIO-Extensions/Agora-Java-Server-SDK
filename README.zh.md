@@ -35,41 +35,33 @@
       - [编译构建](#编译构建)
       - [运行示例](#运行示例)
       - [测试 case](#测试-case)
-  - [API 参考](#api-参考)
+  - [API 与功能模块](#api-与功能模块)
     - [API 文档参考](#api-文档参考)
-    - [VAD 模块](#vad-模块)
-      - [VadV1 模块（仅支持Gateway SDK）](#vadv1-模块仅支持gateway-sdk)
-        - [介绍](#介绍)
-        - [类和方法](#类和方法)
-          - [AgoraAudioVad 类](#agoraaudiovad-类)
-          - [AgoraAudioVadConfig 类](#agoraaudiovadconfig-类)
-        - [使用示例](#使用示例)
-      - [VadV2 模块](#vadv2-模块)
-        - [介绍](#介绍-1)
-        - [类和方法](#类和方法-1)
-          - [AgoraAudioVadV2 类](#agoraaudiovadv2-类)
-          - [AgoraAudioVadConfigV2 属性](#agoraaudiovadconfigv2-属性)
-          - [参数说明](#参数说明)
-          - [方法](#方法)
+    - [APM 功能](#apm-功能)
+      - [使用模式](#使用模式)
+      - [Local 模式](#local-模式)
+        - [使用场景](#使用场景)
+        - [核心类](#核心类)
+          - [AgoraExternalAudioProcessor 类](#agoraexternalaudioprocessor-类)
+          - [IExternalAudioProcessorObserver 接口](#iexternalaudioprocessorobserver-接口)
+        - [场景一：仅使用 VAD](#场景一仅使用-vad)
+        - [场景二：使用 VAD + 3A + BGHVS](#场景二使用-vad--3a--bghvs)
+        - [完整示例](#完整示例)
+      - [Remote 模式](#remote-模式)
+        - [使用场景](#使用场景-1)
+        - [核心配置](#核心配置)
+          - [AgoraServiceConfig 配置](#agoraserviceconfig-配置)
+          - [注册音频帧观察者](#注册音频帧观察者)
+          - [IAudioFrameObserver 接口](#iaudioframeobserver-接口)
+        - [场景一：仅使用 VAD](#场景一仅使用-vad-1)
+        - [场景二：使用 VAD + 3A + BGHVS](#场景二使用-vad--3a--bghvs-1)
+        - [完整示例](#完整示例-1)
+      - [VAD 配置参数说明](#vad-配置参数说明)
+        - [AgoraAudioVadConfigV2 属性](#agoraaudiovadconfigv2-属性)
+        - [参数说明](#参数说明)
         - [VadProcessResult](#vadprocessresult)
-          - [构造方法](#构造方法)
-        - [使用示例](#使用示例-1)
-    - [Audio 3A 模块（仅支持Gateway SDK）](#audio-3a-模块仅支持gateway-sdk)
-      - [介绍](#介绍-2)
-      - [类和方法](#类和方法-2)
-        - [AgoraAudioProcessor 类](#agoraaudioprocessor-类)
-          - [构造方法](#构造方法-1)
-          - [方法](#方法-1)
-        - [AgoraAudioProcessorConfig 类](#agoraaudioprocessorconfig-类)
-          - [方法](#方法-2)
-          - [示例](#示例)
-        - [IAgoraAudioProcessorEventHandler 接口](#iagoraaudioprocessoreventhandler-接口)
-          - [方法](#方法-3)
-        - [io.agora.rtc.audio3a.AgoraAudioFrame 类](#ioagorartcaudio3aagoraaudioframe-类)
-          - [关键属性](#关键属性)
-          - [主要方法 (Setters/Getters)](#主要方法-settersgetters)
-      - [使用示例](#使用示例-2)
   - [更新日志](#更新日志)
+    - [v4.4.32.201（2025-12-18）](#v44322012025-12-18)
     - [v4.4.32.200（2025-11-14）](#v44322002025-11-14)
     - [v4.4.32.101（2025-09-01）](#v44321012025-09-01)
     - [v4.4.32.100（2025-07-22）](#v44321002025-07-22)
@@ -87,9 +79,7 @@
 
 ## 简介
 
-Agora Linux Server Java SDK (v4.4.32.200) 为您提供了强大的实时音视频通信能力，可无缝集成到 Linux 服务器端 Java 应用程序中。借助此 SDK，您的服务器可以作为数据源或处理节点加入 Agora 频道，实时获取和处理音视频流，从而实现多种业务相关的其他高级功能。
-
-Agora Linux Gateway SDK 暂未发布，相关功能暂未支持。
+Agora Linux Server Java SDK (v4.4.32.201) 为您提供了强大的实时音视频通信能力，可无缝集成到 Linux 服务器端 Java 应用程序中。借助此 SDK，您的服务器可以作为数据源或处理节点加入 Agora 频道，实时获取和处理音视频流，从而实现多种业务相关的其他高级功能。
 
 > 注意：如果您是从 v4.4.32.100 之前的版本升级到 v4.4.32.100 及以后版本，请参考《[AIQoS 版本升级指南](./AIQoS_Upgrade_Guide.md)》完成必要的 API 适配与集成变更。
 
@@ -97,7 +87,7 @@ Agora Linux Gateway SDK 暂未发布，相关功能暂未支持。
 
 ### 硬件环境
 
-- **操作系统**：Ubuntu 18.04+ 或 CentOS 7.0+
+- **操作系统**：Ubuntu 18.04+ 或 CentOS 8.0+
 - **CPU 架构**：x86-64
 - **性能要求**：
   - CPU：8 核 1.8 GHz 或更高
@@ -119,13 +109,13 @@ Agora Linux Gateway SDK 暂未发布，相关功能暂未支持。
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.200</version>
+    <version>4.4.32.201</version>
 </dependency>
 ```
 
 ### CDN 下载
 
-[Agora-Linux-Java-SDK-v4.4.32.200-x86_64-964478-6b09067690-20251114_115603](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.200-x86_64-964478-6b09067690-20251114_115603.zip)
+[Agora-Linux-Java-SDK-v4.4.32.201-x86_64-994889-3c3167f90e-20251218_102056](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.201-x86_64-994889-3c3167f90e-20251218_102056.zip)
 
 ## 集成 SDK
 
@@ -144,7 +134,7 @@ Maven 集成是最简单的方式，可以自动管理 Java 依赖关系。
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.200</version>
+    <version>4.4.32.201</version>
 </dependency>
 ```
 
@@ -179,7 +169,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32.200 \
+  -Dversion=4.4.32.201 \
   -Dpackaging=jar \
   -DgeneratePom=true
 ```
@@ -191,7 +181,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32.200 \
+  -Dversion=4.4.32.201 \
   -Dpackaging=jar \
   -DgeneratePom=true \
   -Djavadoc=sdk/agora-sdk-javadoc.jar
@@ -203,7 +193,7 @@ mvn install:install-file \
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.200</version>
+    <version>4.4.32.201</version>
 </dependency>
 ```
 
@@ -252,7 +242,7 @@ Agora Linux Server Java SDK 依赖于底层的 C++ 原生库（`.so` 文件）�
     jar xvf agora-sdk.jar
 
     # 如果使用 Maven 集成方式，JAR 文件在 Maven 缓存中，例如：
-    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.200/linux-java-sdk-4.4.32.200.jar
+    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.201/linux-java-sdk-4.4.32.201.jar
     ```
 
 3.  提取后，`libs` 目录下会生成 `native/linux/x86_64` 子目录，其中包含所需的 `.so` 文件：
@@ -267,8 +257,14 @@ Agora Linux Server Java SDK 依赖于底层的 C++ 原生库（`.so` 文件）�
             └── x86_64/   # x86_64 平台 so 库
                 ├── libagora_rtc_sdk.so
                 ├── libagora-fdkaac.so
+                ├── libagora-ffmpeg.so
+                ├── libagora-soundtouch.so
                 ├── libaosl.so
-                └── libbinding.so
+                ├── libbinding.so
+                ├── libagora_ai_echo_cancellation_extension.so
+                ├── libagora_ai_echo_cancellation_ll_extension.so
+                ├── libagora_ai_noise_suppression_extension.so
+                └── libagora_ai_noise_suppression_ll_extension.so
     ```
 
 #### 3.2 配置加载路径
@@ -415,28 +411,17 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
    TOKEN=
    ```
 
-   如果支持Gateway SDK，则需要创建 `.keys_gateway` 文件，添加：
-
-   ```
-   APP_ID=your_app_id
-   LICENSE=your_license
-   ```
-
 3. 运行时配置 (run_config)
 
    `run_config` 文件用于配置运行时的各种选项，位于 `Examples-Mvn/run_config`。您可以根据需要修改以下配置：
 
-   | 配置项 | 类型 | 默认值 | 描述 |
-   | ------ | ---- | ------ | ---- ||
-   | enable_asan      | boolean | false  | 是否启用 AddressSanitizer，用于内存错误检测                       |
-   | enable_gateway   | boolean | false  | 是否启用 Gateway SDK 模式，启用后可使用 VAD 和 Audio 3A 等功能    |
+   | 配置项      | 类型    | 默认值 | 描述                                        |
+   | ----------- | ------- | ------ | ------------------------------------------- |
+   | enable_asan | boolean | false  | 是否启用 AddressSanitizer，用于内存错误检测 |
 
    **配置示例：**
 
    ```bash
-   # 启用 Gateway SDK 功能
-   enable_gateway=true
-  
    # 启用内存检查（调试模式）
    enable_asan=true
    ```
@@ -457,7 +442,7 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.200</version>  <!-- 确保版本号与您需要使用的版本一致 -->
+    <version>4.4.32.201</version>  <!-- 确保版本号与您需要使用的版本一致 -->
 </dependency>
 ```
 
@@ -497,7 +482,14 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
             └── x86_64/
                 ├── libagora_rtc_sdk.so
                 ├── libagora-fdkaac.so
-                └── ... (其他 .so 文件)
+                ├── libagora-ffmpeg.so
+                ├── libagora-soundtouch.so
+                ├── libaosl.so
+                ├── libbinding.so
+                ├── libagora_ai_echo_cancellation_extension.so
+                ├── libagora_ai_echo_cancellation_ll_extension.so
+                ├── libagora_ai_noise_suppression_extension.so
+                └── libagora_ai_noise_suppression_ll_extension.so
     ```
 
 #### 编译构建
@@ -565,12 +557,6 @@ http://localhost:18080/api/server/basic?taskName=SendReceiverStreamMessageTest
 http://localhost:18080/api/server/basic?taskName=SendYuvTest
 ```
 
-**Gateway SDK 专属功能：**
-```
-http://localhost:18080/api/server/basic?taskName=VadV1Test
-http://localhost:18080/api/server/basic?taskName=Audio3aTest
-```
-
 **配置文件接口：**
 ```
 http://localhost:18080/api/server/start?configFileName=pcm_send.json
@@ -621,15 +607,11 @@ http://localhost:18080/api/server/start?configFileName=pcm_send.json
 
   参考 [SendReceiverStreamMessageTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/SendReceiverStreamMessageTest.java),实现发送接收流消息
 
-- VadV1 模块（仅支持Gateway SDK）
+- APM 功能
 
-  参考 [VadV1Test.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/VadV1Test.java.disabled),实现 VadV1 模块
+  参考 [ExternalAudioProcessorTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ExternalAudioProcessorTest.java),实现 APM 功能
 
-- 音频 3A 处理（仅支持Gateway SDK）
-
-  参考 [Audio3aTest.java](./Examples-Mvn/src/main/java/io/agora/rtc/example/basic/Audio3aTest.java.disabled),实现音频 3A 处理
-
-## API 参考
+## API 与功能模块
 
 ### API 文档参考
 
@@ -638,155 +620,519 @@ http://localhost:18080/api/server/start?configFileName=pcm_send.json
 - [API-reference.zh.md](./API-reference.zh.md) 文件（仅供参考）
 - 官方文档 [Agora Java Server SDK API 参考](https://doc.shengwang.cn/api-ref/rtc-server-sdk/java/overview)（以官方文档为准）
 
-### VAD 模块
+### APM 功能
 
-#### VadV1 模块（仅支持Gateway SDK）
+APM (Audio Processing Module) 功能提供了服务端的回声消除 (AEC)、降噪 (ANS)、自动增益 (AGC) 和背景人声消除 (BGHVS) 等音频处理能力。
 
-##### 介绍
+> **注意**：通常情况下，AEC/ANS/AGC 等功能已经在客户端 SDK 中实现，服务端不需要再次处理，除非有特殊的业务需求（例如处理来自非声网 SDK 客户端的原始音频流）。
 
-`AgoraAudioVad` 是一个用于处理音频帧的语音活动检测 (VAD) 模块。它可以检测音频流中的语音活动，并根据配置参数进行处理。该模块是 VAD 的第一个版本，提供基础的语音活动检测功能。
+如果您确定需要启用服务端的 APM 功能，请联系声网技术支持以获取详细指导和配置说明。
 
-##### 类和方法
+#### 使用模式
 
-###### AgoraAudioVad 类
+APM 功能支持两种使用模式：
 
-**构造方法**
+| 模式        | 说明                                                    | 是否需要加入频道 |
+| ----------- | ------------------------------------------------------- | ---------------- |
+| Local 模式  | 本地音频处理，不需要加入频道，直接推送 PCM 数据进行处理 | 否               |
+| Remote 模式 | 远端音频处理，需要加入频道，处理来自频道的音频流        | 是               |
+
+#### Local 模式
+
+Local 模式适用于不需要加入频道的场景，直接推送本地 PCM 音频数据进行 VAD 和/或 3A+BGHVS 处理。
+
+##### 使用场景
+
+| 场景                  | vadConfig | apmConfig | 说明                           |
+| --------------------- | --------- | --------- | ------------------------------ |
+| 仅使用 VAD            | 不为 null | null      | 仅进行语音活动检测             |
+| 使用 VAD + 3A + BGHVS | 不为 null | 不为 null | 同时进行语音活动检测和音频处理 |
+
+##### 核心类
+
+###### AgoraExternalAudioProcessor 类
+
+外部音频处理器，用于处理音频数据的 3A（AEC、ANS、AGC）和 VAD。
+
+**创建方法**
 
 ```java
-public AgoraAudioVad()
+AgoraExternalAudioProcessor audioProcessor = service.createExternalAudioProcessor();
 ```
 
-- **描述**：构造一个 `AgoraAudioVad` 实例。
-
-**方法**
+**初始化方法**
 
 ```java
-public int initialize(AgoraAudioVadConfig config)
+public int initialize(AgoraApmConfig apmConfig, int outputSampleRate, int outputChannels,
+        AgoraAudioVadConfigV2 vadConfig, IExternalAudioProcessorObserver observer)
 ```
 
-- **描述**：初始化 VAD 模块。必须在使用其他方法前调用。
-- **参数**：
-  - `config`：`AgoraAudioVadConfig` 类型，VAD 配置。
-- **返回**：`int` 类型，0 表示成功，-1 表示失败。
+- **参数**
+  - `apmConfig`：`AgoraApmConfig` 类型，APM 配置。设置为 `null` 表示不启用 3A+BGHVS 处理
+  - `outputSampleRate`：输出采样率
+  - `outputChannels`：输出声道数
+  - `vadConfig`：`AgoraAudioVadConfigV2` 类型，VAD 配置。设置为 `null` 表示不启用 VAD
+  - `observer`：`IExternalAudioProcessorObserver` 类型，音频帧回调观察者
+- **返回**
+  - 0 表示成功，负值表示失败
+
+**推送音频数据方法**
 
 ```java
-public VadProcessResult processPcmFrame(byte[] frame)
+public int pushAudioPcmData(byte[] data, int sampleRate, int channels, long presentationMs)
 ```
 
-- **描述**：处理 PCM 音频帧。
-- **参数**：
-  - `frame`：`byte[]` 类型，PCM 音频数据。
-- **返回**：`VadProcessResult` 类型，VAD 处理结果。
+- **参数**
+  - `data`：PCM 音频数据（16-bit）
+  - `sampleRate`：采样率
+  - `channels`：声道数
+  - `presentationMs`：音频帧的 PTS（毫秒）
+- **返回**
+  - 0 表示成功，负值表示失败
+
+**销毁方法**
 
 ```java
-public synchronized void destroy()
+public void destroy()
 ```
 
-- **描述**：销毁 VAD 模块，释放资源。
+###### IExternalAudioProcessorObserver 接口
 
-###### AgoraAudioVadConfig 类
-
-**主要属性**
-
-| 属性名                 | 类型  | 描述                                 | 默认值 | 取值范围               |
-| ---------------------- | ----- | ------------------------------------ | ------ | ---------------------- |
-| fftSz                  | int   | FFT 大小，仅支持 128、256、512、1024 | 1024   | [128, 256, 512, 1024]  |
-| hopSz                  | int   | FFT 跳跃大小，用于检查               | 160    | [1, Integer.MAX_VALUE] |
-| anaWindowSz            | int   | FFT 窗口大小，用于计算 RMS           | 768    | [1, Integer.MAX_VALUE] |
-| voiceProbThr           | float | 语音概率阈值                         | 0.7    | [0.0, 1.0]             |
-| rmsThr                 | float | RMS 阈值（dB）                       | -40.0  | [-100.0, 0.0]          |
-| jointThr               | float | 联合阈值（dB）                       | 0.0    | [-100.0, 100.0]        |
-| aggressive             | float | 激进因子，值越大越激进               | 2.0    | [0.0, 10.0]            |
-| startRecognizeCount    | int   | 开始识别计数                         | 30     | [1, Integer.MAX_VALUE] |
-| stopRecognizeCount     | int   | 停止识别计数                         | 48     | [1, Integer.MAX_VALUE] |
-| preStartRecognizeCount | int   | 预开始识别计数                       | 16     | [0, Integer.MAX_VALUE] |
-| activePercent          | float | 活跃百分比                           | 0.8    | [0.0, 1.0]             |
-| inactivePercent        | float | 非活跃百分比                         | 0.2    | [0.0, 1.0]             |
-
-##### 使用示例
-
-下面是一个简单的示例代码，展示如何使用 `AgoraAudioVad` 进行音频帧处理：
+外部音频处理器观察者接口，用于接收处理后的音频帧。
 
 ```java
-import io.agora.rtc.AgoraAudioVad;
-import io.agora.rtc.AgoraAudioVadConfig;
+public interface IExternalAudioProcessorObserver {
+    void onAudioFrame(AgoraExternalAudioProcessor audioProcessor, AudioFrame audioFrame, VadProcessResult vadProcessResult);
+}
+```
+
+- **参数**
+  - `audioProcessor`：生成此回调的音频处理器实例，当多个处理器共用同一个观察者时用于区分来源
+  - `audioFrame`：处理后的音频帧
+  - `vadProcessResult`：VAD 处理结果，包含 VAD 状态和输出帧
+
+##### 场景一：仅使用 VAD
+
+仅进行语音活动检测，不启用 3A+BGHVS 处理。
+
+```java
+import io.agora.rtc.AgoraAudioVadConfigV2;
+import io.agora.rtc.AgoraExternalAudioProcessor;
+import io.agora.rtc.AgoraService;
+import io.agora.rtc.AgoraServiceConfig;
+import io.agora.rtc.AudioFrame;
+import io.agora.rtc.Constants;
+import io.agora.rtc.IExternalAudioProcessorObserver;
 import io.agora.rtc.VadProcessResult;
-import java.io.FileInputStream;
 
-public class VadV1Example {
+public class VadOnlyExample {
     public static void main(String[] args) {
-        // 创建 VAD 实例
-        AgoraAudioVad audioVad = new AgoraAudioVad();
-        
-        // 创建配置
-        AgoraAudioVadConfig config = new AgoraAudioVadConfig();
-        // 可以根据需要调整配置参数，建议使用默认值
-        
-        // 初始化 VAD
-        int ret = audioVad.initialize(config);
-        if (ret != 0) {
-            System.err.println("Failed to initialize VAD: " + ret);
-            return;
-        }
-        
-        // 处理音频帧
-        try {
-            // 假设有 PCM 音频数据
-            byte[] pcmData = new byte[320]; // 10ms 16kHz 单声道 PCM16 数据
-            
-            VadProcessResult result = audioVad.processPcmFrame(pcmData);
-            if (result != null) {
-                System.out.println("VAD State: " + result.getState());
-                if (result.getOutFrame() != null) {
-                    System.out.println("Output Frame Length: " + result.getOutFrame().length);
+        // 1. 初始化 AgoraService
+        AgoraService service = new AgoraService();
+        AgoraServiceConfig config = new AgoraServiceConfig();
+        config.setAppId("your_app_id");
+        config.setEnableAudioDevice(0);
+        config.setEnableAudioProcessor(1);
+        config.setAudioScenario(Constants.AUDIO_SCENARIO_AI_SERVER);
+        config.setApmMode(Constants.ApmMode.ENABLE);
+        service.initialize(config);
+
+        // 2. 创建外部音频处理器
+        AgoraExternalAudioProcessor audioProcessor = service.createExternalAudioProcessor();
+
+        // 3. 配置 VAD（参考 VAD 配置参数说明）
+        AgoraAudioVadConfigV2 vadConfig = new AgoraAudioVadConfigV2();
+        // 使用默认值，可根据需要调整
+
+        // 4. 初始化处理器（apmConfig 设置为 null，仅使用 VAD）
+        int ret = audioProcessor.initialize(
+            null,  // apmConfig 为 null，不启用 3A+BGHVS
+            16000, // 输出采样率
+            1,     // 输出声道数
+            vadConfig,
+            new IExternalAudioProcessorObserver() {
+                @Override
+                public void onAudioFrame(AgoraExternalAudioProcessor audioProcessor, AudioFrame audioFrame, VadProcessResult vadProcessResult) {
+                    // audioProcessor 可用于区分回调来自哪个处理器（多处理器共用观察者时）
+                    // 处理回调
+                    if (vadProcessResult != null) {
+                        System.out.println("VAD State: " + vadProcessResult.getState());
+                        // vadProcessResult.getOutFrame() 包含 VAD 处理后的音频数据
+                    }
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        );
+
+        if (ret != 0) {
+            System.err.println("Initialize failed: " + ret);
+            return;
         }
-        
-        // 销毁 VAD 实例
-        audioVad.destroy();
+
+        // 5. 推送 PCM 音频数据（10ms 一帧，16kHz 单声道 = 320 字节）
+        byte[] pcmData = new byte[320]; // 16000 * 1 * 2 / 100 = 320 bytes per 10ms
+        // ... 填充 PCM 数据 ...
+        long presentationMs = 0;
+        audioProcessor.pushAudioPcmData(pcmData, 16000, 1, presentationMs);
+
+        // 6. 销毁资源
+        audioProcessor.destroy();
+        service.destroy();
     }
 }
 ```
 
-#### VadV2 模块
+##### 场景二：使用 VAD + 3A + BGHVS
 
-##### 介绍
-
-`AgoraAudioVadV2` 是一个用于处理音频帧的语音活动检测 (VAD) 模块的第二个版本。它可以检测音频流中的语音活动，并根据配置参数进行处理。
-
-##### 类和方法
-
-###### AgoraAudioVadV2 类
-
-**构造方法**
+同时进行语音活动检测和 3A+BGHVS 音频处理。
 
 ```java
-public AgoraAudioVadV2(AgoraAudioVadConfigV2 config)
+import io.agora.rtc.AgoraAudioVadConfigV2;
+import io.agora.rtc.AgoraExternalAudioProcessor;
+import io.agora.rtc.AgoraService;
+import io.agora.rtc.AgoraServiceConfig;
+import io.agora.rtc.AudioFrame;
+import io.agora.rtc.Constants;
+import io.agora.rtc.IExternalAudioProcessorObserver;
+import io.agora.rtc.VadProcessResult;
+import io.agora.rtc.apm.AgoraApmConfig;
+
+public class VadWith3AExample {
+    public static void main(String[] args) {
+        // 1. 初始化 AgoraService
+        AgoraService service = new AgoraService();
+        AgoraServiceConfig config = new AgoraServiceConfig();
+        config.setAppId("your_app_id");
+        config.setEnableAudioDevice(0);
+        config.setEnableAudioProcessor(1);
+        config.setAudioScenario(Constants.AUDIO_SCENARIO_AI_SERVER);
+        config.setApmMode(Constants.ApmMode.ENABLE);
+        service.initialize(config);
+
+        // 2. 创建外部音频处理器
+        AgoraExternalAudioProcessor audioProcessor = service.createExternalAudioProcessor();
+
+        // 3. 配置 APM（3A + BGHVS）
+        AgoraApmConfig apmConfig = new AgoraApmConfig();
+        // 默认已启用 AEC、ANS、AGC、BGHVS，可根据需要调整
+        // apmConfig.getAiAecConfig().setEnabled(true);   // 回声消除
+        // apmConfig.getAiNsConfig().setNsEnabled(true);  // 降噪
+        // apmConfig.getAgcConfig().setEnabled(true);     // 自动增益
+        // apmConfig.getBghvsConfig().setEnabled(true);   // 背景人声消除
+        // apmConfig.setEnableDump(false);                // 调试时可开启 dump
+
+        // 4. 配置 VAD（参考 VAD 配置参数说明）
+        AgoraAudioVadConfigV2 vadConfig = new AgoraAudioVadConfigV2();
+        // 使用默认值，可根据需要调整
+
+        // 5. 初始化处理器（同时启用 apmConfig 和 vadConfig）
+        int ret = audioProcessor.initialize(
+            apmConfig,  // 启用 3A+BGHVS
+            16000,      // 输出采样率
+            1,          // 输出声道数
+            vadConfig,  // 启用 VAD
+            new IExternalAudioProcessorObserver() {
+                @Override
+                public void onAudioFrame(AgoraExternalAudioProcessor audioProcessor, AudioFrame audioFrame, VadProcessResult vadProcessResult) {
+                    // audioProcessor 可用于区分回调来自哪个处理器（多处理器共用观察者时）
+                    // audioFrame 包含经过 3A+BGHVS 处理后的音频数据
+                    if (audioFrame != null) {
+                        byte[] processedData = io.agora.rtc.utils.Utils.getBytes(audioFrame.getBuffer());
+                        // ... 使用处理后的音频数据 ...
+                    }
+                    
+                    // vadProcessResult 包含 VAD 处理结果
+                    if (vadProcessResult != null) {
+                        System.out.println("VAD State: " + vadProcessResult.getState());
+                        // vadProcessResult.getOutFrame() 包含 VAD 处理后的音频数据
+                    }
+                }
+            }
+        );
+
+        if (ret != 0) {
+            System.err.println("Initialize failed: " + ret);
+            return;
+        }
+
+        // 6. 推送 PCM 音频数据（10ms 一帧，16kHz 单声道 = 320 字节）
+        byte[] pcmData = new byte[320];
+        // ... 填充 PCM 数据 ...
+        long presentationMs = 0;
+        audioProcessor.pushAudioPcmData(pcmData, 16000, 1, presentationMs);
+
+        // 7. 销毁资源
+        audioProcessor.destroy();
+        service.destroy();
+    }
+}
+```
+
+##### 完整示例
+
+完整的示例代码请参考：`Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ExternalAudioProcessorTest.java`
+
+#### Remote 模式
+
+Remote 模式适用于需要加入频道的场景，接收并处理来自频道的远端音频流，同时进行 VAD 和/或 3A+BGHVS 处理。
+
+##### 使用场景
+
+| 场景                  | AgoraServiceConfig.apmConfig | registerAudioFrameObserver vadConfig | 说明                           |
+| --------------------- | ---------------------------- | ------------------------------------ | ------------------------------ |
+| 仅使用 VAD            | null 或不设置                | 不为 null                            | 仅进行语音活动检测             |
+| 使用 VAD + 3A + BGHVS | 不为 null                    | 不为 null                            | 同时进行语音活动检测和音频处理 |
+
+##### 核心配置
+
+###### AgoraServiceConfig 配置
+
+在初始化 `AgoraService` 时，通过 `AgoraServiceConfig` 配置 APM：
+
+```java
+AgoraServiceConfig config = new AgoraServiceConfig();
+config.setApmMode(Constants.ApmMode.ENABLE);  // 启用 APM 模式
+
+// 配置 3A+BGHVS（可选，设置为 null 表示不启用）
+AgoraApmConfig apmConfig = new AgoraApmConfig();
+config.setApmConfig(apmConfig);  // 设置为 null 表示不启用 3A+BGHVS
+```
+
+###### 注册音频帧观察者
+
+通过 `registerAudioFrameObserver` 方法注册音频帧观察者并配置 VAD：
+
+```java
+conn.registerAudioFrameObserver(audioFrameObserver, true, new AgoraAudioVadConfigV2());
 ```
 
 - **参数**
-  - `config`：`AgoraAudioVadConfigV2` 类型，VAD 配置。
+  - `observer`：`IAudioFrameObserver` 类型，音频帧回调观察者
+  - `enableVad`：是否启用 VAD
+  - `vadConfig`：`AgoraAudioVadConfigV2` 类型，VAD 配置
 
-###### AgoraAudioVadConfigV2 属性
+###### IAudioFrameObserver 接口
 
-| 属性名                       | 类型    | 描述                                       | 默认值 | 取值范围               |
-| ---------------------------- | ------- | ------------------------------------------ | ------ | ---------------------- |
-| preStartRecognizeCount       | int     | 开始说话状态前保存的音频帧数               | 16     | [0, Integer.MAX_VALUE] |
-| startRecognizeCount          | int     | 说话状态的音频帧数                         | 30     | [1, Integer.MAX_VALUE] |
-| stopRecognizeCount           | int     | 停止说话状态的音频帧数                     | 65     | [1, Integer.MAX_VALUE] |
-| activePercent                | float   | 在 startRecognizeCount 帧中活跃帧的百分比  | 0.7    | [0.0, 1.0]             |
-| inactivePercent              | float   | 在 stopRecognizeCount 帧中非活跃帧的百分比 | 0.5    | [0.0, 1.0]             |
-| startVoiceProb               | int     | 开始语音检测的概率阈值                     | 70     | [0, 100]               |
-| stopVoiceProb                | int     | 停止语音检测的概率阈值                     | 70     | [0, 100]               |
-| startRmsThreshold            | int     | 开始语音检测的 RMS 阈值 (dB)               | -70    | [-100, 0]              |
-| stopRmsThreshold             | int     | 停止语音检测的 RMS 阈值 (dB)               | -70    | [-100, 0]              |
-| enableAdaptiveRmsThreshold   | boolean | 是否启用自适应 RMS 阈值                    | true   | true/false             |
-| adaptiveRmsThresholdFactor   | float   | 自适应 RMS 阈值因子                        | 0.67   | [0.0, 1.0]             |
+音频帧观察者接口，用于接收处理后的远端音频帧。
 
-###### 参数说明
+```java
+public interface IAudioFrameObserver {
+    int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser,
+            String channelId, String userId, AudioFrame frame, VadProcessResult vadResult);
+}
+```
+
+- **参数**
+  - `agoraLocalUser`：本地用户对象
+  - `channelId`：频道 ID
+  - `userId`：远端用户 ID
+  - `frame`：处理后的音频帧（经过 3A+BGHVS 处理，如果启用）
+  - `vadResult`：VAD 处理结果，包含 VAD 状态和输出帧
+
+##### 场景一：仅使用 VAD
+
+仅进行语音活动检测，不启用 3A+BGHVS 处理。
+
+```java
+import io.agora.rtc.AgoraAudioVadConfigV2;
+import io.agora.rtc.AgoraLocalUser;
+import io.agora.rtc.AgoraRtcConn;
+import io.agora.rtc.AgoraService;
+import io.agora.rtc.AgoraServiceConfig;
+import io.agora.rtc.AudioFrame;
+import io.agora.rtc.Constants;
+import io.agora.rtc.IAudioFrameObserver;
+import io.agora.rtc.RtcConnConfig;
+import io.agora.rtc.VadProcessResult;
+
+public class RemoteVadOnlyExample {
+    public static void main(String[] args) {
+        // 1. 初始化 AgoraService
+        AgoraService service = new AgoraService();
+        AgoraServiceConfig config = new AgoraServiceConfig();
+        config.setAppId("your_app_id");
+        config.setEnableAudioDevice(0);
+        config.setEnableAudioProcessor(1);
+        config.setAudioScenario(Constants.AUDIO_SCENARIO_AI_SERVER);
+        config.setApmMode(Constants.ApmMode.ENABLE);
+        // 不设置 apmConfig，表示不启用 3A+BGHVS
+        // config.setApmConfig(null);
+        service.initialize(config);
+
+        // 2. 创建连接
+        RtcConnConfig ccfg = new RtcConnConfig();
+        ccfg.setClientRoleType(Constants.CLIENT_ROLE_AUDIENCE);
+        ccfg.setAutoSubscribeAudio(0);
+        ccfg.setChannelProfile(Constants.CHANNEL_PROFILE_LIVE_BROADCASTING);
+        AgoraRtcConn conn = service.agoraRtcConnCreate(ccfg, null);
+
+        // 3. 订阅音频
+        conn.getLocalUser().subscribeAllAudio();
+
+        // 4. 设置音频参数
+        conn.getLocalUser().setPlaybackAudioFrameBeforeMixingParameters(1, 16000);
+
+        // 5. 注册音频帧观察者（启用 VAD）
+        IAudioFrameObserver audioFrameObserver = new IAudioFrameObserver() {
+            @Override
+            public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser,
+                    String channelId, String userId, AudioFrame frame, VadProcessResult vadResult) {
+                if (frame == null) {
+                    return 0;
+                }
+                
+                // 处理音频帧
+                byte[] byteArray = io.agora.rtc.utils.Utils.getBytes(frame.getBuffer());
+                
+                // 处理 VAD 结果
+                if (vadResult != null) {
+                    System.out.println("VAD State: " + vadResult.getState());
+                    if (vadResult.getState() == Constants.VadState.START_SPEAKING
+                            || vadResult.getState() == Constants.VadState.SPEAKING
+                            || vadResult.getState() == Constants.VadState.STOP_SPEAKING) {
+                        byte[] vadData = vadResult.getOutFrame();
+                        // ... 使用 VAD 处理后的音频数据 ...
+                    }
+                }
+                return 1;
+            }
+        };
+
+        // 配置 VAD（参考 VAD 配置参数说明）
+        AgoraAudioVadConfigV2 vadConfig = new AgoraAudioVadConfigV2();
+        // 使用默认值，可根据需要调整
+        conn.registerAudioFrameObserver(audioFrameObserver, true, vadConfig);
+
+        // 6. 加入频道
+        conn.connect("your_token", "channel_id", "user_id");
+
+        // ... 业务逻辑 ...
+
+        // 7. 离开频道并销毁资源
+        conn.disconnect();
+        conn.destroy();
+        service.destroy();
+    }
+}
+```
+
+##### 场景二：使用 VAD + 3A + BGHVS
+
+同时进行语音活动检测和 3A+BGHVS 音频处理。
+
+```java
+import io.agora.rtc.AgoraAudioVadConfigV2;
+import io.agora.rtc.AgoraLocalUser;
+import io.agora.rtc.AgoraRtcConn;
+import io.agora.rtc.AgoraService;
+import io.agora.rtc.AgoraServiceConfig;
+import io.agora.rtc.AudioFrame;
+import io.agora.rtc.Constants;
+import io.agora.rtc.IAudioFrameObserver;
+import io.agora.rtc.RtcConnConfig;
+import io.agora.rtc.VadProcessResult;
+import io.agora.rtc.apm.AgoraApmConfig;
+
+public class RemoteVadWith3AExample {
+    public static void main(String[] args) {
+        // 1. 初始化 AgoraService
+        AgoraService service = new AgoraService();
+        AgoraServiceConfig config = new AgoraServiceConfig();
+        config.setAppId("your_app_id");
+        config.setEnableAudioDevice(0);
+        config.setEnableAudioProcessor(1);
+        config.setAudioScenario(Constants.AUDIO_SCENARIO_AI_SERVER);
+        config.setApmMode(Constants.ApmMode.ENABLE);
+
+        // 配置 APM（3A + BGHVS）
+        AgoraApmConfig apmConfig = new AgoraApmConfig();
+        // 默认已启用 AEC、ANS、AGC、BGHVS，可根据需要调整
+        config.setApmConfig(apmConfig);  // 启用 3A+BGHVS
+
+        service.initialize(config);
+
+        // 2. 创建连接
+        RtcConnConfig ccfg = new RtcConnConfig();
+        ccfg.setClientRoleType(Constants.CLIENT_ROLE_AUDIENCE);
+        ccfg.setAutoSubscribeAudio(0);
+        ccfg.setChannelProfile(Constants.CHANNEL_PROFILE_LIVE_BROADCASTING);
+        AgoraRtcConn conn = service.agoraRtcConnCreate(ccfg, null);
+
+        // 3. 订阅音频
+        conn.getLocalUser().subscribeAllAudio();
+
+        // 4. 设置音频参数
+        conn.getLocalUser().setPlaybackAudioFrameBeforeMixingParameters(1, 16000);
+
+        // 5. 注册音频帧观察者（启用 VAD）
+        IAudioFrameObserver audioFrameObserver = new IAudioFrameObserver() {
+            @Override
+            public int onPlaybackAudioFrameBeforeMixing(AgoraLocalUser agoraLocalUser,
+                    String channelId, String userId, AudioFrame frame, VadProcessResult vadResult) {
+                if (frame == null) {
+                    return 0;
+                }
+                
+                // frame 包含经过 3A+BGHVS 处理后的音频数据
+                byte[] processedData = io.agora.rtc.utils.Utils.getBytes(frame.getBuffer());
+                // ... 使用处理后的音频数据 ...
+                
+                // 处理 VAD 结果
+                if (vadResult != null) {
+                    System.out.println("VAD State: " + vadResult.getState());
+                    if (vadResult.getState() == Constants.VadState.START_SPEAKING
+                            || vadResult.getState() == Constants.VadState.SPEAKING
+                            || vadResult.getState() == Constants.VadState.STOP_SPEAKING) {
+                        byte[] vadData = vadResult.getOutFrame();
+                        // ... 使用 VAD 处理后的音频数据 ...
+                    }
+                }
+                return 1;
+            }
+        };
+
+        // 配置 VAD（参考 VAD 配置参数说明）
+        AgoraAudioVadConfigV2 vadConfig = new AgoraAudioVadConfigV2();
+        // 使用默认值，可根据需要调整
+        conn.registerAudioFrameObserver(audioFrameObserver, true, vadConfig);
+
+        // 6. 加入频道
+        conn.connect("your_token", "channel_id", "user_id");
+
+        // ... 业务逻辑 ...
+
+        // 7. 离开频道并销毁资源
+        conn.disconnect();
+        conn.destroy();
+        service.destroy();
+    }
+}
+```
+
+##### 完整示例
+
+完整的示例代码请参考：`Examples-Mvn/src/main/java/io/agora/rtc/example/basic/ReceiverPcmVadTest.java`
+
+#### VAD 配置参数说明
+
+VAD 配置使用 `AgoraAudioVadConfigV2` 类进行配置。
+
+##### AgoraAudioVadConfigV2 属性
+
+| 属性名                     | 类型    | 描述                                       | 默认值 | 取值范围               |
+| -------------------------- | ------- | ------------------------------------------ | ------ | ---------------------- |
+| preStartRecognizeCount     | int     | 开始说话状态前保存的音频帧数               | 16     | [0, Integer.MAX_VALUE] |
+| startRecognizeCount        | int     | 说话状态的音频帧数                         | 30     | [1, Integer.MAX_VALUE] |
+| stopRecognizeCount         | int     | 停止说话状态的音频帧数                     | 65     | [1, Integer.MAX_VALUE] |
+| activePercent              | float   | 在 startRecognizeCount 帧中活跃帧的百分比  | 0.7    | [0.0, 1.0]             |
+| inactivePercent            | float   | 在 stopRecognizeCount 帧中非活跃帧的百分比 | 0.5    | [0.0, 1.0]             |
+| startVoiceProb             | int     | 开始语音检测的概率阈值                     | 70     | [0, 100]               |
+| stopVoiceProb              | int     | 停止语音检测的概率阈值                     | 70     | [0, 100]               |
+| startRmsThreshold          | int     | 开始语音检测的 RMS 阈值 (dB)               | -70    | [-100, 0]              |
+| stopRmsThreshold           | int     | 停止语音检测的 RMS 阈值 (dB)               | -70    | [-100, 0]              |
+| enableAdaptiveRmsThreshold | boolean | 是否启用自适应 RMS 阈值                    | true   | true/false             |
+| adaptiveRmsThresholdFactor | float   | 自适应 RMS 阈值因子                        | 0.67   | [0.0, 1.0]             |
+
+##### 参数说明
 
 **窗口大小参数**：
 - `preStartRecognizeCount`: 预启动缓冲帧数，用于保留语音开头部分（16帧 = 160ms）
@@ -812,28 +1158,9 @@ public AgoraAudioVadV2(AgoraAudioVadConfigV2 config)
 - `enableAdaptiveRmsThreshold`: 启用后根据历史语音统计自动调整 RMS 阈值，提高环境适应性
 - `adaptiveRmsThresholdFactor`: 自适应因子（默认0.67 = 2/3），值越小阈值越低越敏感
 
-###### 方法
-
-```java
-public synchronized VadProcessResult processFrame(AudioFrame frame)
-```
-
-- **参数**
-  - `frame`：`AudioFrame` 类型，音频帧。
-- **返回**
-  - `VadProcessResult` 类型，VAD 处理结果。
-
-```java
-public synchronized void destroy()
-```
-
-- 销毁 VAD 模块，释放资源。
-
 ##### VadProcessResult
 
 存储 VAD 处理结果。
-
-###### 构造方法
 
 ```java
 public VadProcessResult(byte[] result, Constants.VadState state)
@@ -843,408 +1170,30 @@ public VadProcessResult(byte[] result, Constants.VadState state)
   - `result`：`byte[]` 类型，处理后的音频数据。
   - `state`：`Constants.VadState` 类型，当前 VAD 状态。
 
-##### 使用示例
-
-下面是一个简单的示例代码，展示如何使用 `AgoraAudioVadV2` 进行音频帧处理：
-
-```java
-import io.agora.rtc.AgoraAudioVadV2;
-import io.agora.rtc.AgoraAudioVadConfigV2;
-import io.agora.rtc.Constants;
-import io.agora.rtc.AudioFrame;
-import io.agora.rtc.VadProcessResult;
-
-public class VadV2Example {
-    public static void main(String[] args) {
-        // 创建 VAD 配置
-        AgoraAudioVadConfigV2 config = new AgoraAudioVadConfigV2();
-        // 以下为默认值，可根据需要调整
-        config.setPreStartRecognizeCount(16);
-        config.setStartRecognizeCount(30);
-        config.setStopRecognizeCount(65);
-        config.setActivePercent(0.7f);
-        config.setInactivePercent(0.5f);
-        config.setStartVoiceProb(70);
-        config.setStopVoiceProb(70);
-        config.setStartRmsThreshold(-70);
-        config.setStopRmsThreshold(-70);
-        config.setEnableAdaptiveRmsThreshold(true);
-        config.setAdaptiveRmsThresholdFactor(0.67f);
-
-        // 创建 VAD 实例
-        AgoraAudioVadV2 vad = new AgoraAudioVadV2(config);
-
-        // 模拟音频帧处理
-        AudioFrame frame = new AudioFrame();
-        // 设置 frame 的属性
-        frame.setType(Constants.AudioFrameType.PCM16.getValue());
-        frame.setSamplesPerSec(16000); // 16kHz
-        frame.setChannels(1); // 单声道
-        frame.setSamplesPerChannel(160); // 10ms 帧，16000/100 = 160
-        frame.setBytesPerSample(Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue()); // PCM16
-        // 设置音频数据缓冲区
-        byte[] pcmData = new byte[320]; // 160 samples * 1 channel * 2 bytes
-        // ... 填充 PCM 数据 ...
-        java.nio.ByteBuffer buffer = java.nio.ByteBuffer.allocateDirect(320);
-        buffer.put(pcmData);
-        buffer.flip();
-        frame.setBuffer(buffer);
-
-        VadProcessResult result = vad.processFrame(frame);
-        if (result != null) {
-            System.out.println("VAD State: " + result.getState());
-            if (result.getOutFrame() != null) {
-                System.out.println("Processed Data Length: " + result.getOutFrame().length);
-            }
-        }
-
-        // 销毁 VAD 实例
-        vad.destroy();
-    }
-}
-```
-
-### Audio 3A 模块（仅支持Gateway SDK）
-
-#### 介绍
-
-`AgoraAudioProcessor` 是一个用于音频 3A（AEC、ANS、AGC）以及背景人声抑制（BGHVS）处理的模块。它可以对音频帧进行声学回声消除 (AEC)、自动噪声抑制 (ANS)、自动增益控制 (AGC) 和背景人声抑制 (BGHVS)，以提升音频质量。该模块需要相应的模型文件来执行处理。
-
-#### 类和方法
-
-##### AgoraAudioProcessor 类
-
-###### 构造方法
-
-```java
-public AgoraAudioProcessor()
-```
-
-- **描述**：构造一个 `AgoraAudioProcessor` 实例。
-
-###### 方法
-
-```java
-public int init(String appId, String license, IAgoraAudioProcessorEventHandler eventHandler, AgoraAudioProcessorConfig config)
-```
-
-- **描述**：初始化音频处理器。必须在使用其他方法前调用。
-- **参数**：
-  - `appId`：`String` 类型，声网后台获取的 App ID。
-  - `license`：`String` 类型，声网后台获取的 License。
-  - `eventHandler`：`IAgoraAudioProcessorEventHandler` 类型，用于接收处理器事件和错误的回调处理器。
-  - `config`：`AgoraAudioProcessorConfig` 类型，3A 处理器配置对象，用于配置模型路径等。
-- **返回**：`int` 类型，0 表示成功，其他值表示失败。
-
-```java
-public AgoraAudioFrame process(AgoraAudioFrame nearIn)
-```
-
-- **描述**：对输入的近端音频帧进行 3A 处理（如 ANS、AGC）。当仅处理近端音频，或不需要 AEC 处理时使用此方法。
-- **参数**：
-  - `nearIn`：`io.agora.rtc.audio3a.AgoraAudioFrame` 类型，包含待处理的近端 PCM 音频数据的帧对象。
-- **返回**：`io.agora.rtc.audio3a.AgoraAudioFrame` 类型，处理后的音频帧。如果处理失败，可能返回 `null`。
-
-```java
-public AgoraAudioFrame process(AgoraAudioFrame nearIn, AgoraAudioFrame farIn)
-```
-
-- **描述**：对输入的近端和远端音频帧进行 3A 处理（如 AEC、ANS、AGC）。当需要进行回声消除 (AEC) 等同时处理近端和远端音频的场景时使用此方法。
-- **参数**：
-  - `nearIn`：`io.agora.rtc.audio3a.AgoraAudioFrame` 类型，包含待处理的近端 PCM 音频数据的帧对象。
-  - `farIn`：`io.agora.rtc.audio3a.AgoraAudioFrame` 类型，包含参考的远端 PCM 音频数据的帧对象，主要用于声学回声消除 (AEC)。
-- **返回**：`io.agora.rtc.audio3a.AgoraAudioFrame` 类型，处理后的近端音频帧。如果处理失败，可能返回 `null`。
-
-```java
-public int release()
-```
-
-- **描述**：释放 `AgoraAudioProcessor` 实例所占用的所有资源。处理完成后应调用此方法。
-- **返回**：`int` 类型，0 表示成功，其他值表示失败。
-
-##### AgoraAudioProcessorConfig 类
-
-此类用于配置 `AgoraAudioProcessor`。
-
-###### 方法
-
-```java
-public void setModelPath(String modelPath)
-```
-
-- **描述**: 设置 3A 处理所需的模型文件路径。模型文件通常随 SDK 包提供，位于 `resources/model/` 目录下。
-- **参数**:
-  - `modelPath`: `String` 类型，模型文件所在的目录路径。例如 `./resources/model/`。
-
-```java
-public void setAecConfig(AecConfig aecConfig)
-public AecConfig getAecConfig()
-```
-
-- **描述**: 设置和获取声学回声消除（AEC）配置。
-- **参数**:
-  - `aecConfig`: `AecConfig` 类型，AEC 配置对象。
-
-```java
-public void setAnsConfig(AnsConfig ansConfig)
-public AnsConfig getAnsConfig()
-```
-
-- **描述**: 设置和获取自动噪声抑制（ANS）配置。
-- **参数**:
-  - `ansConfig`: `AnsConfig` 类型，ANS 配置对象。
-
-```java
-public void setAgcConfig(AgcConfig agcConfig)
-public AgcConfig getAgcConfig()
-```
-
-- **描述**: 设置和获取自动增益控制（AGC）配置。
-- **参数**:
-  - `agcConfig`: `AgcConfig` 类型，AGC 配置对象。
-
-```java
-public void setBghvsConfig(BghvsConfig bghvsConfig)
-public BghvsConfig getBghvsConfig()
-```
-
-- **描述**: 设置和获取背景人声抑制（BGHVS）配置。
-- **参数**:
-  - `bghvsConfig`: `BghvsConfig` 类型，BGHVS 配置对象。
-
-###### 示例
-
-```java
-AgoraAudioProcessorConfig config = new AgoraAudioProcessorConfig();
-config.setModelPath("./resources/model/"); // 根据实际模型文件位置进行设置
-
-// 配置 AEC
-AecConfig aecConfig = new AecConfig();
-aecConfig.setEnabled(true);
-config.setAecConfig(aecConfig);
-
-// 配置 ANS
-AnsConfig ansConfig = new AnsConfig();
-ansConfig.setEnabled(true);
-config.setAnsConfig(ansConfig);
-
-// 配置 AGC
-AgcConfig agcConfig = new AgcConfig();
-agcConfig.setEnabled(true);
-config.setAgcConfig(agcConfig);
-
-// 配置 BGHVS
-BghvsConfig bghvsConfig = new BghvsConfig();
-bghvsConfig.setEnabled(true);
-config.setBghvsConfig(bghvsConfig);
-```
-
-##### IAgoraAudioProcessorEventHandler 接口
-
-此接口用于接收来自 `AgoraAudioProcessor` 的事件和错误通知。
-
-###### 方法
-
-```java
-public void onEvent(Constants.AgoraAudioProcessorEventType eventType)
-```
-
-- **描述**：报告处理器在运行过程中发生的事件。
-- **参数**：
-  - `eventType`：`io.agora.rtc.Constants.AgoraAudioProcessorEventType` 类型，具体的事件类型。
-
-```java
-public void onError(int errorCode)
-```
-
-- **描述**：报告处理器在运行过程中发生的错误。
-- **参数**：
-  - `errorCode`：`int` 类型，错误码，指示发生的具体错误。
-
-##### io.agora.rtc.audio3a.AgoraAudioFrame 类
-
-此类用于封装音频数据以供 `AgoraAudioProcessor` 处理。 (注意：这与 `io.agora.rtc.AudioFrame` 可能不同，请使用 `audio3a` 包下的版本)
-
-###### 关键属性
-
-| 属性名            | 类型       | 描述                                                                                                        |
-| ----------------- | ---------- | ----------------------------------------------------------------------------------------------------------- |
-| type              | int        | 音频帧类型，通常为 `Constants.AudioFrameType.PCM16.getValue()`。                                            |
-| sampleRate        | int        | 音频采样率 (Hz)，例如 16000, 32000, 48000。                                                                 |
-| channels          | int        | 音频通道数，例如 1 (单声道) 或 2 (立体声)。                                                                 |
-| samplesPerChannel | int        | 每个通道的采样点数量。对于 10ms 的帧，通常是 `sampleRate / 100`。                                           |
-| bytesPerSample    | int        | 每个采样点的字节数。例如 PCM16 格式为 2 字节 (`Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue()`)。 |
-| buffer            | ByteBuffer | 包含原始 PCM 音频数据的 `java.nio.ByteBuffer`。                                                             |
-
-###### 主要方法 (Setters/Getters)
-
-```java
-public void setType(int type);
-public int getType();
-
-public void setSampleRate(int sampleRate);
-public int getSampleRate();
-
-public void setChannels(int channels);
-public int getChannels();
-
-public void setSamplesPerChannel(int samplesPerChannel);
-public int getSamplesPerChannel();
-
-public void setBytesPerSample(int bytesPerSample);
-public int getBytesPerSample();
-
-public void setBuffer(java.nio.ByteBuffer buffer);
-public java.nio.ByteBuffer getBuffer();
-```
-
-#### 使用示例
-
-以下是一个简单的示例代码，展示如何使用 `AgoraAudioProcessor` 进行音频帧处理：
-
-```java
-import io.agora.rtc.audio3a.AgoraAudioProcessor;
-import io.agora.rtc.audio3a.AgoraAudioProcessorConfig;
-import io.agora.rtc.audio3a.IAgoraAudioProcessorEventHandler;
-import io.agora.rtc.audio3a.AgoraAudioFrame; // 使用 audio3a 包下的 AgoraAudioFrame
-import io.agora.rtc.audio3a.AecConfig;
-import io.agora.rtc.audio3a.AnsConfig;
-import io.agora.rtc.audio3a.AgcConfig;
-import io.agora.rtc.audio3a.BghvsConfig;
-import io.agora.rtc.Constants; // SDK 的常量类
-import java.nio.ByteBuffer;
-import java.util.Arrays; // 用于打印数据示例
-
-public class Audio3AProcessingExample {
-    public static void main(String[] args) {
-        // 替换为您的 App ID 和 License
-        String appId = "YOUR_APP_ID";
-        String license = "YOUR_LICENSE_KEY";
-
-        // 1. 创建 AgoraAudioProcessor 实例
-        AgoraAudioProcessor audioProcessor = new AgoraAudioProcessor();
-
-        // 2. 配置 AgoraAudioProcessorConfig
-        AgoraAudioProcessorConfig config = new AgoraAudioProcessorConfig();
-        // 设置模型文件路径，通常在 SDK 包的 resources/model/ 目录下
-        // 请确保路径正确，否则初始化可能失败
-        config.setModelPath("./resources/model/"); // 根据您的实际路径修改
-
-        // 配置 AEC（声学回声消除）
-        AecConfig aecConfig = config.getAecConfig();
-        aecConfig.setEnabled(true); // 启用 AEC
-        
-        // 配置 ANS（自动噪声抑制）
-        AnsConfig ansConfig = config.getAnsConfig();
-        ansConfig.setEnabled(true); // 启用 ANS
-        
-        // 配置 AGC（自动增益控制）
-        AgcConfig agcConfig = config.getAgcConfig();
-        agcConfig.setEnabled(true); // 启用 AGC
-        
-        // 配置 BGHVS（背景人声抑制）
-        BghvsConfig bghvsConfig = config.getBghvsConfig();
-        bghvsConfig.setEnabled(true); // 启用 BGHVS
-
-
-        // 3. 初始化 AgoraAudioProcessor
-        int initRet = audioProcessor.init(appId, license,
-                new IAgoraAudioProcessorEventHandler() {
-                    @Override
-                    public void onEvent(Constants.AgoraAudioProcessorEventType eventType) {
-                        System.out.println("AgoraAudioProcessor Event: " + eventType);
-                    }
-
-                    @Override
-                    public void onError(int errorCode) {
-                        System.err.println("AgoraAudioProcessor Error: " + errorCode);
-                    }
-                }, config);
-
-        if (initRet != 0) {
-            System.err.println("Failed to initialize AgoraAudioProcessor. Error code: " + initRet);
-            // 根据错误码处理初始化失败的情况，例如检查 appId, license, modelPath 是否正确
-            return;
-        }
-        System.out.println("AgoraAudioProcessor initialized successfully.");
-
-        // 4. 准备音频帧 (AgoraAudioFrame)
-        // 示例参数：48kHz, 单声道, 10ms 音频帧
-        int sampleRate = 48000;
-        int channels = 1;
-        int samplesPerChannel = sampleRate / 100; // 10ms frame -> 480 samples
-        int bytesPerSample = Constants.BytesPerSample.TWO_BYTES_PER_SAMPLE.getValue(); // PCM16
-        int bufferSize = samplesPerChannel * channels * bytesPerSample;
-
-        // 创建近端音频帧
-        AgoraAudioFrame nearInFrame = new AgoraAudioFrame();
-        nearInFrame.setType(Constants.AudioFrameType.PCM16.getValue());
-        nearInFrame.setSampleRate(sampleRate);
-        nearInFrame.setChannels(channels);
-        nearInFrame.setSamplesPerChannel(samplesPerChannel);
-        nearInFrame.setBytesPerSample(bytesPerSample);
-        // 实际应用中，这里的 pcmDataNear 来自近端音频源
-        byte[] pcmDataNear = new byte[bufferSize]; 
-        // ... 此处用虚拟数据填充 pcmDataNear ...
-        ByteBuffer nearAudioBuffer = ByteBuffer.allocateDirect(bufferSize);
-        nearAudioBuffer.put(pcmDataNear);
-        nearAudioBuffer.flip();
-        nearInFrame.setBuffer(nearAudioBuffer);
-
-        // 创建远端音频帧 (用于 AEC)
-        AgoraAudioFrame farInFrame = new AgoraAudioFrame();
-        farInFrame.setType(Constants.AudioFrameType.PCM16.getValue());
-        farInFrame.setSampleRate(sampleRate);
-        farInFrame.setChannels(channels);
-        farInFrame.setSamplesPerChannel(samplesPerChannel);
-        farInFrame.setBytesPerSample(bytesPerSample);
-        // 实际应用中，这里的 pcmDataFar 来自远端音频源
-        byte[] pcmDataFar = new byte[bufferSize]; 
-        // ... 此处用虚拟数据填充 pcmDataFar ...
-        ByteBuffer farAudioBuffer = ByteBuffer.allocateDirect(bufferSize);
-        farAudioBuffer.put(pcmDataFar);
-        farAudioBuffer.flip();
-        farInFrame.setBuffer(farAudioBuffer);
-
-        // 5. 处理音频帧
-        // 如果只需要处理近端音频（例如仅 ANS, AGC），可以调用单参数的 process 方法:
-        // AgoraAudioFrame outputFrame = audioProcessor.process(nearInFrame);
- 
-        // 如果需要 AEC 处理，同时传入近端和远端音频帧
-        AgoraAudioFrame outputFrame = audioProcessor.process(nearInFrame, farInFrame);
-
-        if (outputFrame != null && outputFrame.getBuffer() != null) {
-            System.out.println("Audio frame processed successfully.");
-            ByteBuffer processedBuffer = outputFrame.getBuffer();
-            // processedBuffer 包含了经过 3A + BGHVS 处理的音频数据
-            // 处理后的音频将具有以下优化：
-            // - AEC: 消除声学回声
-            // - ANS: 抑制背景噪声
-            // - AGC: 自动调节音量增益
-            // - BGHVS: 抑制背景人声干扰
-            // 您可以将数据写入文件、发送到网络或进行其他操作
-            // 例如，获取处理后的字节数据：
-            // byte[] processedBytes = new byte[processedBuffer.remaining()];
-            // processedBuffer.get(processedBytes);
-            // System.out.println("Processed data sample (first 10 bytes): " +
-            // Arrays.toString(Arrays.copyOfRange(processedBytes, 0, Math.min(10, processedBytes.length))));
-        } else {
-            System.err.println("Failed to process audio frame or output frame is null.");
-            // 检查是否有错误回调，或 process 方法的返回值
-        }
-
-        // 6. 释放资源
-        int releaseRet = audioProcessor.release();
-        if (releaseRet == 0) {
-            System.out.println("AgoraAudioProcessor released successfully.");
-        } else {
-            System.err.println("Failed to release AgoraAudioProcessor. Error code: " + releaseRet);
-        }
-    }
-}
-```
+**VAD 状态说明**：
+- `UNKNOWN`：未知状态
+- `NOT_SPEAKING`：未说话
+- `START_SPEAKING`：开始说话
+- `SPEAKING`：正在说话
+- `STOP_SPEAKING`：停止说话
 
 ## 更新日志
+
+### v4.4.32.201（2025-12-18）
+
+- **API 变更**
+  - **AgoraServiceConfig**: 
+    - 将 `enableApm` 属性更改为 `apmMode`，类型从 `boolean` 改为 `Constants.ApmMode` 枚举。
+    - 新增 `Constants.ApmMode` 枚举，支持 `DISABLE` 和 `ENABLE` 两种模式。
+    - 默认值从 `true` 改为 `Constants.ApmMode.DISABLE`。
+  - **AgoraExternalAudioProcessor**: 
+    - 新增外部音频处理器类，支持本地 APM 模式的音频处理。
+    - 提供 PCM 音频数据推送和处理后音频接收的能力。
+  - **IExternalAudioProcessorObserver**: 
+    - 新增外部音频处理器观察者接口，用于接收处理后的音频帧回调。
+
+- **改进与优化**
+  - 修复了内存泄漏问题，优化了模型类的销毁流程。
 
 ### v4.4.32.200（2025-11-14）
 

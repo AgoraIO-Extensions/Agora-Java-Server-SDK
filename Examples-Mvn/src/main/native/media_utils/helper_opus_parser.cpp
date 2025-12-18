@@ -29,11 +29,11 @@ struct decode_context {
 };
 
 class OggOpusFileParser {
-  public:
+   public:
     explicit OggOpusFileParser(const char *filepath);
     virtual ~OggOpusFileParser();
 
-  public:
+   public:
     // AudioFileParser
     bool open();
     bool hasNext();
@@ -61,12 +61,12 @@ class OggOpusFileParser {
         return oggAudioHeader_;
     }
 
-  private:
+   private:
     void loadMetaInfo(OggOpusFile *oggOpusFile);
     void captureHeaderAndComments();
     void captureOggHeaders();
 
-  private:
+   private:
     char *oggOpusFilePath_;
     OggOpusFile *oggOpusFile_;
     int sampleRateHz_;
@@ -107,20 +107,22 @@ int op_decode_cb(void *ctx, OpusMSDecoder *decoder, void *pcm, const ogg_packet 
 }
 
 OggOpusFileParser::OggOpusFileParser(const char *filepath)
-    : oggOpusFilePath_(strdup(filepath)), oggOpusFile_(nullptr), sampleRateHz_(48000),
-      numberOfChannels_(0), eof(false) {
+    : oggOpusFilePath_(strdup(filepath)),
+      oggOpusFile_(nullptr),
+      sampleRateHz_(48000),
+      numberOfChannels_(0),
+      eof(false) {
 }
 
 OggOpusFileParser::~OggOpusFileParser() {
     if (oggOpusFile_) {
         op_free(oggOpusFile_);
+        oggOpusFile_ = nullptr;
     }
-    free(static_cast<void *>(oggOpusFilePath_));
-
-    if (oggOpusFile_) {
-        op_free(oggOpusFile_);
+    if (oggOpusFilePath_) {
+        free(static_cast<void *>(oggOpusFilePath_));
+        oggOpusFilePath_ = nullptr;
     }
-    free(static_cast<void *>(oggOpusFilePath_));
 }
 
 void OggOpusFileParser::loadMetaInfo(OggOpusFile *oggOpusFile) {
@@ -197,19 +199,19 @@ void OggOpusFileParser::captureHeaderAndComments() {
         return;
     }
 
-    oggHeader_.resize(bytesRead * 2); // op_read 返回的是采样数，每个采样 2 字节
+    oggHeader_.resize(bytesRead * 2);  // op_read 返回的是采样数，每个采样 2 字节
 
     const OpusHead *head = op_head(oggOpusFile_, -1);
     if (!head) {
         return;
     }
 
-    opusHeader_.resize(19); // Opus 头部固定为 19 字节
+    opusHeader_.resize(19);  // Opus 头部固定为 19 字节
     uint8_t *headPtr = opusHeader_.data();
 
     memcpy(headPtr, "OpusHead", 8);
     headPtr += 8;
-    *headPtr++ = 1; // 版本
+    *headPtr++ = 1;  // 版本
     *headPtr++ = head->channel_count;
     *reinterpret_cast<uint16_t *>(headPtr) = head->pre_skip;
     headPtr += 2;
@@ -225,13 +227,13 @@ void OggOpusFileParser::captureHeaderAndComments() {
         return;
     }
 
-    size_t commentsSize = 8; // "OpusTags"
+    size_t commentsSize = 8;  // "OpusTags"
 
     // 计算 vendor 字符串长度
     int vendor_length = tags->vendor ? strlen(tags->vendor) : 0;
-    commentsSize += 4 + vendor_length; // vendor string
+    commentsSize += 4 + vendor_length;  // vendor string
 
-    commentsSize += 4; // user comment list length
+    commentsSize += 4;  // user comment list length
     for (int i = 0; i < tags->comments; i++) {
         commentsSize += 4 + tags->comment_lengths[i];
     }
@@ -355,8 +357,9 @@ std::unique_ptr<HelperAudioFrame> HelperOpusFileParser::getAudioFrame(int frameS
     if (length > 0) {
         unsigned char *buffer2 = new unsigned char[length];
         memcpy(buffer2, databuf, length);
-        audioFrame.reset(new HelperAudioFrame{numberOfChannels, sampleRateHz, codec,
-                                              samplesPerChannel, buffer2, length});
+        // ownsBuffer=true (default) because buffer2 was allocated with new[]
+        audioFrame.reset(new HelperAudioFrame(numberOfChannels, sampleRateHz, codec,
+                                              samplesPerChannel, buffer2, length, true));
 
         bytesnum += length;
     }

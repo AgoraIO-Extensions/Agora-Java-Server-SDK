@@ -35,13 +35,17 @@ public class SendMp4Test {
     private AgoraRtcConn conn;
 
     private long testTime = 60 * 1000;
+    private boolean forceExit = true;
 
     private MediaDecodeUtils mediaDecodeUtils;
 
-    private final MediaDecodeUtils.DecodedMediaType decodedMediaType =
-        MediaDecodeUtils.DecodedMediaType.PCM_H264;
+    private final MediaDecodeUtils.DecodedMediaType decodedMediaType = MediaDecodeUtils.DecodedMediaType.PCM_H264;
 
     private final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
+
+    public void setForceExit(boolean forceExit) {
+        this.forceExit = forceExit;
+    }
 
     public void start() {
         if (appId == null || token == null) {
@@ -69,7 +73,7 @@ public class SendMp4Test {
             ret = service.initialize(config);
             if (ret != 0) {
                 SampleLogger.log(
-                    "createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
+                        "createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
                 releaseAgoraService();
                 return;
             }
@@ -107,7 +111,7 @@ public class SendMp4Test {
             @Override
             public void onConnected(AgoraRtcConn agoraRtcConn, RtcConnInfo connInfo, int reason) {
                 SampleLogger.log("onConnected chennalId:" + connInfo.getChannelId()
-                    + " userId:" + connInfo.getLocalUserId());
+                        + " userId:" + connInfo.getLocalUserId());
                 userId = connInfo.getLocalUserId();
             }
 
@@ -126,7 +130,7 @@ public class SendMp4Test {
 
         ret = conn.connect(token, channelId, userId);
         SampleLogger.log(
-            "Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
+                "Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
         if (ret != 0) {
             SampleLogger.log("conn.connect fail ret=" + ret);
             releaseConn();
@@ -137,94 +141,94 @@ public class SendMp4Test {
         mediaDecodeUtils = new MediaDecodeUtils();
 
         boolean initRet = mediaDecodeUtils.init(
-            filePath, 50, -1, decodedMediaType, new MediaDecodeUtils.MediaDecodeCallback() {
-                private ByteBuffer byteBuffer;
-                private boolean isPublishAudio = false;
-                private boolean isPublishVideo = false;
+                filePath, 50, -1, decodedMediaType, new MediaDecodeUtils.MediaDecodeCallback() {
+                    private ByteBuffer byteBuffer;
+                    private boolean isPublishAudio = false;
+                    private boolean isPublishVideo = false;
 
-                @Override
-                public void onAudioFrame(MediaDecode.MediaFrame frame) {
-                    if (!isPublishAudio) {
-                        conn.publishAudio();
-                        isPublishAudio = true;
+                    @Override
+                    public void onAudioFrame(MediaDecode.MediaFrame frame) {
+                        if (!isPublishAudio) {
+                            conn.publishAudio();
+                            isPublishAudio = true;
+                        }
+                        int ret = conn.pushAudioPcmData(frame.buffer, frame.sampleRate, frame.channels);
+                        SampleLogger.log("SendPcmData frame.pts:" + frame.pts + " ret:" + ret
+                                + " samples:" + frame.samples + " bytesPerSample:" + frame.bytesPerSample
+                                + " channels:" + frame.channels + " sampleRate:" + frame.sampleRate
+                                + " channelId:" + channelId + " userId:" + userId);
                     }
-                    int ret = conn.pushAudioPcmData(frame.buffer, frame.sampleRate, frame.channels);
-                    SampleLogger.log("SendPcmData frame.pts:" + frame.pts + " ret:" + ret
-                        + " samples:" + frame.samples + " bytesPerSample:" + frame.bytesPerSample
-                        + " channels:" + frame.channels + " sampleRate:" + frame.sampleRate
-                        + " channelId:" + channelId + " userId:" + userId);
-                }
 
-                @Override
-                public void onVideoFrame(MediaDecode.MediaFrame frame) {
-                    SampleLogger.log("onVideoFrame frame:" + frame);
-                    if (conn == null) {
-                        return;
-                    }
-                    if (decodedMediaType == MediaDecodeUtils.DecodedMediaType.PCM_H264) {
-                        // Publish video track
-                        if (!isPublishVideo) {
-                            conn.publishVideo();
-                            // for wait video track ready
-                            try {
-                                Thread.sleep(3000);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            isPublishVideo = true;
-                        }
-
-                        EncodedVideoFrameInfo info = new EncodedVideoFrameInfo();
-                        info.setFrameType(frame.isKeyFrame
-                                ? Constants.VIDEO_FRAME_TYPE_KEY_FRAME
-                                : Constants.VIDEO_FRAME_TYPE_DELTA_FRAME);
-                        info.setWidth(frame.width);
-                        info.setHeight(frame.height);
-                        info.setCodecType(Constants.VIDEO_CODEC_H264);
-                        info.setCaptureTimeMs(frame.pts);
-                        info.setDecodeTimeMs(frame.pts);
-                        info.setFramesPerSecond(frame.fps);
-                        info.setRotation(0);
-                        int ret = conn.pushVideoEncodedData(frame.buffer, info);
-                        SampleLogger.log("SendEncodedVideoFrame frame.pts:" + frame.pts
-                            + " ret:" + ret + " width:" + frame.width + " height:" + frame.height
-                            + " fps:" + frame.fps + " isKeyFrame:" + frame.isKeyFrame
-                            + " buffer:" + frame.buffer.length);
-
-                    } else if (decodedMediaType == MediaDecodeUtils.DecodedMediaType.PCM_YUV) {
-                        if (!isPublishVideo) {
-                            VideoEncoderConfig config = new VideoEncoderConfig();
-                            config.setCodecType(Constants.VIDEO_CODEC_H264);
-                            config.setDimensions(new VideoDimensions(frame.width, frame.height));
-                            config.setFrameRate(frame.fps);
-                            conn.setVideoEncoderConfig(config);
-                            // Publish video track
-                            conn.publishVideo();
-                            isPublishVideo = true;
-                        }
-
-                        ExternalVideoFrame externalVideoFrame = new ExternalVideoFrame();
-                        if (null == byteBuffer) {
-                            byteBuffer = ByteBuffer.allocateDirect(frame.buffer.length);
-                        }
-                        if (byteBuffer == null || byteBuffer.limit() < frame.buffer.length) {
+                    @Override
+                    public void onVideoFrame(MediaDecode.MediaFrame frame) {
+                        SampleLogger.log("onVideoFrame frame:" + frame);
+                        if (conn == null) {
                             return;
                         }
-                        byteBuffer.put(frame.buffer);
-                        byteBuffer.flip();
-                        externalVideoFrame.setBuffer(byteBuffer);
-                        externalVideoFrame.setHeight(frame.height);
-                        externalVideoFrame.setStride(frame.stride);
-                        externalVideoFrame.setRotation(0);
-                        externalVideoFrame.setFormat(
-                            Constants.EXTERNAL_VIDEO_FRAME_PIXEL_FORMAT_I420);
-                        externalVideoFrame.setType(
-                            Constants.EXTERNAL_VIDEO_FRAME_BUFFER_TYPE_RAW_DATA);
-                        externalVideoFrame.setTimestamp(frame.pts);
-                        int ret = conn.pushVideoFrame(externalVideoFrame);
+                        if (decodedMediaType == MediaDecodeUtils.DecodedMediaType.PCM_H264) {
+                            // Publish video track
+                            if (!isPublishVideo) {
+                                conn.publishVideo();
+                                // for wait video track ready
+                                try {
+                                    Thread.sleep(3000);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                                isPublishVideo = true;
+                            }
+
+                            EncodedVideoFrameInfo info = new EncodedVideoFrameInfo();
+                            info.setFrameType(frame.isKeyFrame
+                                    ? Constants.VIDEO_FRAME_TYPE_KEY_FRAME
+                                    : Constants.VIDEO_FRAME_TYPE_DELTA_FRAME);
+                            info.setWidth(frame.width);
+                            info.setHeight(frame.height);
+                            info.setCodecType(Constants.VIDEO_CODEC_H264);
+                            info.setCaptureTimeMs(frame.pts);
+                            info.setDecodeTimeMs(frame.pts);
+                            info.setFramesPerSecond(frame.fps);
+                            info.setRotation(0);
+                            int ret = conn.pushVideoEncodedData(frame.buffer, info);
+                            SampleLogger.log("SendEncodedVideoFrame frame.pts:" + frame.pts
+                                    + " ret:" + ret + " width:" + frame.width + " height:" + frame.height
+                                    + " fps:" + frame.fps + " isKeyFrame:" + frame.isKeyFrame
+                                    + " buffer:" + frame.buffer.length);
+
+                        } else if (decodedMediaType == MediaDecodeUtils.DecodedMediaType.PCM_YUV) {
+                            if (!isPublishVideo) {
+                                VideoEncoderConfig config = new VideoEncoderConfig();
+                                config.setCodecType(Constants.VIDEO_CODEC_H264);
+                                config.setDimensions(new VideoDimensions(frame.width, frame.height));
+                                config.setFrameRate(frame.fps);
+                                conn.setVideoEncoderConfig(config);
+                                // Publish video track
+                                conn.publishVideo();
+                                isPublishVideo = true;
+                            }
+
+                            ExternalVideoFrame externalVideoFrame = new ExternalVideoFrame();
+                            if (null == byteBuffer) {
+                                byteBuffer = ByteBuffer.allocateDirect(frame.buffer.length);
+                            }
+                            if (byteBuffer == null || byteBuffer.limit() < frame.buffer.length) {
+                                return;
+                            }
+                            byteBuffer.put(frame.buffer);
+                            byteBuffer.flip();
+                            externalVideoFrame.setBuffer(byteBuffer);
+                            externalVideoFrame.setHeight(frame.height);
+                            externalVideoFrame.setStride(frame.stride);
+                            externalVideoFrame.setRotation(0);
+                            externalVideoFrame.setFormat(
+                                    Constants.EXTERNAL_VIDEO_FRAME_PIXEL_FORMAT_I420);
+                            externalVideoFrame.setType(
+                                    Constants.EXTERNAL_VIDEO_FRAME_BUFFER_TYPE_RAW_DATA);
+                            externalVideoFrame.setTimestamp(frame.pts);
+                            int ret = conn.pushVideoFrame(externalVideoFrame);
+                        }
                     }
-                }
-            });
+                });
 
         SampleLogger.log("send mp4 initRet:" + initRet);
 
@@ -235,15 +239,22 @@ public class SendMp4Test {
         }
 
         mediaDecodeUtils.stop();
+        mediaDecodeUtils = null;
 
         releaseConn();
         releaseAgoraService();
 
-        System.exit(0);
+        if (forceExit) {
+            System.exit(0);
+        }
     }
 
     private void pushMp4Data() {
-        testTaskExecutorService.execute(() -> { mediaDecodeUtils.start(); });
+        testTaskExecutorService.execute(() -> {
+            if (null != mediaDecodeUtils) {
+                mediaDecodeUtils.start();
+            }
+        });
     }
 
     private void releaseConn() {
