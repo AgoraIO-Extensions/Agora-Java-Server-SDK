@@ -60,26 +60,32 @@
         - [AgoraAudioVadConfigV2 属性](#agoraaudiovadconfigv2-属性)
         - [参数说明](#参数说明)
         - [VadProcessResult](#vadprocessresult)
+    - [增量发送模式（Incremental Sending Mode）](#增量发送模式incremental-sending-mode)
+      - [1. 适用场景与限制](#1-适用场景与限制)
+      - [2. 行为机制](#2-行为机制)
+      - [3. 参数说明 (SendExternalAudioParameters)](#3-参数说明-sendexternalaudioparameters)
+      - [4. 接入示例](#4-接入示例)
   - [更新日志](#更新日志)
-    - [v4.4.32.201（2025-12-18）](#v44322012025-12-18)
-    - [v4.4.32.200（2025-11-14）](#v44322002025-11-14)
-    - [v4.4.32.101（2025-09-01）](#v44321012025-09-01)
-    - [v4.4.32.100（2025-07-22）](#v44321002025-07-22)
-    - [v4.4.32.1（2025-06-12）](#v443212025-06-12)
-    - [v4.4.32（2025-05-27）](#v44322025-05-27)
-    - [v4.4.31.4（2025-03-21）](#v443142025-03-21)
-    - [v4.4.31.3（2025-02-26）](#v443132025-02-26)
-    - [v4.4.31.2（2025-02-19）](#v443122025-02-19)
-    - [v4.4.31.1（2025-01-06）](#v443112025-01-06)
-    - [v4.4.31（2024-12-23）](#v44312024-12-23)
-    - [v4.4.30.2（2024-11-20）](#v443022024-11-20)
-    - [v4.4.30.1（2024-11-12）](#v443012024-11-12)
-    - [v4.4.30（2024-10-24）](#v44302024-10-24)
+    - [v4.4.32.202 (2026-01-05)](#v4432202-2026-01-05)
+    - [v4.4.32.201 (2025-12-18)](#v4432201-2025-12-18)
+    - [v4.4.32.200 (2025-11-14)](#v4432200-2025-11-14)
+    - [v4.4.32.101 (2025-09-01)](#v4432101-2025-09-01)
+    - [v4.4.32.100 (2025-07-22)](#v4432100-2025-07-22)
+    - [v4.4.32.1 (2025-06-12)](#v44321-2025-06-12)
+    - [v4.4.32 (2025-05-27)](#v4432-2025-05-27)
+    - [v4.4.31.4 (2025-03-21)](#v44314-2025-03-21)
+    - [v4.4.31.3 (2025-02-26)](#v44313-2025-02-26)
+    - [v4.4.31.2 (2025-02-19)](#v44312-2025-02-19)
+    - [v4.4.31.1 (2025-01-06)](#v44311-2025-01-06)
+    - [v4.4.31 (2024-12-23)](#v4431-2024-12-23)
+    - [v4.4.30.2 (2024-11-20)](#v44302-2024-11-20)
+    - [v4.4.30.1 (2024-11-12)](#v44301-2024-11-12)
+    - [v4.4.30 (2024-10-24)](#v4430-2024-10-24)
   - [其他参考](#其他参考)
 
 ## 简介
 
-Agora Linux Server Java SDK (v4.4.32.201) 为您提供了强大的实时音视频通信能力，可无缝集成到 Linux 服务器端 Java 应用程序中。借助此 SDK，您的服务器可以作为数据源或处理节点加入 Agora 频道，实时获取和处理音视频流，从而实现多种业务相关的其他高级功能。
+Agora Linux Server Java SDK (v4.4.32.202) 为您提供了强大的实时音视频通信能力，可无缝集成到 Linux 服务器端 Java 应用程序中。借助此 SDK，您的服务器可以作为数据源或处理节点加入 Agora 频道，实时获取和处理音视频流，从而实现多种业务相关的其他高级功能。
 
 > 注意：如果您是从 v4.4.32.100 之前的版本升级到 v4.4.32.100 及以后版本，请参考《[AIQoS 版本升级指南](./AIQoS_Upgrade_Guide.md)》完成必要的 API 适配与集成变更。
 
@@ -109,13 +115,13 @@ Agora Linux Server Java SDK (v4.4.32.201) 为您提供了强大的实时音视�
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.201</version>
+    <version>4.4.32.202</version>
 </dependency>
 ```
 
 ### CDN 下载
 
-[Agora-Linux-Java-SDK-v4.4.32.201-x86_64-994889-3c3167f90e-20251218_102056](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.201-x86_64-994889-3c3167f90e-20251218_102056.zip)
+[Agora-Linux-Java-SDK-v4.4.32.202-x86_64-994889-b202cdc4e3-20260105_103751](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.202-x86_64-994889-b202cdc4e3-20260105_103751.zip)
 
 ## 集成 SDK
 
@@ -134,7 +140,7 @@ Maven 集成是最简单的方式，可以自动管理 Java 依赖关系。
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.201</version>
+    <version>4.4.32.202</version>
 </dependency>
 ```
 
@@ -169,7 +175,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32.201 \
+  -Dversion=4.4.32.202 \
   -Dpackaging=jar \
   -DgeneratePom=true
 ```
@@ -181,7 +187,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32.201 \
+  -Dversion=4.4.32.202 \
   -Dpackaging=jar \
   -DgeneratePom=true \
   -Djavadoc=sdk/agora-sdk-javadoc.jar
@@ -193,7 +199,7 @@ mvn install:install-file \
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.201</version>
+    <version>4.4.32.202</version>
 </dependency>
 ```
 
@@ -242,7 +248,7 @@ Agora Linux Server Java SDK 依赖于底层的 C++ 原生库（`.so` 文件）�
     jar xvf agora-sdk.jar
 
     # 如果使用 Maven 集成方式，JAR 文件在 Maven 缓存中，例如：
-    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.201/linux-java-sdk-4.4.32.201.jar
+    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.202/linux-java-sdk-4.4.32.202.jar
     ```
 
 3.  提取后，`libs` 目录下会生成 `native/linux/x86_64` 子目录，其中包含所需的 `.so` 文件：
@@ -442,7 +448,7 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.201</version>  <!-- 确保版本号与您需要使用的版本一致 -->
+    <version>4.4.32.202</version>  <!-- 确保版本号与您需要使用的版本一致 -->
 </dependency>
 ```
 
@@ -1177,9 +1183,57 @@ public VadProcessResult(byte[] result, Constants.VadState state)
 - `SPEAKING`：正在说话
 - `STOP_SPEAKING`：停止说话
 
+### 增量发送模式（Incremental Sending Mode）
+
+该模式专为 AI 场景（特别是 TTS 业务）设计，允许开发者在连接建立初期以受控的高倍率推送外部音频数据，从而平衡首帧延迟与链路稳定性。
+
+#### 1. 适用场景与限制
+- **核心场景**：仅推荐在 IoT 等对首字延迟敏感的 TTS 场景下启用。
+- **作用域**：配置作用于 **Connection（连接）** 粒度，支持不同连接差异化设置。
+
+#### 2. 行为机制
+- **突发加速**：在设定的“加速窗口期（sendMs）”内，SDK 将按照指定的“倍率（sendSpeed）”加速推送缓存或实时生成的音频帧。
+- **平滑回落**：窗口期结束后，自动回退至 1x 正常速率发送，确保后续实时流的平稳传输。
+
+#### 3. 参数说明 (SendExternalAudioParameters)
+
+| 参数 | 类型 | 默认值 | 推荐值 | 说明 |
+| :--- | :--- | :--- | :--- | :--- |
+| **enabled** | boolean | false | true | 是否激活增量发送策略。 |
+| **sendMs** | int | 0 | 500 | **加速窗口期**（毫秒）。定义连接建立后执行加速发送的持续时长。 |
+| **sendSpeed** | int | 0 | 2 | **加速倍率**。取值范围 [1, 5]。推荐设为 2，即以 2 倍速消耗数据。 |
+| **deliverMuteDataForFakeAdmin** | boolean | false | false | **引擎级静音补帧**。无数据时是否发送静音包。<br>⚠️ **注意**：此参数为 `AgoraService` 引擎级别全局生效，非单连接配置。 |
+
+#### 4. 接入示例
+
+```java
+// connection 连接配置
+RtcConnPublishConfig publishConfig = new RtcConnPublishConfig();
+
+// 1.设置音频场景为 AI_SERVER 或者 DEFAULT
+publishConfig.setAudioScenario(Constants.AUDIO_SCENARIO_AI_SERVER);
+
+SendExternalAudioParameters params = new SendExternalAudioParameters();
+params.setEnabled(true);      // 激活功能
+params.setSendMs(500);        // 前 500ms 执行加速
+params.setSendSpeed(2);       // 使用 2 倍速发送
+// 2.初始化增量发送配置
+publishConfig.setSendExternalAudioParameters(params);
+// ... 其他配置
+```
+
 ## 更新日志
 
-### v4.4.32.201（2025-12-18）
+### v4.4.32.202 (2026-01-05)
+
+- **API 变更**
+  - **RtcConnPublishConfig**:
+    - 新增 `setSendExternalAudioParameters` 方法，用于配置“增量发送模式（Incremental Sending Mode）”。
+    - 该模式通过 `SendExternalAudioParameters` 类进行参数化配置，详情请参阅文档上方 [增量发送模式](#增量发送模式incremental-sending-mode) 章节。
+  - **AgoraRtcConn**:
+    - 新增 `sendIntraRequest` 方法，支持主动向发送端请求关键帧（I 帧），用于优化视频弱网恢复体验。
+
+### v4.4.32.201 (2025-12-18)
 
 - **API 变更**
   - **AgoraServiceConfig**: 
@@ -1195,7 +1249,7 @@ public VadProcessResult(byte[] result, Constants.VadState state)
 - **改进与优化**
   - 修复了内存泄漏问题，优化了模型类的销毁流程。
 
-### v4.4.32.200（2025-11-14）
+### v4.4.32.200 (2025-11-14)
 
 - **API 变更**
   - **AgoraServiceConfig**: 新增 `enableApm` 和 `apmConfig` 属性，支持配置 APM（Audio Processing Module）模块。
@@ -1204,7 +1258,7 @@ public VadProcessResult(byte[] result, Constants.VadState state)
   - 优化了 VAD V2 的默认配置参数，提升语音活动检测的准确性。
   - 修复了 Audio 和 Video 回调参数中pts值的准确性问题。
 
-### v4.4.32.101（2025-09-01）
+### v4.4.32.101 (2025-09-01)
 
 - **API 变更**
   - **AudioFrame**: 新增 `presentationMs` 字段及 getter/setter，用于透传音频帧 PTS（毫秒）。
@@ -1215,12 +1269,12 @@ public VadProcessResult(byte[] result, Constants.VadState state)
 - **改进与优化**
   - 修复 `IAudioFrameObserver` 回调在极端场景下可能出现的异常问题，提升回调稳定性。
 
-### v4.4.32.100（2025-07-22）
+### v4.4.32.100 (2025-07-22)
 
 - **API 变更**
   - 该版本支持AIQoS，同时API有变更，请参考[AIQoS升级指南](AIQoS_Upgrade_Guide.md)
 
-### v4.4.32.1（2025-06-12）
+### v4.4.32.1 (2025-06-12)
 
 - **API 变更**
   - 优化 `ILocalUserObserver` 接口的 `onStreamMessage` 回调参数，将原有的 `onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, String data, long length)` 修改为 `onStreamMessage(AgoraLocalUser agoraLocalUser, String userId, int streamId, byte[] data)`，提升消息处理的灵活性和效率。
@@ -1228,7 +1282,7 @@ public VadProcessResult(byte[] result, Constants.VadState state)
 - **改进与优化**
   - 修复了 `AgoraServiceConfig` 的 `setLogFileSize` 方法，单位为 KB 时实际生效单位为 Byte 的问题，现已正确按 KB 设置日志文件大小。
 
-### v4.4.32（2025-05-27）
+### v4.4.32 (2025-05-27)
 
 - **API 变更**
   - `AgoraService` 新增 `getSdkVersion` 方法，用于获取 SDK 版本号
@@ -1241,18 +1295,18 @@ int numberOfChannels, int sampleRate) ` 方法标位不推荐，新增 `sendAudi
 - **改进与优化**
   - 修复了 `destroy` 方法可能导致的崩溃问题
 
-### v4.4.31.4（2025-03-21）
+### v4.4.31.4 (2025-03-21)
 
 - **改进与优化**
   - 修复了多线程环境下可能导致的异常崩溃问题
   - 改进了错误处理流程，增强了异常情况下的恢复能力
 
-### v4.4.31.3（2025-02-26）
+### v4.4.31.3 (2025-02-26)
 
 - **改进与优化**
 - 修复了由于内存复用可能导致的异常处理问题
 
-### v4.4.31.2（2025-02-19）
+### v4.4.31.2 (2025-02-19)
 
 - **API 变更**
   - 新增 `sendStreamMessage(int streamId, byte[] messageData)` 方法，弃用 `sendStreamMessage(int streamId, String message, int length)` 方法
@@ -1260,12 +1314,12 @@ int numberOfChannels, int sampleRate) ` 方法标位不推荐，新增 `sendAudi
 - **改进与优化**
   - 优化代码处理，提高系统稳健性
 
-### v4.4.31.1（2025-01-06）
+### v4.4.31.1 (2025-01-06)
 
 - **改进与优化**
   - 优化 VAD 功能配置，现在默认开启 VAD 功能，无需手动配置
 
-### v4.4.31（2024-12-23）
+### v4.4.31 (2024-12-23)
 
 - **API 变更**
   - 在 `AgoraServiceConfig` 中新增 `DomainLimit` 配置选项，用于域名限制管理
@@ -1282,7 +1336,7 @@ int numberOfChannels, int sampleRate) ` 方法标位不推荐，新增 `sendAudi
   - 修复多处内存泄露问题，提高系统稳定性
   - 增强内存访问安全机制，有效防止内存踩踏问题
 
-### v4.4.30.2（2024-11-20）
+### v4.4.30.2 (2024-11-20)
 
 **API 变更**
   - 增强了 AgoraAudioVadV2 的 `processFrame` 处理，新增 `START_SPEAKING` 和 `STOP_SPEAKING` 状态回调
@@ -1292,7 +1346,7 @@ int numberOfChannels, int sampleRate) ` 方法标位不推荐，新增 `sendAudi
   - VAD 插件启动优化，`enableExtension` 现在在 SDK 内部实现，应用程序不再需要手动调用此方法
   - 修复了 `VideoFrame` 中 `alphaBuffer` 和 `metadataBuffer` 的处理问题
 
-### v4.4.30.1（2024-11-12）
+### v4.4.30.1 (2024-11-12)
 
 - **API 变更**
   - 增加 AgoraAudioVad2 相关 `Vad2` 接口，移除 AgoraAudioVad 相关 `Vad` 接口
@@ -1302,7 +1356,7 @@ int numberOfChannels, int sampleRate) ` 方法标位不推荐，新增 `sendAudi
   - 修复 `LocalAudioDetailedStats` 相关回调崩溃问题
   - 修改 `onAudioVolumeIndication` 回调参数类型
 
-### v4.4.30（2024-10-24）
+### v4.4.30 (2024-10-24)
 
 - 详细更新日志请参考 [发版说明](https://doc.shengwang.cn/doc/rtc-server-sdk/java/overview/release-notes)
 

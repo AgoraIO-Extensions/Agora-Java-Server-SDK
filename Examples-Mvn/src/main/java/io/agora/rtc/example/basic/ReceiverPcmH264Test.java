@@ -44,7 +44,11 @@ public class ReceiverPcmH264Test {
     private long testTime = 60 * 1000;
     private boolean forceExit = true;
 
+    private boolean enableTestKeyFrame = false;
+
     private final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
+    private Thread keyFrameRequestThread = null;
+    private volatile boolean shouldStopKeyFrameRequest = false;
 
     public void setForceExit(boolean forceExit) {
         this.forceExit = forceExit;
@@ -135,6 +139,9 @@ public class ReceiverPcmH264Test {
             @Override
             public void onUserLeft(AgoraRtcConn agoraRtcConn, String userId, int reason) {
                 SampleLogger.log("onUserLeft userId:" + userId + " reason:" + reason);
+                if (enableTestKeyFrame) {
+                    stopKeyFrameRequestThread();
+                }
             }
         });
         SampleLogger.log("registerObserver ret:" + ret);
@@ -228,12 +235,19 @@ public class ReceiverPcmH264Test {
                 if (isFirstVideoFrame) {
                     isFirstVideoFrame = false;
                     new File(finalVideoOutFile).delete();
+                    if (enableTestKeyFrame) {
+                        startRequestKeyFrameTest(userId);
+                    }
+                }
+
+                if (enableTestKeyFrame && info != null
+                        && info.getFrameType() == Constants.VideoFrameType.VIDEO_FRAME_TYPE_KEY_FRAME.getValue()) {
+                    SampleLogger.log("onEncodedVideoFrame receive key frame from userId:" + userId);
                 }
 
                 singleExecutorService.execute(() -> {
-                    SampleLogger.log("onEncodedVideoFrame userId:" + userId + " length "
-                            + byteArray.length + " with current channelId:" + channelId
-                            + "  userId:" + userId + " info:" + info);
+                    SampleLogger.log("onEncodedVideoFrame userId:" + userId + " length " + byteArray.length
+                            + " with current channelId:" + channelId + " userId:" + userId + " info:" + info);
                     Utils.writeBytesToFile(byteArray, finalVideoOutFile);
                 });
                 return 1;
@@ -260,10 +274,56 @@ public class ReceiverPcmH264Test {
             }
         }
 
+        if (enableTestKeyFrame) {
+            stopKeyFrameRequestThread();
+        }
+
         releaseConn();
         releaseAgoraService();
         if (forceExit) {
             System.exit(0);
+        }
+    }
+
+    private void startRequestKeyFrameTest(int userId) {
+        shouldStopKeyFrameRequest = false;
+        long unsignedUserId = Utils.convertToUnsignedLong(userId);
+        keyFrameRequestThread = new Thread(() -> {
+            SampleLogger.log("startRequestKeyFrameTest thread started for userId:" + userId
+                    + " (unsigned: " + unsignedUserId + ")");
+            while (!shouldStopKeyFrameRequest) {
+                if (conn == null) {
+                    break;
+                }
+                int ret = conn.sendIntraRequest(String.valueOf(unsignedUserId));
+                if (ret != 0) {
+                    SampleLogger.log("sendIntraRequest fail ret=" + ret);
+                }
+                SampleLogger.log("sendIntraRequest success to userId:" + userId
+                        + " (unsigned: " + unsignedUserId + ")");
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    SampleLogger.log("keyFrameRequestThread interrupted");
+                    break;
+                }
+            }
+            SampleLogger.log("startRequestKeyFrameTest thread stopped for userId:" + userId
+                    + " (unsigned: " + unsignedUserId + ")");
+        }, "KeyFrameRequestThread-" + unsignedUserId);
+        keyFrameRequestThread.start();
+    }
+
+    private void stopKeyFrameRequestThread() {
+        shouldStopKeyFrameRequest = true;
+        if (keyFrameRequestThread != null && keyFrameRequestThread.isAlive()) {
+            keyFrameRequestThread.interrupt();
+            try {
+                keyFrameRequestThread.join(2000);
+            } catch (InterruptedException e) {
+                SampleLogger.log("Failed to join keyFrameRequestThread");
+            }
+            keyFrameRequestThread = null;
         }
     }
 

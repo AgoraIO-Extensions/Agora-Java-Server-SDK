@@ -4,6 +4,7 @@ import io.agora.rtc.AgoraRtcConn;
 import io.agora.rtc.Constants;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnPublishConfig;
+import io.agora.rtc.SendExternalAudioParameters;
 import io.agora.rtc.example.utils.Utils;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -28,6 +29,7 @@ public class AgoraTaskControl {
 
     private final static String TEST_TASK_SEND_PCM_AI_WITH_PTS = "send_pcm_ai_with_pts";
     private final static String TEST_TASK_RECEIVE_PCM_AI_WITH_PTS = "receive_pcm_ai_with_pts";
+    private final static String TEST_TASK_SEND_PCM_INCREMENTAL_MODE = "send_pcm_incremental_mode";
 
     class UserIdHolder {
         private volatile String userId;
@@ -60,6 +62,7 @@ public class AgoraTaskControl {
         SEND_PCM_H264,
         SEND_PCM_AI,
         SEND_PCM_AI_WITH_PTS,
+        SEND_PCM_INCREMENTAL_MODE,
         SEND_H265,
         RECEIVE_PCM,
         RECEIVE_YUV,
@@ -92,8 +95,10 @@ public class AgoraTaskControl {
             totalTaskExecutedCount.incrementAndGet();
             System.out.println(Utils.formatTimestamp(System.currentTimeMillis())
                     + " testTaskCount:" + testTaskCount.get() + " testTask:" + testTask
-                    + " channelId:" + channelId + " userId:" + userId + " totalTaskExecutedCount:" + totalTaskExecutedCount.get());
-            SampleLogger.log("test start testTaskCount:" + testTaskCount.get() + " totalTaskExecutedCount:" + totalTaskExecutedCount.get());
+                    + " channelId:" + channelId + " userId:" + userId + " totalTaskExecutedCount:"
+                    + totalTaskExecutedCount.get());
+            SampleLogger.log("test start testTaskCount:" + testTaskCount.get() + " totalTaskExecutedCount:"
+                    + totalTaskExecutedCount.get());
         }
         AgoraServiceInitializer.initAgoraService(0, 1, 1, argsConfig);
         testTaskExecutorService.execute(() -> {
@@ -242,6 +247,17 @@ public class AgoraTaskControl {
                     publishConfig.setAudioPublishType(Constants.AudioPublishType.PCM);
                     publishConfig.setVideoPublishType(Constants.VideoPublishType.NO_PUBLISH);
                     break;
+                case SEND_PCM_INCREMENTAL_MODE:
+                    publishConfig.setIsPublishAudio(true);
+                    publishConfig.setIsPublishVideo(false);
+                    publishConfig.setAudioPublishType(Constants.AudioPublishType.PCM);
+                    publishConfig.setVideoPublishType(Constants.VideoPublishType.NO_PUBLISH);
+                    SendExternalAudioParameters sendExternalAudioParameters = new SendExternalAudioParameters();
+                    sendExternalAudioParameters.setEnabled(true);
+                    sendExternalAudioParameters.setSendMs(500);
+                    sendExternalAudioParameters.setSendSpeed(2);
+                    publishConfig.setSendExternalAudioParameters(sendExternalAudioParameters);
+                    break;
                 case SEND_H265:
                     publishConfig.setIsPublishAudio(false);
                     publishConfig.setIsPublishVideo(true);
@@ -335,6 +351,9 @@ public class AgoraTaskControl {
                 case RECEIVE_PCM_AI_WITH_PTS:
                     connTask.sendTestTaskMessage(TEST_TASK_RECEIVE_PCM_AI_WITH_PTS);
                     break;
+                case SEND_PCM_INCREMENTAL_MODE:
+                    connTask.sendTestTaskMessage(TEST_TASK_SEND_PCM_INCREMENTAL_MODE);
+                    break;
             }
 
             if (argsConfig.isEnableAssistantDevice()) {
@@ -396,6 +415,7 @@ public class AgoraTaskControl {
                     break;
                 case SEND_PCM_AI:
                 case SEND_PCM_AI_WITH_PTS:
+                case SEND_PCM_INCREMENTAL_MODE:
                     connTask.sendPcmTask(true, true);
                     break;
                 case SEND_H265:
@@ -469,7 +489,8 @@ public class AgoraTaskControl {
             }
             SampleLogger.log("test finished for connTask:" + testTask + " channelId:" + channelId
                     + " userId:" + threadLocalUserId.get()
-                    + " with left testTaskCount:" + leftTestTaskCount.get() + " totalTaskExecutedCount:" + totalTaskExecutedCount.get() + "\n");
+                    + " with left testTaskCount:" + leftTestTaskCount.get() + " totalTaskExecutedCount:"
+                    + totalTaskExecutedCount.get() + "\n");
         });
         return true;
     }

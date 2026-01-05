@@ -251,6 +251,9 @@ public class TaskLauncher {
             } else if ("pcm_recv_ai_with_pts.json".equalsIgnoreCase(configFileName)) {
                 agoraTaskManager.startTask(
                         configFileName, argsConfig, AgoraTaskControl.TestTask.RECEIVE_PCM_AI_WITH_PTS);
+            } else if ("ai_pcm_send_incremental.json".equalsIgnoreCase(configFileName)) {
+                agoraTaskManager.startTask(
+                        configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_PCM_INCREMENTAL_MODE);
             }
 
             // Encoded Audio related config files

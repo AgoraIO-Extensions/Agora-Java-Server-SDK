@@ -60,7 +60,13 @@
         - [AgoraAudioVadConfigV2 Properties](#agoraaudiovadconfigv2-properties)
         - [Parameter Description](#parameter-description)
         - [VadProcessResult](#vadprocessresult)
+    - [Incremental Sending Mode](#incremental-sending-mode)
+      - [1. Applicable Scenarios \& Limitations](#1-applicable-scenarios--limitations)
+      - [2. Mechanism](#2-mechanism)
+      - [3. Parameters (SendExternalAudioParameters)](#3-parameters-sendexternalaudioparameters)
+      - [4. Usage Example](#4-usage-example)
   - [Changelog](#changelog)
+    - [v4.4.32.202 (2026-01-05)](#v4432202-2026-01-05)
     - [v4.4.32.201 (2025-12-18)](#v4432201-2025-12-18)
     - [v4.4.32.200 (2025-11-14)](#v4432200-2025-11-14)
     - [v4.4.32.101 (2025-09-01)](#v4432101-2025-09-01)
@@ -79,7 +85,7 @@
 
 ## Introduction
 
-The Agora Linux Server Java SDK (v4.4.32.201) provides powerful real-time audio and video communication capabilities that can be seamlessly integrated into Linux server-side Java applications. With this SDK, your server can join Agora channels as a data source or processing node, accessing and processing audio and video streams in real-time to implement various business-related advanced features.
+The Agora Linux Server Java SDK (v4.4.32.202) provides powerful real-time audio and video communication capabilities that can be seamlessly integrated into Linux server-side Java applications. With this SDK, your server can join Agora channels as a data source or processing node, accessing and processing audio and video streams in real-time to implement various business-related advanced features.
 
 > Note: If you are upgrading from a version earlier than v4.4.32.100 to v4.4.32.100 or later, please refer to the [AIQoS Upgrade Guide](./AIQoS_Upgrade_Guide.md) for required API and integration changes.
 
@@ -109,13 +115,13 @@ The Agora Linux Server Java SDK (v4.4.32.201) provides powerful real-time audio 
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.201</version>
+    <version>4.4.32.202</version>
 </dependency>
 ```
 
 ### CDN Download
 
-[Agora-Linux-Java-SDK-v4.4.32.201-x86_64-994889-3c3167f90e-20251218_102056](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.201-x86_64-994889-3c3167f90e-20251218_102056.zip)
+[Agora-Linux-Java-SDK-v4.4.32.202-x86_64-994889-b202cdc4e3-20260105_103751](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.202-x86_64-994889-b202cdc4e3-20260105_103751.zip)
 
 ## Integrate the SDK
 
@@ -134,7 +140,7 @@ Add the following dependency to your project's `pom.xml` file:
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.201</version>
+    <version>4.4.32.202</version>
 </dependency>
 ```
 
@@ -169,7 +175,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32.201 \
+  -Dversion=4.4.32.202 \
   -Dpackaging=jar \
   -DgeneratePom=true
 ```
@@ -181,7 +187,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32.201 \
+  -Dversion=4.4.32.202 \
   -Dpackaging=jar \
   -DgeneratePom=true \
   -Djavadoc=sdk/agora-sdk-javadoc.jar
@@ -193,7 +199,7 @@ After installation, add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.201</version>
+    <version>4.4.32.202</version>
 </dependency>
 ```
 
@@ -242,7 +248,7 @@ The `.so` files are contained within the `agora-sdk.jar` or `linux-java-sdk-x.x.
     jar xvf agora-sdk.jar
 
     # If using Maven integration, the JAR file is in the Maven cache, e.g.:
-    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.201/linux-java-sdk-4.4.32.201.jar
+    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.202/linux-java-sdk-4.4.32.202.jar
     ```
 
 3.  After extraction, a `native/linux/x86_64` subdirectory will be generated within the `libs` directory, containing the required `.so` files:
@@ -443,7 +449,7 @@ This project has integrated C++ code compilation functionality, which can automa
     <dependency>
         <groupId>io.agora.rtc</groupId>
         <artifactId>linux-java-sdk</artifactId>
-        <version>4.4.32.201</version>  <!-- Ensure the version number is consistent with the one you need to use -->
+        <version>4.4.32.202</version>  <!-- Ensure the version number is consistent with the one you need to use -->
     </dependency>
     ```
 
@@ -1185,7 +1191,55 @@ public VadProcessResult(byte[] result, Constants.VadState state)
 - `SPEAKING`: Speaking
 - `STOP_SPEAKING`: Stop speaking
 
+### Incremental Sending Mode
+
+Designed for AI scenarios (specifically TTS), this mode allows developers to push external audio data at a controlled, accelerated rate during the initial phase of connection establishment. This helps balance first-frame latency with link stability.
+
+#### 1. Applicable Scenarios & Limitations
+- **Core Scenarios**: Recommended only for TTS scenarios sensitive to first-word latency (e.g., IoT devices).
+- **Scope**: Configuration is applied at the **Connection** level, allowing differentiated settings for each connection.
+
+#### 2. Mechanism
+- **Burst Acceleration**: Within the configured "acceleration window (sendMs)", the SDK pushes cached or real-time audio frames at the specified "multiplier (sendSpeed)".
+- **Smooth Fallback**: Once the window expires, the sending rate automatically reverts to 1x normal speed to ensure stable transmission of subsequent real-time streams.
+
+#### 3. Parameters (SendExternalAudioParameters)
+
+| Parameter | Type | Default | Recommended | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| **enabled** | boolean | false | true | Whether to enable the incremental sending strategy. |
+| **sendMs** | int | 0 | 500 | **Acceleration Window** (ms). Defines the duration of accelerated sending after connection establishment. |
+| **sendSpeed** | int | 0 | 2 | **Acceleration Multiplier**. Range: [1, 5]. A value of 2 is recommended (consumes data at 2x speed). |
+| **deliverMuteDataForFakeAdmin** | boolean | false | false | **Engine-level Mute Padding**. Whether to send silent packets when no audio data is available.<br>⚠️ **Note**: This is a global setting effective at the `AgoraService` engine level, not per-connection. |
+
+#### 4. Usage Example
+
+```java
+// Connection configuration
+RtcConnPublishConfig publishConfig = new RtcConnPublishConfig();
+
+// 1. Set audio scenario to AI_SERVER or DEFAULT
+publishConfig.setAudioScenario(Constants.AUDIO_SCENARIO_AI_SERVER);
+
+SendExternalAudioParameters params = new SendExternalAudioParameters();
+params.setEnabled(true);      // Enable the feature
+params.setSendMs(500);        // Accelerate for the first 500 ms
+params.setSendSpeed(2);       // Send at 2× speed
+// 2. Initialize incremental-sending configuration
+publishConfig.setSendExternalAudioParameters(params);
+// ... other configurations
+```
+
 ## Changelog
+
+### v4.4.32.202 (2026-01-05)
+
+- **API Changes**
+  - **RtcConnPublishConfig**:
+    - Added `setSendExternalAudioParameters` method to configure the "Incremental Sending Mode".
+    - This mode is parameterized through the `SendExternalAudioParameters` class; for details, please refer to the [Incremental Sending Mode](#incremental-sending-mode) section above.
+  - **AgoraRtcConn**:
+    - Added `sendIntraRequest` method to actively request a keyframe (I-frame) from the sender, optimizing video weak-network recovery.
 
 ### v4.4.32.201 (2025-12-18)
 
