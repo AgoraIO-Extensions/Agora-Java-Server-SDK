@@ -99,6 +99,7 @@ public class AgoraConnectionTask {
 
     private static final String TEST_PASS = "pass";
     private static final String TEST_START = "start";
+    private static final String TEST_TASK_SEND_PCM_INCREMENTAL_MODE_FINISHED = "send_pcm_incremental_mode_finished";
 
     public interface TaskCallback {
         default void onConnected(String userId) {
@@ -568,6 +569,22 @@ public class AgoraConnectionTask {
             } else {
                 SampleLogger.log("sendPcmTask pushAudioPcmData with pts:" + pts + " success ret:" + ret);
             }
+            if (argsConfig.isEnableIncrementalSending()) {
+                while (!conn.isPushToRtcCompleted()) {
+                    // SampleLogger.log("pushAudioPcmData not completed");
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                sendTestTaskMessage(TEST_TASK_SEND_PCM_INCREMENTAL_MODE_FINISHED);
+            }
         } else {
             int oneFramePcmDataSize = argsConfig.getNumOfChannels()
                     * (argsConfig.getSampleRate() / 1000) * intervalMs * 2;
@@ -974,6 +991,11 @@ public class AgoraConnectionTask {
                         return;
                     }
 
+                    if (externalVideoFrame == null) {
+                        SampleLogger.log("send yuv frame data externalVideoFrame is null");
+                        return;
+                    }
+
                     externalVideoFrame.setHeight(argsConfig.getHeight());
                     if (null == byteBuffer) {
                         byteBuffer = ByteBuffer.allocateDirect(data.length);
@@ -1143,6 +1165,11 @@ public class AgoraConnectionTask {
                         return;
                     }
 
+                    if (info == null) {
+                        SampleLogger.log("send h264 frame data info is null");
+                        return;
+                    }
+
                     info.setFrameType(lastFrameType);
                     info.setStreamType(streamType);
                     info.setWidth(h264Width);
@@ -1235,6 +1262,11 @@ public class AgoraConnectionTask {
                         }
                         if (!taskStarted.get()) {
                             release();
+                            return;
+                        }
+
+                        if (info == null) {
+                            SampleLogger.log("send h264 frame data info is null");
                             return;
                         }
 

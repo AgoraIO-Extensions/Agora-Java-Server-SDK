@@ -278,7 +278,7 @@ public class ServerController implements DisposableBean, ApplicationContextAware
     private boolean testPcmTask(SseEmitter sseEmitter) {
         try {
             agoraTaskManager.releaseAgoraService();
-            
+
             long startTime = System.currentTimeMillis();
             taskFinishLatch = new CountDownLatch(1);
 
@@ -1101,10 +1101,10 @@ public class ServerController implements DisposableBean, ApplicationContextAware
     private boolean testBasicTask(SseEmitter sseEmitter) {
         try {
             String version = AgoraService.getSdkVersion();
-            if(version == null || version.equalsIgnoreCase("Unknown") || version.isEmpty()) {
+            if (version == null || version.equalsIgnoreCase("Unknown") || version.isEmpty()) {
                 sendSseEvent("Error: test getSdkVersion failed: version is " + version, sseEmitter);
                 return false;
-            }else{
+            } else {
                 sendSseEvent("Test getSdkVersion finished, version: " + version, sseEmitter);
             }
 
@@ -1149,7 +1149,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
                 return false;
             }
             File sendFile = new File(argsConfig.getAudioFile());
-            String recvAudioBytes = Utils.readStringFromFile(recvArgsConfig.getAudioOutFile() + "_receiveAudioBytes.txt");
+            String recvAudioBytes = Utils
+                    .readStringFromFile(recvArgsConfig.getAudioOutFile() + "_receiveAudioBytes.txt");
             if (recvAudioBytes == null || recvAudioBytes.isEmpty()) {
                 sendSseEvent("Error: recv ai pcm receiveAudioBytes file does not exist: "
                         + recvArgsConfig.getAudioOutFile() + "_receiveAudioBytes.txt",
@@ -1158,7 +1159,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             }
             int recvAudioBytesInt = Integer.parseInt(recvAudioBytes);
             File recvFile = files.get(0);
-            SampleLogger.log("sendFile.length():" + sendFile.length() + " recvFile.length():" + recvFile.length() + " recvAudioBytesInt:" + recvAudioBytesInt);
+            SampleLogger.log("sendFile.length():" + sendFile.length() + " recvFile.length():" + recvFile.length()
+                    + " recvAudioBytesInt:" + recvAudioBytesInt);
             int bytesPerMs = argsConfig.getNumOfChannels() * (argsConfig.getSampleRate() / 1000) * 2;
             if (sendFile.exists() && recvFile.exists()
                     && sendFile.length() - recvAudioBytesInt > 10 * bytesPerMs) {
@@ -1271,6 +1273,23 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             sendSseEvent("test ai pcm task send recv fallback finished, time cost: "
                     + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
                     sseEmitter);
+
+            taskFinishLatch = new CountDownLatch(1);
+            startTime = System.currentTimeMillis();
+
+            configFileName = "ai_pcm_send_incremental.json";
+            argsConfig = agoraTaskManager.parseArgsConfig(configFileName);
+            agoraTaskManager.startTask(
+                    configFileName, argsConfig, AgoraTaskControl.TestTask.SEND_PCM_INCREMENTAL_MODE);
+
+            taskFinishLatch.await();
+
+            endTime = System.currentTimeMillis();
+            timeCostMs = endTime - startTime;
+            timeCostMinutes = timeCostMs / 1000.0 / 60.0;
+            sendSseEvent("test ai pcm task with send incremental mode finished, time cost: "
+                    + String.format("%.2f", timeCostMinutes) + " minutes (" + timeCostMs + "ms)",
+                    sseEmitter);
         } catch (Exception e) {
             sendSseEvent("Error: test ai pcm task failed: " + e.getMessage(), sseEmitter);
             return false;
@@ -1333,8 +1352,7 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
             taskFinishLatch.await();
 
-            
-            String[] apmDumpFiles = new String[]{"af_agc_", "af_ed_", "af_ns_", "af_ps_", "af_sfnlp_"};
+            String[] apmDumpFiles = new String[] { "af_agc_", "af_ed_", "af_ns_", "af_ps_", "af_sfnlp_" };
 
             for (String apmDumpFile : apmDumpFiles) {
                 if (!Utils.checkFileExists(basePath + apmDumpFile)) {
@@ -1344,7 +1362,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
                 }
             }
 
-            List<String> apmVadDumpFiles = Utils.findFilePathsRecursively(basePath + "vad_dump", 2, "vad_session", ".pcm");
+            List<String> apmVadDumpFiles = Utils.findFilePathsRecursively(basePath + "vad_dump", 2, "vad_session",
+                    ".pcm");
             SampleLogger.log("apmVadDumpFiles: " + apmVadDumpFiles.toString());
             if (apmVadDumpFiles.size() != 2) {
                 sendSseEvent("Error: apm vad dump file count is not 2: " + apmVadDumpFiles.size(),
@@ -1368,7 +1387,7 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             File expectedFile = new File("test_data/vad_test_16k_1ch_expected.pcm");
             File outFile = new File(externalAudioProcessorTest.getDefaultVadOutFilePath());
             if (expectedFile.exists() && outFile.exists()
-                && Utils.areFilesIdentical(expectedFile.getAbsolutePath(), outFile.getAbsolutePath())) {
+                    && Utils.areFilesIdentical(expectedFile.getAbsolutePath(), outFile.getAbsolutePath())) {
                 sendSseEvent("Test remote APM Pass, vad out file is correct", sseEmitter);
             } else {
                 sendSseEvent("Test remote APM Pass, vad out file is incorrect", sseEmitter);
@@ -1385,8 +1404,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
             File expectedFile2 = new File("test_data/vad_test_16k_1ch_3A_expected_2.pcm");
             outFile = new File(externalAudioProcessorTest.getDefaultVadOutFilePath());
             if (expectedFile.exists() && outFile.exists()
-                && (Utils.areFilesIdentical(expectedFile.getAbsolutePath(), outFile.getAbsolutePath())
-                || Utils.areFilesIdentical(expectedFile2.getAbsolutePath(), outFile.getAbsolutePath()))) {
+                    && (Utils.areFilesIdentical(expectedFile.getAbsolutePath(), outFile.getAbsolutePath())
+                            || Utils.areFilesIdentical(expectedFile2.getAbsolutePath(), outFile.getAbsolutePath()))) {
                 sendSseEvent("Test remote APM Pass with 3A, vad out file is correct", sseEmitter);
             } else {
                 sendSseEvent("Test remote APM Pass with 3A, vad out file is incorrect", sseEmitter);
@@ -1401,14 +1420,14 @@ public class ServerController implements DisposableBean, ApplicationContextAware
                 }
             }
 
-            List<String> apmVadDumpFiles3A = Utils.findFilePathsRecursively(basePath + "vad_dump", 2, "vad_session", ".pcm");
+            List<String> apmVadDumpFiles3A = Utils.findFilePathsRecursively(basePath + "vad_dump", 2, "vad_session",
+                    ".pcm");
             SampleLogger.log("apmVadDumpFiles3A: " + apmVadDumpFiles3A.toString());
             if (apmVadDumpFiles3A.size() != 2) {
                 sendSseEvent("Error: apm vad dump file count is not 2 with 3A: " + apmVadDumpFiles3A.size(),
                         sseEmitter);
                 return false;
             }
-
 
             long endTime = System.currentTimeMillis();
             long timeCostMs = endTime - startTime;

@@ -53,6 +53,7 @@ public class ArgsConfig implements Cloneable {
     private int apmMode = Constants.ApmMode.DISABLE.getValue();
     private boolean enableApm3a = false;
     private boolean enableApmDump = false;
+    private boolean enableIncrementalSending = false;
 
     // Getter and Setter methods
     public String getAppId() {
@@ -447,6 +448,14 @@ public class ArgsConfig implements Cloneable {
         this.enableApmDump = enableApmDump;
     }
 
+    public boolean isEnableIncrementalSending() {
+        return enableIncrementalSending;
+    }
+
+    public void setEnableIncrementalSending(boolean enableIncrementalSending) {
+        this.enableIncrementalSending = enableIncrementalSending;
+    }
+
     @Override
     public ArgsConfig clone() {
         try {
@@ -514,6 +523,7 @@ public class ArgsConfig implements Cloneable {
         cloned.apmMode = this.apmMode;
         cloned.enableApm3a = this.enableApm3a;
         cloned.enableApmDump = this.enableApmDump;
+        cloned.enableIncrementalSending = this.enableIncrementalSending;
         return cloned;
     }
 
@@ -545,7 +555,8 @@ public class ArgsConfig implements Cloneable {
                 + '\'' + ", isBroadcaster='" + isBroadcaster + '\'' + ", isRecvAudioEncodedFrame='"
                 + isRecvAudioEncodedFrame + '\'' + ", enableAssistantDevice='" + enableAssistantDevice
                 + '\'' + ", isAutoTest='" + isAutoTest + '\'' + ", apmMode='" + apmMode + '\'' + ", enableApm3a='"
-                + enableApm3a + '\'' + ", enableApmDump='" + enableApmDump + '\''
-                + '\'' + '}';
+                + enableApm3a + '\'' + ", enableApmDump='" + enableApmDump + '\'' + ", enableIncrementalSending='"
+                + enableIncrementalSending + '\''
+                + '}';
     }
 }

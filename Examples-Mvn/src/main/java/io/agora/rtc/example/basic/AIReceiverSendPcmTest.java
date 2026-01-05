@@ -11,6 +11,7 @@ import io.agora.rtc.IRtcConnObserver;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
 import io.agora.rtc.RtcConnPublishConfig;
+import io.agora.rtc.SendExternalAudioParameters;
 import io.agora.rtc.VadProcessResult;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.AudioFrameManager;
@@ -45,6 +46,8 @@ public class AIReceiverSendPcmTest {
     private final ExecutorService fileWriteTaskExecutorService = Executors.newSingleThreadExecutor();
 
     private final AtomicInteger testTaskCount = new AtomicInteger(0);
+
+    private boolean enableIncrementalSendingMode = true;
 
     public void setForceExit(boolean forceExit) {
         this.forceExit = forceExit;
@@ -144,6 +147,13 @@ public class AIReceiverSendPcmTest {
         publishConfig.setIsPublishVideo(false);
         publishConfig.setAudioPublishType(Constants.AudioPublishType.PCM);
         publishConfig.setVideoPublishType(Constants.VideoPublishType.NO_PUBLISH);
+        if (enableIncrementalSendingMode) {
+            SendExternalAudioParameters sendExternalAudioParameters = new SendExternalAudioParameters();
+            sendExternalAudioParameters.setEnabled(true);
+            sendExternalAudioParameters.setSendMs(500);
+            sendExternalAudioParameters.setSendSpeed(2);
+            publishConfig.setSendExternalAudioParameters(sendExternalAudioParameters);
+        }
         AgoraRtcConn conn = service.agoraRtcConnCreate(ccfg, publishConfig);
         if (conn == null) {
             SampleLogger.log("AgoraService.agoraRtcConnCreate fail\n");

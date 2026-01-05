@@ -564,4 +564,14 @@ public class Utils {
             return null;
         }
     }
+
+    /**
+     * Converts a signed int userId to an unsigned long value.
+     * 
+     * @param userId The signed int userId (may be negative)
+     * @return The unsigned long value
+     */
+    public static long convertToUnsignedLong(int userId) {
+        return userId & 0xFFFFFFFFL;
+    }
 }
