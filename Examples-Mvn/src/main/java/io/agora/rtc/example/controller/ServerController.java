@@ -989,6 +989,8 @@ public class ServerController implements DisposableBean, ApplicationContextAware
 
     private boolean testDataStreamTask(SseEmitter sseEmitter) {
         try {
+            agoraTaskManager.releaseAgoraService();
+
             long startTime = System.currentTimeMillis();
             taskFinishLatch = new CountDownLatch(1);
 
