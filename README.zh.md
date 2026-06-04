@@ -66,6 +66,7 @@
       - [3. 参数说明 (SendExternalAudioParameters)](#3-参数说明-sendexternalaudioparameters)
       - [4. 接入示例](#4-接入示例)
   - [更新日志](#更新日志)
+    - [v4.4.32.203 (2026-06-04)](#v4432203-2026-06-04)
     - [v4.4.32.202 (2026-01-05)](#v4432202-2026-01-05)
     - [v4.4.32.201 (2025-12-18)](#v4432201-2025-12-18)
     - [v4.4.32.200 (2025-11-14)](#v4432200-2025-11-14)
@@ -85,7 +86,7 @@
 
 ## 简介
 
-Agora Linux Server Java SDK (v4.4.32.202) 为您提供了强大的实时音视频通信能力，可无缝集成到 Linux 服务器端 Java 应用程序中。借助此 SDK，您的服务器可以作为数据源或处理节点加入 Agora 频道，实时获取和处理音视频流，从而实现多种业务相关的其他高级功能。
+Agora Linux Server Java SDK (v4.4.32.203) 为您提供了强大的实时音视频通信能力，可无缝集成到 Linux 服务器端 Java 应用程序中。借助此 SDK，您的服务器可以作为数据源或处理节点加入 Agora 频道，实时获取和处理音视频流，从而实现多种业务相关的其他高级功能。
 
 > 注意：如果您是从 v4.4.32.100 之前的版本升级到 v4.4.32.100 及以后版本，请参考《[AIQoS 版本升级指南](./AIQoS_Upgrade_Guide.md)》完成必要的 API 适配与集成变更。
 
@@ -115,13 +116,13 @@ Agora Linux Server Java SDK (v4.4.32.202) 为您提供了强大的实时音视�
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.202</version>
+    <version>4.4.32.203</version>
 </dependency>
 ```
 
 ### CDN 下载
 
-[Agora-Linux-Java-SDK-v4.4.32.202-x86_64-994889-b202cdc4e3-20260105_103751](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.202-x86_64-994889-b202cdc4e3-20260105_103751.zip)
+[Agora-Linux-Java-SDK-v4.4.32.203-x86_64-1123257-ec6de77725-20260420_162652](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.203-x86_64-1123257-ec6de77725-20260420_162652.zip)
 
 ## 集成 SDK
 
@@ -140,7 +141,7 @@ Maven 集成是最简单的方式，可以自动管理 Java 依赖关系。
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.202</version>
+    <version>4.4.32.203</version>
 </dependency>
 ```
 
@@ -175,7 +176,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32.202 \
+  -Dversion=4.4.32.203 \
   -Dpackaging=jar \
   -DgeneratePom=true
 ```
@@ -187,7 +188,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32.202 \
+  -Dversion=4.4.32.203 \
   -Dpackaging=jar \
   -DgeneratePom=true \
   -Djavadoc=sdk/agora-sdk-javadoc.jar
@@ -199,7 +200,7 @@ mvn install:install-file \
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.202</version>
+    <version>4.4.32.203</version>
 </dependency>
 ```
 
@@ -248,7 +249,7 @@ Agora Linux Server Java SDK 依赖于底层的 C++ 原生库（`.so` 文件）�
     jar xvf agora-sdk.jar
 
     # 如果使用 Maven 集成方式，JAR 文件在 Maven 缓存中，例如：
-    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.202/linux-java-sdk-4.4.32.202.jar
+    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.203/linux-java-sdk-4.4.32.203.jar
     ```
 
 3.  提取后，`libs` 目录下会生成 `native/linux/x86_64` 子目录，其中包含所需的 `.so` 文件：
@@ -448,7 +449,7 @@ java -Djava.library.path=$LIB_PATH -cp "$CLASSPATH" $MAIN_CLASS
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.202</version>  <!-- 确保版本号与您需要使用的版本一致 -->
+    <version>4.4.32.203</version>  <!-- 确保版本号与您需要使用的版本一致 -->
 </dependency>
 ```
 
@@ -1223,6 +1224,11 @@ publishConfig.setSendExternalAudioParameters(params);
 ```
 
 ## 更新日志
+
+### v4.4.32.203 (2026-06-04)
+
+- **改进与优化**
+  - 支持发送 Opus 音频编码时固定帧长度。
 
 ### v4.4.32.202 (2026-01-05)
 

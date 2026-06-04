@@ -66,6 +66,7 @@
       - [3. Parameters (SendExternalAudioParameters)](#3-parameters-sendexternalaudioparameters)
       - [4. Usage Example](#4-usage-example)
   - [Changelog](#changelog)
+    - [v4.4.32.203 (2026-06-04)](#v4432203-2026-06-04)
     - [v4.4.32.202 (2026-01-05)](#v4432202-2026-01-05)
     - [v4.4.32.201 (2025-12-18)](#v4432201-2025-12-18)
     - [v4.4.32.200 (2025-11-14)](#v4432200-2025-11-14)
@@ -85,7 +86,7 @@
 
 ## Introduction
 
-The Agora Linux Server Java SDK (v4.4.32.202) provides powerful real-time audio and video communication capabilities that can be seamlessly integrated into Linux server-side Java applications. With this SDK, your server can join Agora channels as a data source or processing node, accessing and processing audio and video streams in real-time to implement various business-related advanced features.
+The Agora Linux Server Java SDK (v4.4.32.203) provides powerful real-time audio and video communication capabilities that can be seamlessly integrated into Linux server-side Java applications. With this SDK, your server can join Agora channels as a data source or processing node, accessing and processing audio and video streams in real-time to implement various business-related advanced features.
 
 > Note: If you are upgrading from a version earlier than v4.4.32.100 to v4.4.32.100 or later, please refer to the [AIQoS Upgrade Guide](./AIQoS_Upgrade_Guide.md) for required API and integration changes.
 
@@ -115,13 +116,13 @@ The Agora Linux Server Java SDK (v4.4.32.202) provides powerful real-time audio 
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.202</version>
+    <version>4.4.32.203</version>
 </dependency>
 ```
 
 ### CDN Download
 
-[Agora-Linux-Java-SDK-v4.4.32.202-x86_64-994889-b202cdc4e3-20260105_103751](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.202-x86_64-994889-b202cdc4e3-20260105_103751.zip)
+[Agora-Linux-Java-SDK-v4.4.32.203-x86_64-1123257-ec6de77725-20260420_162652](https://download.agora.io/sdk/release/Agora-Linux-Java-SDK-v4.4.32.203-x86_64-1123257-ec6de77725-20260420_162652.zip)
 
 ## Integrate the SDK
 
@@ -140,7 +141,7 @@ Add the following dependency to your project's `pom.xml` file:
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.202</version>
+    <version>4.4.32.203</version>
 </dependency>
 ```
 
@@ -175,7 +176,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32.202 \
+  -Dversion=4.4.32.203 \
   -Dpackaging=jar \
   -DgeneratePom=true
 ```
@@ -187,7 +188,7 @@ mvn install:install-file \
   -Dfile=sdk/agora-sdk.jar \
   -DgroupId=io.agora.rtc \
   -DartifactId=linux-java-sdk \
-  -Dversion=4.4.32.202 \
+  -Dversion=4.4.32.203 \
   -Dpackaging=jar \
   -DgeneratePom=true \
   -Djavadoc=sdk/agora-sdk-javadoc.jar
@@ -199,7 +200,7 @@ After installation, add the dependency to your `pom.xml`:
 <dependency>
     <groupId>io.agora.rtc</groupId>
     <artifactId>linux-java-sdk</artifactId>
-    <version>4.4.32.202</version>
+    <version>4.4.32.203</version>
 </dependency>
 ```
 
@@ -248,7 +249,7 @@ The `.so` files are contained within the `agora-sdk.jar` or `linux-java-sdk-x.x.
     jar xvf agora-sdk.jar
 
     # If using Maven integration, the JAR file is in the Maven cache, e.g.:
-    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.202/linux-java-sdk-4.4.32.202.jar
+    # jar xvf ~/.m2/repository/io/agora/rtc/linux-java-sdk/4.4.32.203/linux-java-sdk-4.4.32.203.jar
     ```
 
 3.  After extraction, a `native/linux/x86_64` subdirectory will be generated within the `libs` directory, containing the required `.so` files:
@@ -449,7 +450,7 @@ This project has integrated C++ code compilation functionality, which can automa
     <dependency>
         <groupId>io.agora.rtc</groupId>
         <artifactId>linux-java-sdk</artifactId>
-        <version>4.4.32.202</version>  <!-- Ensure the version number is consistent with the one you need to use -->
+        <version>4.4.32.203</version>  <!-- Ensure the version number is consistent with the one you need to use -->
     </dependency>
     ```
 
@@ -1231,6 +1232,11 @@ publishConfig.setSendExternalAudioParameters(params);
 ```
 
 ## Changelog
+
+### v4.4.32.203 (2026-06-04)
+
+- **Improvements & Optimizations**
+  - Support fixed frame length when sending Opus audio encoding.
 
 ### v4.4.32.202 (2026-01-05)
 
