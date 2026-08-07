@@ -30,16 +30,11 @@ public class SendPcmFileTest {
     private String audioFilePath = "test_data/tts_ai_16k_1ch.pcm";
     private int numOfChannels = 1;
     private int sampleRate = 16000;
-    private int pushMaxCount = 2;
-    private boolean forceExit = true;
+    private int pushMaxCount = 100;
 
     private final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
 
     private CountDownLatch taskFinishLatch = new CountDownLatch(1);
-
-    public void setForceExit(boolean forceExit) {
-        this.forceExit = forceExit;
-    }
 
     public void start() {
         if (appId == null || token == null) {
@@ -147,9 +142,7 @@ public class SendPcmFileTest {
 
         releaseConn();
         releaseAgoraService();
-        if (forceExit) {
-            System.exit(0);
-        }
+        System.exit(0);
     }
 
     private void pushPcmData() {

@@ -340,8 +340,7 @@ extern "C" JNIEXPORT jobject JNICALL Java_io_agora_rtc_example_mediautils_OpusRe
         jbyteArray arrys = env->NewByteArray(frame.get()->bufferLen);
         env->SetByteArrayRegion(arrys, 0, frame.get()->bufferLen,
                                 (const jbyte *)frame.get()->buffer);
-        // Note: frame->buffer will be automatically deleted by unique_ptr when frame goes out of
-        // scope
+        delete frame.get()->buffer;
         jobject data =
             env->NewObject(clsAudioFrame, constructorAudioFrame, frame.get()->numberOfChannels,
                            frame.get()->sampleRate, frame.get()->codec,
@@ -465,9 +464,6 @@ Java_io_agora_rtc_example_mediautils_OpusReader_release(JNIEnv *env, jobject thi
     if (cptr == 0L)
         return;
     HelperOpusFileParser *helperOpusFileParser = reinterpret_cast<HelperOpusFileParser *>(cptr);
-    if (helperOpusFileParser != nullptr) {
-        delete helperOpusFileParser;
-    }
 }
 
 extern "C" JNIEXPORT jlong JNICALL

@@ -34,15 +34,10 @@ public class SendPcmRealTimeTest {
     private String audioFilePath = "test_data/tts_ai_16k_1ch.pcm";
     private int numOfChannels = 1;
     private int sampleRate = 16000;
-    private boolean forceExit = true;
 
     private final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
 
     private CountDownLatch taskFinishLatch = new CountDownLatch(1);
-
-    public void setForceExit(boolean forceExit) {
-        this.forceExit = forceExit;
-    }
 
     // Audio payload type for custom audio encoding (default: 120 for opus) 0:G711U,
     // 8: G711A, 9: G722;
@@ -157,9 +152,7 @@ public class SendPcmRealTimeTest {
 
         releaseConn();
         releaseAgoraService();
-        if (forceExit) {
-            System.exit(0);
-        }
+        System.exit(0);
     }
 
     private void pushPcmData() {

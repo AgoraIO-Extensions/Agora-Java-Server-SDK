@@ -42,13 +42,8 @@ public class ReceiverPcmYuvTest {
     private String streamType = "high";
     private String remoteUserId = "";
     private long testTime = 60 * 1000;
-    private boolean forceExit = true;
 
     private final ExecutorService singleExecutorService = Executors.newSingleThreadExecutor();
-
-    public void setForceExit(boolean forceExit) {
-        this.forceExit = forceExit;
-    }
 
     private UserIdHolder userIdHolder = new UserIdHolder("0");
 
@@ -332,9 +327,7 @@ public class ReceiverPcmYuvTest {
 
         releaseConn();
         releaseAgoraService();
-        if (forceExit) {
-            System.exit(0);
-        }
+        System.exit(0);
     }
 
     private void releaseConn() {

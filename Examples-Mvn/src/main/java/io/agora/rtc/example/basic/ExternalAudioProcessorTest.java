@@ -31,7 +31,7 @@ public class ExternalAudioProcessorTest {
     private String audioOutFile = "test_data_out/external_audio_processor_test_out";
     // 10ms one frame
     private static final int INTERVAL = 10; // ms
-    private static final int MAX_TASK_COUNT = 2;
+    private static final int MAX_TASK_COUNT = 1;
 
     private final ExecutorService taskExecutor = Executors.newCachedThreadPool();
     private final ExecutorService audioWriteExecutor = Executors.newSingleThreadExecutor();
@@ -43,11 +43,6 @@ public class ExternalAudioProcessorTest {
     private boolean enableApmDump = false;
     private boolean enableApm3A = true;
     private boolean forceExit = true;
-
-    // frame processing latency statistics
-    private long callbackCount = 0;
-    private volatile long lastPushTimeNs = 0;
-    private volatile long totalLatencyUs = 0;
 
     public void setEnableApmDump(boolean enableApmDump) {
         this.enableApmDump = enableApmDump;
@@ -90,7 +85,7 @@ public class ExternalAudioProcessorTest {
                 config.setLogFilePath(DEFAULT_LOG_PATH);
                 config.setLogFileSize(DEFAULT_LOG_SIZE);
                 config.setLogFilters(Constants.LOG_FILTER_DEBUG);
-                config.setApmMode(Constants.ApmMode.ENABLE);
+                config.setApmMode(Constants.APMMode.ENABLE);
 
                 SampleLogger.log("About to call service.initialize()");
                 ret = service.initialize(config);
@@ -157,17 +152,9 @@ public class ExternalAudioProcessorTest {
                         private String taskAudioVadOutFile = finalTaskAudioVadOutFile;
 
                         @Override
-                        public void onAudioFrame(AgoraExternalAudioProcessor processor, AudioFrame audioFrame,
-                                VadProcessResult vadProcessResult) {
-                            long callbackTimeNs = System.nanoTime();
-                            if (lastPushTimeNs > 0) {
-                                long latencyUs = (callbackTimeNs - lastPushTimeNs) / 1000;
-                                totalLatencyUs += latencyUs;
-                                callbackCount++;
-                            }
-                            SampleLogger.log("onAudioFrame: processor=" + processor + ", audioFrame=" + audioFrame
-                                    + ", vadProcessResult=" + vadProcessResult + ", latency="
-                                    + (callbackCount > 0 ? (totalLatencyUs / callbackCount) : 0) + "us");
+                        public void onAudioFrame(AudioFrame audioFrame, VadProcessResult vadProcessResult) {
+                            SampleLogger.log("onAudioFrame: audioFrame=" + audioFrame + ", vadProcessResult="
+                                    + vadProcessResult);
 
                             if (audioFrame == null) {
                                 SampleLogger.log("onAudioFrame: audioFrame is null");
@@ -240,7 +227,6 @@ public class ExternalAudioProcessorTest {
 
                     // Push audio data to all initialized audio processors
                     for (AgoraExternalAudioProcessor audioProcessor : audioProcessorList) {
-                        lastPushTimeNs = System.nanoTime();
                         int pusRet = audioProcessor.pushAudioPcmData(dataToPut, sampleRate, numOfChannels,
                                 presentationMs);
                         if (pusRet != 0) {
@@ -276,20 +262,12 @@ public class ExternalAudioProcessorTest {
             e.printStackTrace();
         }
 
-        SampleLogger.log("Waiting 1 second for callbacks to complete...");
+        SampleLogger.log("Waiting 5 seconds for callbacks to complete...");
         try {
             Thread.sleep(1 * 1000);
         } catch (InterruptedException e) {
             SampleLogger.log("Sleep interrupted: " + e.getMessage());
             e.printStackTrace();
-        }
-
-        // avgLatency = totalLatency / callbackCount
-        if (callbackCount > 0) {
-            long avgLatencyUs = totalLatencyUs / callbackCount;
-            SampleLogger.log("===== Frame Stats: callbackCount=" + callbackCount
-                    + ", totalLatency=" + totalLatencyUs + "us"
-                    + ", avgLatency=" + avgLatencyUs + "us =====");
         }
 
         SampleLogger.log("Starting cleanup...");

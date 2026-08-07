@@ -35,8 +35,5 @@
     "testTime": 0,
     "sleepTime": 1.0,
     "isBroadcaster": false,
-    "isRecvAudioEncodedFrame": false,
-    "apmMode": 1,
-    "enableApm3a": true,
-    "enableApmDump": true
+    "isRecvAudioEncodedFrame": false
 }

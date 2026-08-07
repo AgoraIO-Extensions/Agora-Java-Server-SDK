@@ -11,7 +11,6 @@ import io.agora.rtc.IRtcConnObserver;
 import io.agora.rtc.RtcConnConfig;
 import io.agora.rtc.RtcConnInfo;
 import io.agora.rtc.RtcConnPublishConfig;
-import io.agora.rtc.SendExternalAudioParameters;
 import io.agora.rtc.VadProcessResult;
 import io.agora.rtc.example.common.SampleLogger;
 import io.agora.rtc.example.utils.AudioFrameManager;
@@ -38,20 +37,13 @@ public class AIReceiverSendPcmTest {
     private String audioOutFile = "test_data_out/receiver_audio_out_ai";
     private int numOfChannels = 1;
     private int sampleRate = 16000;
-    private long testTime = 60 * 1000;
-    private int pushMaxCount = 2;
-    private boolean forceExit = true;
+    private long testTime = 5 * 60 * 1000;
+    private int pushMaxCount = 100;
 
     private final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
     private final ExecutorService fileWriteTaskExecutorService = Executors.newSingleThreadExecutor();
 
     private final AtomicInteger testTaskCount = new AtomicInteger(0);
-
-    private boolean enableIncrementalSendingMode = true;
-
-    public void setForceExit(boolean forceExit) {
-        this.forceExit = forceExit;
-    }
 
     class UserIdHolder {
         private volatile String userId;
@@ -116,9 +108,7 @@ public class AIReceiverSendPcmTest {
         } while (testTaskCount.get() != 0);
 
         releaseAgoraService();
-        if (forceExit) {
-            System.exit(0);
-        }
+        System.exit(0);
     }
 
     private void startSendPcmData() {
@@ -147,13 +137,6 @@ public class AIReceiverSendPcmTest {
         publishConfig.setIsPublishVideo(false);
         publishConfig.setAudioPublishType(Constants.AudioPublishType.PCM);
         publishConfig.setVideoPublishType(Constants.VideoPublishType.NO_PUBLISH);
-        if (enableIncrementalSendingMode) {
-            SendExternalAudioParameters sendExternalAudioParameters = new SendExternalAudioParameters();
-            sendExternalAudioParameters.setEnabled(true);
-            sendExternalAudioParameters.setSendMs(500);
-            sendExternalAudioParameters.setSendSpeed(2);
-            publishConfig.setSendExternalAudioParameters(sendExternalAudioParameters);
-        }
         AgoraRtcConn conn = service.agoraRtcConnCreate(ccfg, publishConfig);
         if (conn == null) {
             SampleLogger.log("AgoraService.agoraRtcConnCreate fail\n");
@@ -213,11 +196,11 @@ public class AIReceiverSendPcmTest {
             }
         }
 
-        // try {
-        // userJoinLatch.await();
-        // } catch (InterruptedException e) {
-        // e.printStackTrace();
-        // }
+        try {
+            userJoinLatch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
         byte[] pcmData = Utils.readPcmFromFile(audioFilePath);
         // The data length must be an integer multiple of the data length of 1ms.

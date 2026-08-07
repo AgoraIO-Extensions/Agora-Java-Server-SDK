@@ -1,1 +1,2 @@
 enable_asan=false
+enable_gateway=true

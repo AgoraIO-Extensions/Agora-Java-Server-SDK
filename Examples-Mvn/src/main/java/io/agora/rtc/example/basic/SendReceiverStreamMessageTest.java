@@ -29,17 +29,12 @@ public class SendReceiverStreamMessageTest {
     private String channelId = "agaa";
     private String userId = "0";
     private long testTime = 60 * 1000;
-    private boolean forceExit = true;
 
     private CountDownLatch connectedLatch = null;
 
     private final ExecutorService testTaskExecutorService = Executors.newCachedThreadPool();
 
     private final AtomicInteger testTaskCount = new AtomicInteger(0);
-
-    public void setForceExit(boolean forceExit) {
-        this.forceExit = forceExit;
-    }
 
     public void start() {
         if (appId == null || token == null) {
@@ -67,7 +62,7 @@ public class SendReceiverStreamMessageTest {
             ret = service.initialize(config);
             if (ret != 0) {
                 SampleLogger.log(
-                        "createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
+                    "createAndInitAgoraService AgoraService.initialize fail ret:" + ret);
                 releaseAgoraService();
                 return;
             }
@@ -92,9 +87,7 @@ public class SendReceiverStreamMessageTest {
         } while (testTaskCount.get() != 0);
 
         releaseAgoraService();
-        if (forceExit) {
-            System.exit(0);
-        }
+        System.exit(0);
     }
 
     private void startSendStreamMessage() {
@@ -142,7 +135,7 @@ public class SendReceiverStreamMessageTest {
 
         ret = conn.connect(token, channelId, userId);
         SampleLogger.log(
-                "Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
+            "Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
         if (ret != 0) {
             SampleLogger.log("conn.connect fail ret=" + ret);
             releaseConn(conn);
@@ -164,7 +157,7 @@ public class SendReceiverStreamMessageTest {
         testTaskExecutorService.execute(() -> {
             while (!sendStreamMessageDone.get()) {
                 String data = Utils.getCurrentTime() + " hello world from channelId:" + channelId
-                        + " userId:" + userId;
+                    + " userId:" + userId;
                 int sendRet = conn.sendStreamMessage(data.getBytes());
                 SampleLogger.log("sendStreamMessage: " + data + " done ret:" + sendRet);
 
@@ -235,15 +228,15 @@ public class SendReceiverStreamMessageTest {
         conn.registerLocalUserObserver(new ILocalUserObserver() {
             @Override
             public void onStreamMessage(
-                    AgoraLocalUser agoraLocalUser, String userId, int streamId, byte[] data) {
+                AgoraLocalUser agoraLocalUser, String userId, int streamId, byte[] data) {
                 SampleLogger.log("onStreamMessage userId:" + userId + " streamId:" + streamId
-                        + " decoded message:" + new String(data));
+                    + " decoded message:" + new String(data));
             }
         });
 
         ret = conn.connect(token, channelId, userId);
         SampleLogger.log(
-                "Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
+            "Connecting to Agora channel " + channelId + " with userId " + userId + " ret:" + ret);
         if (ret != 0) {
             SampleLogger.log("conn.connect fail ret=" + ret);
             releaseConn(conn);
@@ -268,7 +261,7 @@ public class SendReceiverStreamMessageTest {
         }
 
         SampleLogger.log("releaseConn for channelId:" + conn.getConnInfo().getChannelId()
-                + " userId:" + conn.getConnInfo().getLocalUserId());
+            + " userId:" + conn.getConnInfo().getLocalUserId());
 
         int ret = conn.disconnect();
         if (ret != 0) {
